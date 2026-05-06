@@ -374,23 +374,23 @@ function Toggle({
   hint?: string;
 }) {
   return (
-    <label className="flex items-start gap-3 p-3 border border-ink-900/10 cursor-pointer hover:bg-cream-100">
+    <label className="flex items-start gap-4 p-3 border border-ink-900/10 cursor-pointer hover:bg-cream-100">
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`shrink-0 h-6 w-10 relative transition-colors ${
+        className={`shrink-0 mt-0.5 h-6 w-11 relative rounded-full transition-colors ${
           checked ? 'bg-gold-500' : 'bg-ink-300'
         }`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 bg-cream-50 transition-transform ${
-            checked ? 'translate-x-4' : 'translate-x-0.5'
+          className={`absolute top-0.5 left-0.5 h-5 w-5 bg-cream-50 rounded-full shadow-sm transition-transform ${
+            checked ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
       </button>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <span className="text-sm font-medium text-ink-900 block">{label}</span>
         {hint && <span className="text-xs text-ink-500 block mt-0.5">{hint}</span>}
       </div>
