@@ -87,8 +87,66 @@ export function ProductsTable({
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-cream-100 border border-ink-900/10 overflow-x-auto">
+{/* Mobile cards */}
+      <div className="md:hidden space-y-2">
+        {filtered.length === 0 && (
+          <p className="text-center py-10 text-ink-500">No products match those filters.</p>
+        )}
+        {filtered.map((p) => (
+          <div
+            key={p.id}
+            className="bg-cream-100 border border-ink-900/10 p-3 flex gap-3 items-center"
+          >
+            <div className="relative h-14 w-14 bg-ink-900/5 overflow-hidden shrink-0">
+              {p.imageUrl ? (
+                <Image src={p.imageUrl} alt="" fill sizes="56px" className="object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-ink-300 text-xs">
+                  ·
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-ink-900 leading-tight truncate">{p.name}</p>
+                <span
+                  className={`inline-block h-2 w-2 rounded-full mt-1.5 shrink-0 ${
+                    p.isActive ? 'bg-green-500' : 'bg-ink-300'
+                  }`}
+                  title={p.isActive ? 'Active' : 'Inactive'}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2 mt-1">
+                <p className="text-xs text-ink-500 truncate">
+                  {p.categoryId ? catMap.get(p.categoryId)?.name ?? '—' : '—'}
+                  {p.isPack && ' · Pack'}
+                </p>
+                <p className="text-sm font-medium text-ink-900 tabular shrink-0">
+                  {formatPrice(p.priceInPence)}
+                </p>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Link
+                  href={`/admin/products/${p.id}`}
+                  className="flex-1 text-center text-xs uppercase tracking-[0.18em] py-2 bg-ink-900 text-cream-50"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(p.id, p.name)}
+                  disabled={deleting === p.id}
+                  className="px-3 py-2 border border-butcher-500/30 text-butcher-500 hover:bg-butcher-500/5 text-xs uppercase tracking-[0.18em] disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block bg-cream-100 border border-ink-900/10 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-cream-50 border-b border-ink-900/10">
             <tr className="text-left text-ink-500 uppercase tracking-[0.16em] text-[11px]">
@@ -177,6 +235,7 @@ export function ProductsTable({
         </table>
       </div>
 
+      
       <p className="text-xs text-ink-500">
         Showing {filtered.length} of {products.length} products.
       </p>
