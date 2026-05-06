@@ -101,18 +101,18 @@ export function Hero() {
           >
             <div className="relative aspect-square max-w-md mx-auto">
               {/* Decorative concentric rings */}
-              <div className="absolute inset-0 border border-gold-400/15 rotate-3" />
-              <div className="absolute inset-3 border border-gold-400/25 -rotate-2" />
-
+              <div className="absolute inset-0 border border-gold-400/15 rotate-3 rounded-full" />
+              <div className="absolute inset-3 border border-gold-400/25 -rotate-2 rounded-full" />
+              
               {/* The logo */}
-              <div className="absolute inset-6 bg-ink-900 flex items-center justify-center p-8 menu-plate">
-                <Image
-                  src="/logo.png"
-                  alt="Gary's Butchers & Fishmongers"
-                  width={400}
-                  height={400}
-                  className="w-full h-auto relative z-10"
-                  priority
+              <div className="absolute inset-6 bg-ink-900 flex items-center justify-center p-8 menu-plate rounded-full overflow-hidden">
+                  <Image
+                    src="/logo.png"
+                    alt="Gary's Butchers & Fishmongers"
+                    width={400}
+                    height={400}
+                    className="w-full h-full object-contain relative z-10"
+                    priority
                 />
               </div>
 

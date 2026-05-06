@@ -67,15 +67,17 @@ export function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center justify-center" aria-label="Home">
-            <Image
-              src="/logo.png"
-              alt="Gary's Butchers & Fishmongers"
-              width={140}
-              height={140}
-              className="h-14 lg:h-16 w-auto bg-ink-900 p-1.5"
-              priority
-            />
-          </Link>
+            <div className="h-14 lg:h-16 aspect-square rounded-full bg-ink-900 p-1.5 overflow-hidden flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Gary's Butchers & Fishmongers"
+                width={140}
+                height={140}
+                className="w-full h-full object-contain"
+                priority
+              />
+            </div>          
+            </Link>
 
           {/* Right nav (desktop) */}
           <nav className="hidden lg:flex items-center gap-8 flex-1 justify-end">

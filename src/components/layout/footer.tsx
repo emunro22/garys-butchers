@@ -41,13 +41,15 @@ export function Footer() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 pb-16 border-b border-cream-100/10">
           {/* Brand */}
           <div className="lg:col-span-4">
-            <Image
-              src="/logo.png"
-              alt="Gary's Butchers & Fishmongers"
-              width={120}
-              height={120}
-              className="mb-6"
-            />
+              <div className="w-24 h-24 rounded-full bg-ink-900 p-2 overflow-hidden flex items-center justify-center mb-6">
+                <Image
+                  src="/logo.png"
+                  alt="Gary's Butchers & Fishmongers"
+                  width={120}
+                  height={120}
+                  className="w-full h-full object-contain"
+                />
+              </div>            
             <p className="text-cream-200/80 leading-relaxed text-sm max-w-xs">
               An independent butcher and fishmonger in Erskine. Hand-cut Scottish meat,
               fresh fish daily, and our famous meat packs. Family-run since 2015.
