@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Fraunces', 'Playfair Display', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-cream text-ink-900 font-sans;
+    font-feature-settings: 'ss01', 'ss02', 'cv11';
+  }
+
+  /* Selection — gold on charcoal */
+  ::selection {
+    background: theme('colors.gold.400');
+    color: theme('colors.ink.900');
+  }
+
+  /* Display headings should always use the serif and sit tight */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Numbers feel right with tabular figures in cart/checkout */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Smooth scroll for anchor jumps */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Eyebrow label — the small uppercase "BUTCHERS · SINCE 2015" type lockup */
+  .eyebrow {
+    @apply uppercase text-[11px] tracking-[0.28em] font-medium;
+  }
+
+  /* The signature gold underline used on key headings */
+  .gold-rule {
+    @apply relative inline-block;
+  }
+  .gold-rule::after {
+    content: '';
+    @apply absolute left-0 right-0 -bottom-2 h-px bg-gold-400/60;
+  }
+
+  /* A subtle paper texture for cream-coloured panels */
+  .paper {
+    background-image:
+      radial-gradient(rgba(74, 68, 58, 0.045) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+
+  /* Used on dark hero section and footer */
+  .ink-paper {
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 5px 5px;
+  }
+
+  /* Marquee container for the announcement bar */
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 40s linear infinite;
+  }
+
+  /* Card with a faint inner gold rule like a menu plate */
+  .menu-plate {
+    @apply relative rounded-sm bg-ink-900 text-cream-50;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 0 0 1px rgba(201, 169, 97, 0.18),
+      0 30px 60px -30px rgba(0, 0, 0, 0.6);
+  }
+  .menu-plate::before {
+    content: '';
+    @apply absolute inset-2 pointer-events-none rounded-sm;
+    border: 1px solid rgba(201, 169, 97, 0.22);
+  }
+
+  /* Star rating style — small inline gold stars */
+  .stars {
+    @apply inline-flex gap-0.5 text-gold-400;
+  }
+}
+
+/* Custom scrollbar for the cart drawer */
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(74, 68, 58, 0.3);
+  border-radius: 3px;
+}
