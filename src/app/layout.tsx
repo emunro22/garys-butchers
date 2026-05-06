@@ -32,6 +32,11 @@ export const metadata: Metadata = {
     'free range chicken',
     "Gary's Butchers",
   ],
+  icons: {
+    icon: '/favicon.ico',           // standard favicon
+    shortcut: '/favicon.ico',       // legacy support
+    apple: '/apple-touch-icon.png', // iOS home screen
+  },
   openGraph: {
     type: 'website',
     title: "Gary's Butchers & Fishmongers",
