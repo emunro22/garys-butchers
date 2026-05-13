@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Facebook, Instagram, MapPin, Phone, Clock } from 'lucide-react';
+import { NewsletterSignup } from '@/components/shop/newsletter-signup';
 
 const cols = [
   {
@@ -36,9 +37,26 @@ const cols = [
 
 export function Footer() {
   return (
-    <footer className="bg-ink-900 text-cream-100 ink-paper">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-20 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 pb-16 border-b border-cream-100/10">
+<footer className="bg-ink-900 text-cream-100 ink-paper">
+      {/* Newsletter band */}
+      <div className="border-b border-cream-100/10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12 md:py-16 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div>
+            <p className="eyebrow text-gold-400 mb-3">Mailing list</p>
+            <h2 className="font-display text-3xl md:text-4xl text-cream-50 leading-tight">
+              Subscribe for up-to-date offers
+            </h2>
+            <p className="mt-3 text-sm text-cream-200/70 max-w-md">
+              Seasonal specials, new meat packs and discount codes — straight to your inbox. No spam, unsubscribe any time.
+            </p>
+          </div>
+          <div>
+            <NewsletterSignup variant="dark" source="footer" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-20 pb-10">        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 pb-16 border-b border-cream-100/10">
           {/* Brand */}
           <div className="lg:col-span-4">
               <div className="w-24 h-24 rounded-full bg-ink-900 p-2 overflow-hidden flex items-center justify-center mb-6">

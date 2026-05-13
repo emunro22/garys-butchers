@@ -12,6 +12,8 @@ import {
   TicketPercent,
   Settings,
   LogOut,
+  Users,
+  Mail,
   Menu,
   X,
 } from 'lucide-react';
@@ -22,6 +24,8 @@ const NAV = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/promotions', label: 'Promotions', icon: TicketPercent },
+  { href: '/admin/customers', label: 'Customers', icon: Users },
+  { href: '/admin/subscribers', label: 'Mailing list', icon: Mail },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

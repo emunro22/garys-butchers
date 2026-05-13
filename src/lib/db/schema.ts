@@ -169,6 +169,22 @@ export const settings = pgTable('settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const subscribers = pgTable(
+  'subscribers',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: varchar('email', { length: 200 }).notNull(),
+    name: varchar('name', { length: 160 }),
+    source: varchar('source', { length: 60 }).default('website').notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    subscribedAt: timestamp('subscribed_at', { withTimezone: true }).defaultNow().notNull(),
+    unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }),
+  },
+  (t) => ({
+    emailIdx: uniqueIndex('subscribers_email_idx').on(t.email),
+  })
+);
+
 // ---------- Relations ----------
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -193,3 +209,5 @@ export type NewPromotion = typeof promotions.$inferInsert;
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
+export type Subscriber = typeof subscribers.$inferSelect;
+export type NewSubscriber = typeof subscribers.$inferInsert;
