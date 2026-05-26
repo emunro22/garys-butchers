@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
 import { SettingsForm } from '@/components/admin/settings-form';
-import { DEFAULT_SETTINGS } from '@/app/api/settings/route';
+import { DEFAULT_SETTINGS } from '@/lib/settings';
 
 export const dynamic = 'force-dynamic';
 

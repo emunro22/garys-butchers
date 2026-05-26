@@ -2,20 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
-
-export const DEFAULT_SETTINGS = {
-  shop: {
-    name: "Gary's Butchers & Fishmongers",
-    address: 'Bridgewater Shopping Centre, Erskine PA8 7AA',
-    phone: '0141 555 1234',
-  },
-  delivery: {
-    freeThresholdPence: 2500,
-    feePence: 350,
-  },
-};
+import { DEFAULT_SETTINGS } from '@/lib/settings';
 
 export async function GET() {
   const session = await getSession();
