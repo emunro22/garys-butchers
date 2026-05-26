@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
-import { eq, asc, desc } from 'drizzle-orm';
+import { eq, asc, desc, and } from 'drizzle-orm';
 import { ProductCard } from '@/components/shop/product-card';
 import type { Metadata } from 'next';
 
@@ -25,7 +25,7 @@ export default async function ShopPage() {
     bestsellers = await db
       .select()
       .from(products)
-      .where(eq(products.isFeatured, true))
+      .where(and(eq(products.isFeatured, true), eq(products.isActive, true)))
       .orderBy(desc(products.createdAt))
       .limit(8);
   } catch {

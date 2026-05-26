@@ -9,3 +9,4 @@ out
 *.log
 .turbo
 drizzle/meta
+.env*

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { formatPrice, cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ export function ProductCard({
   index?: number;
 }) {
   const addItem = useCart((s) => s.addItem);
+  const [imgError, setImgError] = useState(false);
   const href = product.isPack ? `/meat-packs/${product.slug}` : `/product/${product.slug}`;
 
   return (
@@ -27,13 +29,14 @@ export function ProductCard({
       className="group flex flex-col"
     >
       <Link href={href} className="relative block overflow-hidden bg-ink-900/5 aspect-[4/5] mb-4">
-        {product.imageUrl ? (
+        {product.imageUrl && !imgError ? (
           <Image
             src={product.imageUrl}
             alt={product.name}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-ink-900 text-gold-400/40">

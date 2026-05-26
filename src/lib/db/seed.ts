@@ -16,6 +16,17 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  beef: 'https://images.unsplash.com/photo-1546964124-0cce460e0700?w=800&q=80',
+  pork: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=800&q=80',
+  chicken: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80',
+  fish: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&q=80',
+  'sausages-burgers': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
+  'pies-bakery': 'https://images.unsplash.com/photo-1621796359060-e56ca3fd26a0?w=800&q=80',
+  'breakfast-sides': 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&q=80',
+  'meat-packs': 'https://images.unsplash.com/photo-1607623347174-e8c2f0cc9e20?w=800&q=80',
+};
+
 // ---------- Categories ----------
 
 const seedCategories = [
@@ -625,6 +636,7 @@ async function main() {
     isFeatured: p.featured ?? false,
     badge: p.badge ?? null,
     isPack: false,
+    imageUrl: CATEGORY_IMAGES[p.category] ?? null,
   }));
   await db.insert(products).values(productRows);
 
@@ -639,6 +651,7 @@ async function main() {
     isFeatured: p.featured ?? false,
     badge: p.badge ?? null,
     isPack: true,
+    imageUrl: CATEGORY_IMAGES['meat-packs'] ?? null,
   }));
   await db.insert(products).values(packRows);
 
