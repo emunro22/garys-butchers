@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
             orderNumber: order.orderNumber,
             customerName: order.customerName,
             customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
             fulfilment: order.fulfilment,
             items: order.items,
             subtotalInPence: order.subtotalInPence,
@@ -76,6 +77,8 @@ export async function POST(req: NextRequest) {
             pickupSlot: order.pickupSlot ? order.pickupSlot.toISOString() : null,
             deliverySlot: order.deliverySlot ? order.deliverySlot.toISOString() : null,
             deliveryAddress: order.deliveryAddress,
+            notes: order.notes,
+            promotionCode: order.promotionCode,
           };
           await Promise.all([
             sendOrderConfirmation(emailPayload),

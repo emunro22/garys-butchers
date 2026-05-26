@@ -185,6 +185,29 @@ export const subscribers = pgTable(
   })
 );
 
+export const dealCategoryEnum = pgEnum('deal_category', [
+  'christmas',
+  'easter',
+  'summer-bbq',
+  'general',
+]);
+
+export const dealStatusEnum = pgEnum('deal_status', ['draft', 'published']);
+
+export const deals = pgTable('deals', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: varchar('title', { length: 200 }).notNull(),
+  description: text('description'),
+  category: dealCategoryEnum('category').default('general').notNull(),
+  imageUrl: text('image_url'),
+  badgeText: varchar('badge_text', { length: 80 }),
+  status: dealStatusEnum('status').default('draft').notNull(),
+  startsAt: timestamp('starts_at', { withTimezone: true }),
+  endsAt: timestamp('ends_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // ---------- Relations ----------
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -211,3 +234,5 @@ export type NewOrder = typeof orders.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type Subscriber = typeof subscribers.$inferSelect;
 export type NewSubscriber = typeof subscribers.$inferInsert;
+export type Deal = typeof deals.$inferSelect;
+export type NewDeal = typeof deals.$inferInsert;

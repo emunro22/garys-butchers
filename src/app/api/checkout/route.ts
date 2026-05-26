@@ -151,6 +151,8 @@ export async function POST(req: NextRequest) {
       metadata: {
         orderId: order.id,
         orderNumber: String(order.orderNumber),
+        ...(appliedPromoCode ? { promoCode: appliedPromoCode } : {}),
+        fulfilment: data.fulfilment,
       },
       description: `Gary's Butchers order #${order.orderNumber}`,
     });

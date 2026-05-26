@@ -16,6 +16,8 @@ import {
   Mail,
   Menu,
   X,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 
 const NAV = [
@@ -24,10 +26,13 @@ const NAV = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/promotions', label: 'Promotions', icon: TicketPercent },
+  { href: '/admin/deals', label: 'Seasonal Deals', icon: Sparkles },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/subscribers', label: 'Mailing list', icon: Mail },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://garys-butchers.vercel.app';
 
 export function AdminShell({
   children,
@@ -89,6 +94,15 @@ export function AdminShell({
         </nav>
 
         <div className="p-3 border-t border-gold-400/15">
+          <a
+            href={SITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gold-400/80 hover:text-gold-400 hover:bg-gold-400/5 transition-colors mb-1"
+          >
+            <ExternalLink className="h-4 w-4" />
+            View live site
+          </a>
           <p className="text-xs text-cream-200/50 px-3 py-1 truncate">{email}</p>
           <button
             onClick={handleLogout}
@@ -166,6 +180,16 @@ export function AdminShell({
               })}
             </nav>
             <div className="p-3 border-t border-gold-400/15">
+              <a
+                href={SITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-3 px-3 py-3 text-sm text-gold-400/80 hover:text-gold-400 hover:bg-gold-400/5 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                <ExternalLink className="h-5 w-5" />
+                View live site
+              </a>
               <p className="text-xs text-cream-200/50 px-3 py-1 truncate">{email}</p>
               <button
                 onClick={handleLogout}
