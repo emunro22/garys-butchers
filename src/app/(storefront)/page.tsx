@@ -7,6 +7,7 @@ import { FeaturedPacks } from '@/components/home/featured-packs';
 import { Reviews } from '@/components/home/reviews';
 import { AboutStrip } from '@/components/home/about-strip';
 import { DeliveryStrip } from '@/components/home/delivery-strip';
+import { SeasonalDeals } from '@/components/home/seasonal-deals';
 
 export const revalidate = 60;
 
@@ -40,6 +41,7 @@ export default async function HomePage() {
     <>
       <Hero />
       <DeliveryStrip />
+      <SeasonalDeals />
       <FeaturedCategories />
       {packs.length > 0 && <FeaturedPacks packs={packs} />}
       <AboutStrip />

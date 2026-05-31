@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { ProductCard } from '@/components/shop/product-card';
+import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -78,6 +79,8 @@ export default async function ShopPage() {
           ))}
         </div>
       </section>
+
+      <SeasonalDeals compact />
 
       {/* Bestsellers */}
       {bestsellers.length > 0 && (
