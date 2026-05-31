@@ -204,6 +204,10 @@ export const deals = pgTable('deals', {
   status: dealStatusEnum('status').default('draft').notNull(),
   startsAt: timestamp('starts_at', { withTimezone: true }),
   endsAt: timestamp('ends_at', { withTimezone: true }),
+  // Items bundled in this deal — stored as [{productId, quantity}]
+  dealItems: jsonb('deal_items').$type<Array<{ productId: string; quantity: number }>>().default([]).notNull(),
+  // Optional override price in pence (null = sum of item prices)
+  dealPrice: integer('deal_price'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

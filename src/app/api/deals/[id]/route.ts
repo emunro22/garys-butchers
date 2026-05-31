@@ -5,6 +5,8 @@ import { deals } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 
+const DealItemSchema = z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1) });
+
 const PatchSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).nullable().optional(),
@@ -14,6 +16,8 @@ const PatchSchema = z.object({
   status: z.enum(['draft', 'published']).optional(),
   startsAt: z.string().datetime().nullable().optional(),
   endsAt: z.string().datetime().nullable().optional(),
+  dealItems: z.array(DealItemSchema).optional(),
+  dealPrice: z.number().int().min(0).nullable().optional(),
 });
 
 export async function PATCH(

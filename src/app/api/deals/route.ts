@@ -5,6 +5,8 @@ import { deals } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 
+const DealItemSchema = z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1) });
+
 const Schema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).nullable().optional(),
@@ -14,6 +16,8 @@ const Schema = z.object({
   status: z.enum(['draft', 'published']).optional(),
   startsAt: z.string().datetime().nullable().optional(),
   endsAt: z.string().datetime().nullable().optional(),
+  dealItems: z.array(DealItemSchema).optional(),
+  dealPrice: z.number().int().min(0).nullable().optional(),
 });
 
 export async function GET() {
@@ -53,6 +57,8 @@ export async function POST(req: NextRequest) {
         status: d.status ?? 'draft',
         startsAt: d.startsAt ? new Date(d.startsAt) : null,
         endsAt: d.endsAt ? new Date(d.endsAt) : null,
+        dealItems: d.dealItems ?? [],
+        dealPrice: d.dealPrice ?? null,
       })
       .returning();
     return NextResponse.json({ deal: created });

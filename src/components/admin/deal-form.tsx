@@ -1,15 +1,27 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Search, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
+import { formatPrice } from '@/lib/utils';
 import type { Deal } from '@/lib/db/schema';
 
 type DealCategory = 'christmas' | 'easter' | 'summer-bbq' | 'general';
 type DealStatus = 'draft' | 'published';
+
+type ProductOption = {
+  id: string;
+  name: string;
+  priceInPence: number;
+  imageUrl: string | null;
+  weightLabel: string | null;
+  slug: string;
+};
+
+type DealItemState = ProductOption & { quantity: number };
 
 const CATEGORY_OPTIONS: { value: DealCategory; label: string; emoji: string }[] = [
   { value: 'christmas', label: 'Christmas', emoji: '🎄' },
@@ -18,15 +30,10 @@ const CATEGORY_OPTIONS: { value: DealCategory; label: string; emoji: string }[] 
   { value: 'general', label: 'General', emoji: '🏷️' },
 ];
 
-export function DealForm({
-  initial,
-  mode,
-}: {
-  initial?: Deal;
-  mode: 'create' | 'edit';
-}) {
+export function DealForm({ initial, mode }: { initial?: Deal; mode: 'create' | 'edit' }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     title: initial?.title ?? '',
@@ -35,21 +42,84 @@ export function DealForm({
     imageUrl: initial?.imageUrl ?? '',
     badgeText: initial?.badgeText ?? '',
     status: (initial?.status ?? 'draft') as DealStatus,
-    startsAt: initial?.startsAt
-      ? new Date(initial.startsAt).toISOString().slice(0, 16)
-      : '',
-    endsAt: initial?.endsAt
-      ? new Date(initial.endsAt).toISOString().slice(0, 16)
-      : '',
+    startsAt: initial?.startsAt ? new Date(initial.startsAt).toISOString().slice(0, 16) : '',
+    endsAt: initial?.endsAt ? new Date(initial.endsAt).toISOString().slice(0, 16) : '',
+    dealPrice: initial?.dealPrice ? String(((initial.dealPrice ?? 0) / 100).toFixed(2)) : '',
   });
+
+  const [allProducts, setAllProducts] = useState<ProductOption[]>([]);
+  const [dealItems, setDealItems] = useState<DealItemState[]>([]);
+  const [search, setSearch] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load all products on mount, then hydrate dealItems for edit mode
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((data) => {
+        const prods: ProductOption[] = (data.products ?? []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          priceInPence: p.priceInPence,
+          imageUrl: p.imageUrl ?? null,
+          weightLabel: p.weightLabel ?? null,
+          slug: p.slug,
+        }));
+        setAllProducts(prods);
+
+        // Hydrate saved deal items from product list
+        if (initial?.dealItems && initial.dealItems.length > 0) {
+          const hydrated: DealItemState[] = [];
+          for (const saved of initial.dealItems) {
+            const prod = prods.find((p) => p.id === saved.productId);
+            if (prod) hydrated.push({ ...prod, quantity: saved.quantity });
+          }
+          setDealItems(hydrated);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    if (!search.trim()) return allProducts.slice(0, 12);
+    const q = search.toLowerCase();
+    return allProducts.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 12);
+  }, [search, allProducts]);
+
+  const alreadyAdded = new Set(dealItems.map((i) => i.id));
+
+  function addItem(prod: ProductOption) {
+    if (alreadyAdded.has(prod.id)) {
+      setDealItems((prev) =>
+        prev.map((i) => (i.id === prod.id ? { ...i, quantity: i.quantity + 1 } : i))
+      );
+    } else {
+      setDealItems((prev) => [...prev, { ...prod, quantity: 1 }]);
+    }
+    setSearch('');
+    setShowDropdown(false);
+  }
+
+  function updateQty(id: string, delta: number) {
+    setDealItems((prev) =>
+      prev
+        .map((i) => (i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
+    );
+  }
+
+  function removeItem(id: string) {
+    setDealItems((prev) => prev.filter((i) => i.id !== id));
+  }
+
+  const calculatedTotal = dealItems.reduce((s, i) => s + i.priceInPence * i.quantity, 0);
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setError(null);
     setUploading(true);
     try {
       const fd = new FormData();
@@ -71,6 +141,10 @@ export function DealForm({
     setError(null);
     setSubmitting(true);
     try {
+      const dealPriceParsed = form.dealPrice
+        ? Math.round(parseFloat(form.dealPrice) * 100)
+        : null;
+
       const payload = {
         title: form.title,
         description: form.description || null,
@@ -80,7 +154,10 @@ export function DealForm({
         status: form.status,
         startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
+        dealItems: dealItems.map((i) => ({ productId: i.id, quantity: i.quantity })),
+        dealPrice: dealPriceParsed,
       };
+
       const url = mode === 'create' ? '/api/deals' : `/api/deals/${initial!.id}`;
       const method = mode === 'create' ? 'POST' : 'PATCH';
       const res = await fetch(url, {
@@ -108,7 +185,9 @@ export function DealForm({
           : 'bg-amber-50 border-amber-200 text-amber-800'
       }`}>
         <span className="text-sm font-medium">
-          {form.status === 'published' ? '✓ This deal will be visible on the site' : '✏ Draft — not visible to customers yet'}
+          {form.status === 'published'
+            ? '✓ This deal will be visible on the site'
+            : '✏ Draft — not visible to customers yet'}
         </span>
         <button
           type="button"
@@ -147,7 +226,7 @@ export function DealForm({
         </div>
       </section>
 
-      {/* Title & badge */}
+      {/* Title, badge & description */}
       <section className="space-y-4">
         <div>
           <Label htmlFor="title">Title</Label>
@@ -155,12 +234,12 @@ export function DealForm({
             id="title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Christmas Feast Packs"
+            placeholder="Summer BBQ Bundle"
             required
           />
         </div>
         <div>
-          <Label htmlFor="badge">Badge text (optional — shown as a pill on the banner)</Label>
+          <Label htmlFor="badge">Badge text (optional)</Label>
           <Input
             id="badge"
             value={form.badgeText}
@@ -172,12 +251,143 @@ export function DealForm({
           <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
-            rows={4}
+            rows={3}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Stock the freezer before the big day. Our Christmas packs are the same great value as always — just bigger."
+            placeholder="Everything you need for the perfect BBQ — hand-selected by Gary."
           />
         </div>
+      </section>
+
+      {/* ── Bundle items ─────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-1">Bundle items</h2>
+        <p className="text-xs text-ink-500 mb-4">
+          Add products to this deal — customers can add the whole bundle to their cart in one click.
+        </p>
+
+        {/* Search / add */}
+        <div className="relative mb-4">
+          <div className="flex items-center gap-2 border border-ink-900/15 px-3 focus-within:border-ink-900 bg-white">
+            <Search className="h-4 w-4 text-ink-400 shrink-0" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setShowDropdown(true); }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              placeholder="Search products to add…"
+              className="flex-1 py-2.5 text-sm bg-transparent outline-none placeholder:text-ink-400"
+            />
+          </div>
+
+          {showDropdown && filteredProducts.length > 0 && (
+            <div className="absolute z-20 w-full mt-1 bg-white border border-ink-900/15 shadow-lg max-h-64 overflow-y-auto">
+              {filteredProducts.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onMouseDown={() => addItem(p)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-cream-50 text-sm"
+                >
+                  {p.imageUrl ? (
+                    <img src={p.imageUrl} alt="" className="w-9 h-9 object-cover shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 bg-ink-900/5 shrink-0" />
+                  )}
+                  <span className="flex-1 font-medium">{p.name}</span>
+                  <span className="text-ink-500 tabular shrink-0">{formatPrice(p.priceInPence)}</span>
+                  {alreadyAdded.has(p.id) && (
+                    <span className="text-[10px] uppercase tracking-wider text-gold-600 shrink-0">added</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Items list */}
+        {dealItems.length > 0 ? (
+          <div className="border border-ink-900/10 divide-y divide-ink-900/8">
+            {dealItems.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt="" className="w-10 h-10 object-cover shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 bg-ink-900/5 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{item.name}</p>
+                  {item.weightLabel && (
+                    <p className="text-xs text-ink-500">{item.weightLabel}</p>
+                  )}
+                </div>
+                {/* Quantity stepper */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => updateQty(item.id, -1)}
+                    className="h-7 w-7 flex items-center justify-center border border-ink-900/15 hover:border-ink-900 text-ink-700"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="w-8 text-center text-sm tabular">{item.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateQty(item.id, 1)}
+                    className="h-7 w-7 flex items-center justify-center border border-ink-900/15 hover:border-ink-900 text-ink-700"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+                <span className="w-16 text-right text-sm tabular text-ink-700 shrink-0">
+                  {formatPrice(item.priceInPence * item.quantity)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.id)}
+                  className="h-7 w-7 flex items-center justify-center text-ink-400 hover:text-butcher-600 shrink-0"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <div className="flex items-center justify-between px-4 py-3 bg-cream-50">
+              <span className="text-sm text-ink-500">Calculated total</span>
+              <span className="text-sm font-semibold tabular">{formatPrice(calculatedTotal)}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-ink-400 border border-dashed border-ink-900/15 py-6 text-center">
+            No items added yet — search above to build the bundle.
+          </p>
+        )}
+
+        {/* Optional deal price override */}
+        {dealItems.length > 0 && (
+          <div className="mt-4">
+            <Label htmlFor="dealPrice">
+              Special deal price (optional — leave blank to use the calculated total)
+            </Label>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-ink-500 text-sm">£</span>
+              <Input
+                id="dealPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.dealPrice}
+                onChange={(e) => setForm({ ...form, dealPrice: e.target.value })}
+                placeholder={((calculatedTotal) / 100).toFixed(2)}
+                className="max-w-[140px]"
+              />
+            </div>
+            <p className="text-xs text-ink-500 mt-1">
+              Set a lower price to offer a bundle discount.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Image */}
