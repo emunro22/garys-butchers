@@ -5,6 +5,10 @@ import { orders } from '@/lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 
+const DeleteSchema = z.object({
+  id: z.string().uuid(),
+});
+
 const StatusSchema = z.object({
   id: z.string().uuid(),
   status: z.enum([
@@ -30,6 +34,27 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error('orders GET error', err);
     return NextResponse.json({ error: 'Could not load orders' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const body = await req.json();
+    const parsed = DeleteSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+    const [deleted] = await db
+      .delete(orders)
+      .where(eq(orders.id, parsed.data.id))
+      .returning();
+    if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('orders DELETE error', err);
+    return NextResponse.json({ error: 'Could not delete order' }, { status: 500 });
   }
 }
 

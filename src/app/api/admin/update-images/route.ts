@@ -7,7 +7,7 @@ const PRODUCT_IMAGES: Array<[RegExp, string]> = [
   // ── Beef ──────────────────────────────────────────────────────────────────
   [/sirloin/i,              'https://images.unsplash.com/photo-1546964124-0cce460e0700?w=800&q=80'],
   [/popeseye/i,             'https://images.unsplash.com/photo-1607116667981-ff0f5b0c8c29?w=800&q=80'],
-  [/rump steak/i,           'https://images.unsplash.com/photo-1607116667981-ff0f5b0c8c29?w=800&q=80'],
+  [/rump steak(?! burger)/i,'https://images.unsplash.com/photo-1607116667981-ff0f5b0c8c29?w=800&q=80'],
   [/roasting joint/i,       'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80'],
   [/diced beef/i,           'https://images.unsplash.com/photo-1529359536977-1ce2c7543cca?w=800&q=80'],
   [/steak mince|mince/i,    'https://images.unsplash.com/photo-1588347785-3f1e5b15c1a4?w=800&q=80'],
@@ -25,6 +25,7 @@ const PRODUCT_IMAGES: Array<[RegExp, string]> = [
   [/prawn/i,                'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800&q=80'],
   [/cod/i,                  'https://images.unsplash.com/photo-1559847844-5315695dadae?w=800&q=80'],
   // ── Sausages & Burgers ────────────────────────────────────────────────────
+  [/rump steak(?! burger)/i,'https://images.unsplash.com/photo-1607116667981-ff0f5b0c8c29?w=800&q=80'],
   [/rump steak burger/i,    'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=800&q=80'],
   [/steak burger/i,         'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80'],
   [/beef sausage|beef.*link/i, 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80'],
@@ -42,7 +43,7 @@ const PRODUCT_IMAGES: Array<[RegExp, string]> = [
   [/egg/i,                  'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=800&q=80'],
   // ── Meat packs ────────────────────────────────────────────────────────────
   [/breakfast pack/i,       'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&q=80'],
-  [/bbq/i,                  'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800&q=80'],
+  [/b\.?b\.?q/i,            'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800&q=80'],
   [/slimmer/i,              'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80'],
   [/fit pack/i,             'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80'],
   [/muscle/i,               'https://images.unsplash.com/photo-1607623347174-e8c2f0cc9e20?w=800&q=80'],

@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import type { Order } from '@/lib/db/schema';
 
@@ -33,6 +33,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const [filter, setFilter] = useState<'all' | Status>('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const filtered =
     filter === 'all' ? orders : orders.filter((o) => o.status === filter);
@@ -44,6 +45,24 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
       else next.add(id);
       return next;
     });
+  }
+
+  async function deleteOrder(id: string, orderNumber: number) {
+    if (!confirm(`Delete order #${String(orderNumber).padStart(5, '0')}? This cannot be undone.`)) return;
+    setDeleting(id);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      setOrders((arr) => arr.filter((o) => o.id !== id));
+    } catch {
+      alert('Could not delete order');
+    } finally {
+      setDeleting(null);
+    }
   }
 
   async function updateStatus(id: string, status: Status) {
@@ -109,12 +128,13 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
               <th className="px-5 py-3">Slot</th>
               <th className="px-5 py-3 text-right">Total</th>
               <th className="px-5 py-3">Status</th>
+              <th className="px-3 py-3 w-8" />
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-900/5">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-ink-500">
+                <td colSpan={8} className="px-5 py-10 text-center text-ink-500">
                   No orders match this filter.
                 </td>
               </tr>
@@ -189,10 +209,21 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                         ))}
                       </select>
                     </td>
+                    <td className="px-3 py-3 align-top">
+                      <button
+                        onClick={() => deleteOrder(o.id, o.orderNumber)}
+                        disabled={deleting === o.id}
+                        className="p-1.5 text-ink-400 hover:text-butcher-600 hover:bg-butcher-50 disabled:opacity-40"
+                        aria-label="Delete order"
+                        title="Delete order"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
                   </tr>
                   {isOpen && (
                     <tr className="bg-cream-50">
-                      <td colSpan={7} className="px-5 py-5">
+                      <td colSpan={8} className="px-5 py-5">
                         <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
                           <div>
                             <p className="eyebrow text-ink-500 mb-2">Items</p>
