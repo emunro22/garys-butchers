@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Facebook, Instagram, MapPin, Phone, Clock } from 'lucide-react';
 import { NewsletterSignup } from '@/components/shop/newsletter-signup';
+import { getShopSettings } from '@/lib/settings';
 
 const cols = [
   {
@@ -35,7 +36,9 @@ const cols = [
   },
 ];
 
-export function Footer() {
+export async function Footer() {
+  const { shop } = await getShopSettings();
+  const telHref = `tel:${shop.phone.replace(/\D/g, '')}`;
   return (
 <footer className="bg-ink-900 text-cream-100 ink-paper">
       {/* Newsletter band */}
@@ -117,16 +120,12 @@ export function Footer() {
             <ul className="space-y-4 text-sm text-cream-200/90">
               <li className="flex gap-3">
                 <MapPin className="h-4 w-4 mt-0.5 text-gold-400 shrink-0" />
-                <span>
-                  Bridgewater Shopping Centre,
-                  <br />
-                  Erskine, PA8 7AA
-                </span>
+                <span>{shop.address}</span>
               </li>
               <li className="flex gap-3">
                 <Phone className="h-4 w-4 mt-0.5 text-gold-400 shrink-0" />
-                <a href="tel:01415551234" className="hover:text-cream-50">
-                  0141 555 1234
+                <a href={telHref} className="hover:text-cream-50">
+                  {shop.phone}
                 </a>
               </li>
               <li className="flex gap-3">

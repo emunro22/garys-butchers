@@ -1,4 +1,5 @@
 import { ContactForm } from '@/components/shop/contact-form';
+import { getShopSettings } from '@/lib/settings';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,7 +7,8 @@ export const metadata: Metadata = {
   description: 'Get in touch with Gary’s Butchers & Fishmongers in Erskine, Scotland.',
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { shop } = await getShopSettings();
   return (
     <div>
       <section className="bg-ink-900 text-cream-50 py-20 md:py-24">
@@ -26,15 +28,11 @@ export default function ContactPage() {
             <div className="space-y-6 text-ink-700">
               <div>
                 <p className="eyebrow text-ink-500 mb-2">Address</p>
-                <p>
-                  Bridgewater Shopping Centre<br />
-                  Erskine PA8 7AA<br />
-                  Scotland
-                </p>
+                <p>{shop.address}</p>
               </div>
               <div>
                 <p className="eyebrow text-ink-500 mb-2">Phone</p>
-                <p className="tabular text-lg">0141 555 1234</p>
+                <p className="tabular text-lg">{shop.phone}</p>
               </div>
               <div>
                 <p className="eyebrow text-ink-500 mb-2">Hours</p>
