@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Upload, X, Plus, Trash2 } from 'lucide-react';
+import { Upload, X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import type { Category, Product } from '@/lib/db/schema';
@@ -16,6 +16,8 @@ type FormProduct = Partial<Product> & {
   galleryUrls?: string[];
   variants?: Variant[];
 };
+
+const PRESET_SIZES = ['4oz', '6oz', '7oz', '8oz', '10oz', '12oz', '14oz', '16oz / 1lb', 'Custom'];
 
 export function ProductForm({
   initial,
@@ -50,20 +52,38 @@ export function ProductForm({
   const [variants, setVariants] = useState<Variant[]>(
     (initial?.variants as Variant[] | undefined) ?? []
   );
-  const [variantLabel, setVariantLabel] = useState('');
-  const [variantPrice, setVariantPrice] = useState('');
+  const [newSize, setNewSize] = useState('7oz');
+  const [customSize, setCustomSize] = useState('');
+  const [newPrice, setNewPrice] = useState('');
 
   function addVariant() {
-    const label = variantLabel.trim();
-    const price = Math.round(Number(variantPrice) * 100);
+    const label = (newSize === 'Custom' ? customSize : newSize).trim();
+    const price = Math.round(Number(newPrice) * 100);
     if (!label || Number.isNaN(price) || price < 0) return;
+    if (variants.some((v) => v.label === label)) return; // no duplicates
     setVariants((v) => [...v, { label, priceInPence: price }]);
-    setVariantLabel('');
-    setVariantPrice('');
+    setNewPrice('');
+    if (newSize === 'Custom') setCustomSize('');
   }
 
   function removeVariant(i: number) {
     setVariants((v) => v.filter((_, idx) => idx !== i));
+  }
+
+  function updateVariantPrice(i: number, raw: string) {
+    const price = Math.round(Number(raw) * 100);
+    if (Number.isNaN(price) || price < 0) return;
+    setVariants((v) => v.map((item, idx) => idx === i ? { ...item, priceInPence: price } : item));
+  }
+
+  function moveVariant(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= variants.length) return;
+    setVariants((v) => {
+      const next = [...v];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
   }
 
   const [uploading, setUploading] = useState(false);
@@ -367,53 +387,113 @@ export function ProductForm({
       {/* Variants */}
       <section>
         <h2 className="font-display text-xl text-ink-900 mb-1">Size / weight variants</h2>
-        <p className="text-xs text-ink-500 mb-4">
-          Add options like "7oz" or "10oz". Each has its own price. When variants exist, the product
-          base price is hidden and customers must choose one before adding to their basket.
+        <p className="text-xs text-ink-500 mb-5">
+          When variants are added, customers pick a size from a dropdown on the product page — each
+          size has its own price. Leave empty to use the base price above.
         </p>
-        <div className="space-y-2 mb-4">
-          {variants.length === 0 && (
-            <p className="text-sm text-ink-500 italic">No variants — product uses the base price above.</p>
-          )}
-          {variants.map((v, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 bg-cream-100 border border-ink-900/10 px-3 py-2"
-            >
-              <span className="text-gold-500 text-xs">●</span>
-              <span className="flex-1 text-sm font-medium">{v.label}</span>
-              <span className="text-sm text-ink-600 tabular">{formatPrice(v.priceInPence)}</span>
-              <button
-                type="button"
-                onClick={() => removeVariant(i)}
-                className="text-ink-400 hover:text-butcher-500"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+
+        {/* Existing variants */}
+        {variants.length > 0 && (
+          <div className="mb-5 border border-ink-900/10 divide-y divide-ink-900/10">
+            <div className="grid grid-cols-[1fr_140px_72px] bg-cream-100 px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-ink-500">
+              <span>Size</span>
+              <span>Price (£)</span>
+              <span />
             </div>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Label e.g. 7oz"
-            value={variantLabel}
-            onChange={(e) => setVariantLabel(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
-            className="w-32"
-          />
-          <Input
-            placeholder="Price (£)"
-            type="number"
-            step="0.01"
-            min="0"
-            value={variantPrice}
-            onChange={(e) => setVariantPrice(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
-            className="w-32"
-          />
-          <Button type="button" variant="outline" onClick={addVariant}>
-            <Plus className="h-4 w-4 mr-1" /> Add variant
-          </Button>
+            {variants.map((v, i) => (
+              <div key={i} className="grid grid-cols-[1fr_140px_72px] items-center px-3 py-2 bg-cream-50">
+                <span className="text-sm font-medium text-ink-900">{v.label}</span>
+                <div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={(v.priceInPence / 100).toFixed(2)}
+                    onBlur={(e) => updateVariantPrice(i, e.target.value)}
+                    className="w-28 border border-ink-900/15 bg-cream-50 px-2 h-8 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-0.5 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => moveVariant(i, -1)}
+                    disabled={i === 0}
+                    className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
+                    aria-label="Move up"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveVariant(i, 1)}
+                    disabled={i === variants.length - 1}
+                    className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
+                    aria-label="Move down"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(i)}
+                    className="p-1 text-ink-400 hover:text-butcher-500"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add new variant */}
+        <div className="bg-cream-100 border border-ink-900/10 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Add a size</p>
+          <div className="flex flex-wrap gap-2 items-end">
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Size</label>
+              <select
+                value={newSize}
+                onChange={(e) => setNewSize(e.target.value)}
+                className="border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+              >
+                {PRESET_SIZES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
+            {newSize === 'Custom' && (
+              <div>
+                <label className="block text-xs text-ink-500 mb-1">Custom label</label>
+                <Input
+                  placeholder="e.g. 500g"
+                  value={customSize}
+                  onChange={(e) => setCustomSize(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+                  className="w-32"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Price (£)</label>
+              <Input
+                placeholder="0.00"
+                type="number"
+                step="0.01"
+                min="0"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+                className="w-28"
+              />
+            </div>
+
+            <Button type="button" variant="outline" onClick={addVariant} className="h-11">
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
         </div>
       </section>
 
