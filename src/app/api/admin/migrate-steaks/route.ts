@@ -24,7 +24,7 @@ export async function POST() {
     if (existing.rowCount === 0) {
       // Check if already migrated under new slug
       const migrated = await sql`SELECT id FROM products WHERE slug = ${s.newSlug} LIMIT 1`;
-      if (migrated.rowCount > 0) {
+      if ((migrated.rowCount ?? 0) > 0) {
         results.push(`${s.newName}: already migrated, skipped`);
       } else {
         results.push(`${s.newName}: old product not found, skipped`);
