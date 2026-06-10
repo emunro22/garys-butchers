@@ -159,24 +159,6 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
         </div>
       </section>
 
-      {/* Integrations & DB info (read-only) */}
-      <section className="grid sm:grid-cols-2 gap-6">
-        <div className="bg-cream-100 border border-ink-900/10 p-5 space-y-2 opacity-70">
-          <p className="eyebrow text-ink-500 text-[11px]">Integrations</p>
-          <p className="font-medium text-ink-900 text-sm">Stripe &amp; Resend</p>
-          <p className="text-xs text-ink-600">
-            API keys are managed in your Vercel environment variables. Contact your developer to update them.
-          </p>
-        </div>
-        <div className="bg-cream-100 border border-ink-900/10 p-5 space-y-2 opacity-70">
-          <p className="eyebrow text-ink-500 text-[11px]">Database</p>
-          <p className="font-medium text-ink-900 text-sm">Vercel Postgres</p>
-          <p className="text-xs text-ink-600">
-            Product catalogue, orders, and customer data are stored in your Postgres database.
-          </p>
-        </div>
-      </section>
-
       {error && (
         <p className="text-sm text-butcher-500 bg-butcher-500/10 border border-butcher-500/30 px-3 py-2">
           {error}

@@ -41,60 +41,61 @@ export function Header() {
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center justify-between h-20 lg:h-24">
-          {/* Mobile menu trigger */}
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 -ml-2 text-ink-900"
-            aria-label="Open menu"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+        <div className="grid grid-cols-3 items-center h-20 lg:h-24">
 
-          {/* Left nav (desktop) */}
-          <nav className="hidden lg:flex items-center gap-8 flex-1">
-            {nav.slice(0, 3).map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="eyebrow text-ink-700 hover:text-ink-900 transition-colors relative group"
-              >
-                {item.label}
-                <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gold-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
-              </Link>
-            ))}
-          </nav>
+          {/* Left column: hamburger (mobile) | left nav (desktop) */}
+          <div className="flex items-center">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden p-2 -ml-2 text-ink-900"
+              aria-label="Open menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <nav className="hidden lg:flex items-center gap-8">
+              {nav.slice(0, 3).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="eyebrow text-ink-700 hover:text-ink-900 transition-colors relative group"
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gold-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
+                </Link>
+              ))}
+            </nav>
+          </div>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center justify-center" aria-label="Home">
-            <div className="h-14 lg:h-16 aspect-square rounded-full bg-ink-900 p-1.5 overflow-hidden flex items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Gary's Butchers & Fishmongers"
-                width={140}
-                height={140}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>          
+          {/* Centre column: logo — always perfectly centred */}
+          <div className="flex items-center justify-center">
+            <Link href="/" aria-label="Home">
+              <div className="h-14 lg:h-16 aspect-square rounded-full bg-ink-900 p-1.5 overflow-hidden flex items-center justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="Gary's Butchers & Fishmongers"
+                  width={140}
+                  height={140}
+                  className="w-full h-full object-contain"
+                  priority
+                />
+              </div>
             </Link>
+          </div>
 
-          {/* Right nav (desktop) */}
-          <nav className="hidden lg:flex items-center gap-8 flex-1 justify-end">
-            {nav.slice(3).map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="eyebrow text-ink-700 hover:text-ink-900 transition-colors relative group"
-              >
-                {item.label}
-                <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gold-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right side icons */}
-          <div className="flex items-center gap-1 lg:gap-2 ml-4">
+          {/* Right column: right nav (desktop) + icons */}
+          <div className="flex items-center justify-end gap-1 lg:gap-2">
+            <nav className="hidden lg:flex items-center gap-8 mr-2">
+              {nav.slice(3).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="eyebrow text-ink-700 hover:text-ink-900 transition-colors relative group"
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gold-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
+                </Link>
+              ))}
+            </nav>
             <Link
               href="/contact"
               className="hidden md:inline-flex items-center gap-1.5 eyebrow text-ink-700 hover:text-ink-900 px-3"
@@ -120,6 +121,7 @@ export function Header() {
               )}
             </button>
           </div>
+
         </div>
       </div>
 

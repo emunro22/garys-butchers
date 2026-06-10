@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { asc, eq } from 'drizzle-orm';
+import { sql } from '@vercel/postgres';
 import { ProductForm } from '@/components/admin/product-form';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,10 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  try {
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb NOT NULL DEFAULT '[]'::jsonb`;
+  } catch { /* already exists */ }
+
   const { id } = await params;
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
   if (!product) notFound();
