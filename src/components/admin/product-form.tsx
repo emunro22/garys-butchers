@@ -7,10 +7,14 @@ import { Upload, X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import type { Category, Product } from '@/lib/db/schema';
+import { formatPrice } from '@/lib/utils';
+
+type Variant = { label: string; priceInPence: number };
 
 type FormProduct = Partial<Product> & {
   packContents?: string[];
   galleryUrls?: string[];
+  variants?: Variant[];
 };
 
 export function ProductForm({
@@ -42,6 +46,25 @@ export function ProductForm({
     initial?.packContents ?? []
   );
   const [packLine, setPackLine] = useState('');
+
+  const [variants, setVariants] = useState<Variant[]>(
+    (initial?.variants as Variant[] | undefined) ?? []
+  );
+  const [variantLabel, setVariantLabel] = useState('');
+  const [variantPrice, setVariantPrice] = useState('');
+
+  function addVariant() {
+    const label = variantLabel.trim();
+    const price = Math.round(Number(variantPrice) * 100);
+    if (!label || Number.isNaN(price) || price < 0) return;
+    setVariants((v) => [...v, { label, priceInPence: price }]);
+    setVariantLabel('');
+    setVariantPrice('');
+  }
+
+  function removeVariant(i: number) {
+    setVariants((v) => v.filter((_, idx) => idx !== i));
+  }
 
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -106,6 +129,7 @@ export function ProductForm({
         isFeatured: form.isFeatured,
         isActive: form.isActive,
         packContents: form.isPack ? packContents : [],
+        variants,
       };
       const url = mode === 'create' ? '/api/products' : `/api/products/${initial!.id}`;
       const method = mode === 'create' ? 'POST' : 'PATCH';
@@ -339,6 +363,59 @@ export function ProductForm({
           </div>
         </section>
       )}
+
+      {/* Variants */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-1">Size / weight variants</h2>
+        <p className="text-xs text-ink-500 mb-4">
+          Add options like "7oz" or "10oz". Each has its own price. When variants exist, the product
+          base price is hidden and customers must choose one before adding to their basket.
+        </p>
+        <div className="space-y-2 mb-4">
+          {variants.length === 0 && (
+            <p className="text-sm text-ink-500 italic">No variants — product uses the base price above.</p>
+          )}
+          {variants.map((v, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 bg-cream-100 border border-ink-900/10 px-3 py-2"
+            >
+              <span className="text-gold-500 text-xs">●</span>
+              <span className="flex-1 text-sm font-medium">{v.label}</span>
+              <span className="text-sm text-ink-600 tabular">{formatPrice(v.priceInPence)}</span>
+              <button
+                type="button"
+                onClick={() => removeVariant(i)}
+                className="text-ink-400 hover:text-butcher-500"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Label e.g. 7oz"
+            value={variantLabel}
+            onChange={(e) => setVariantLabel(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+            className="w-32"
+          />
+          <Input
+            placeholder="Price (£)"
+            type="number"
+            step="0.01"
+            min="0"
+            value={variantPrice}
+            onChange={(e) => setVariantPrice(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+            className="w-32"
+          />
+          <Button type="button" variant="outline" onClick={addVariant}>
+            <Plus className="h-4 w-4 mr-1" /> Add variant
+          </Button>
+        </div>
+      </section>
 
       {error && (
         <p className="text-sm text-butcher-500 bg-butcher-500/10 border border-butcher-500/30 px-3 py-2">

@@ -132,16 +132,18 @@ export default async function ProductPage({
               {product.name}
             </h1>
 
-            <div className="mt-6 flex items-baseline gap-3">
-              <p className="font-display text-3xl text-ink-900 tabular">
-                {formatPrice(product.priceInPence)}
-              </p>
-              {onSale && (
-                <p className="text-base text-ink-400 line-through tabular">
-                  {formatPrice(product.compareAtPriceInPence!)}
+            {(!product.variants || product.variants.length === 0) && (
+              <div className="mt-6 flex items-baseline gap-3">
+                <p className="font-display text-3xl text-ink-900 tabular">
+                  {formatPrice(product.priceInPence)}
                 </p>
-              )}
-            </div>
+                {onSale && (
+                  <p className="text-base text-ink-400 line-through tabular">
+                    {formatPrice(product.compareAtPriceInPence!)}
+                  </p>
+                )}
+              </div>
+            )}
             {product.weightLabel && (
               <p className="text-sm text-ink-500 mt-2">{product.weightLabel}</p>
             )}

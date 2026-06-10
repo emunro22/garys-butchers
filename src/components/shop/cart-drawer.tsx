@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { X, Minus, Plus, Truck } from 'lucide-react';
-import { useCart, cartSubtotal } from '@/lib/cart';
+import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
 import { formatPrice, FREE_DELIVERY_THRESHOLD_PENCE } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -83,7 +83,7 @@ export function CartDrawer() {
               ) : (
                 <ul className="divide-y divide-ink-900/10">
                   {items.map((item) => (
-                    <li key={item.productId} className="py-4 flex gap-4">
+                    <li key={cartKey(item.productId, item.variantLabel)} className="py-4 flex gap-4">
                       <div className="h-20 w-20 bg-ink-900/5 shrink-0 relative overflow-hidden">
                         {item.imageUrl && (
                           <Image
@@ -105,20 +105,22 @@ export function CartDrawer() {
                             {item.name}
                           </Link>
                           <button
-                            onClick={() => removeItem(item.productId)}
+                            onClick={() => removeItem(item.productId, item.variantLabel)}
                             className="text-ink-400 hover:text-butcher-500 text-xs eyebrow"
                           >
                             Remove
                           </button>
                         </div>
-                        {item.weightLabel && (
-                          <p className="text-xs text-ink-500 mt-0.5">{item.weightLabel}</p>
+                        {(item.variantLabel || item.weightLabel) && (
+                          <p className="text-xs text-ink-500 mt-0.5">
+                            {item.variantLabel ?? item.weightLabel}
+                          </p>
                         )}
                         <div className="mt-auto pt-2 flex items-center justify-between">
                           <div className="flex items-center border border-ink-900/20">
                             <button
                               onClick={() =>
-                                updateQuantity(item.productId, item.quantity - 1)
+                                updateQuantity(item.productId, item.quantity - 1, item.variantLabel)
                               }
                               className="h-8 w-8 flex items-center justify-center hover:bg-ink-900/5"
                               aria-label="Decrease"
@@ -130,7 +132,7 @@ export function CartDrawer() {
                             </span>
                             <button
                               onClick={() =>
-                                updateQuantity(item.productId, item.quantity + 1)
+                                updateQuantity(item.productId, item.quantity + 1, item.variantLabel)
                               }
                               className="h-8 w-8 flex items-center justify-center hover:bg-ink-900/5"
                               aria-label="Increase"

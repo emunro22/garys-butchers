@@ -11,14 +11,20 @@ export type CartItem = {
   imageUrl?: string;
   quantity: number;
   weightLabel?: string;
+  variantLabel?: string;
 };
+
+// Unique key per cart line (product + optional variant)
+export function cartKey(productId: string, variantLabel?: string) {
+  return variantLabel ? `${productId}::${variantLabel}` : productId;
+}
 
 type CartState = {
   items: CartItem[];
   isOpen: boolean;
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, variantLabel?: string) => void;
+  updateQuantity: (productId: string, quantity: number, variantLabel?: string) => void;
   clear: () => void;
   open: () => void;
   close: () => void;
@@ -32,11 +38,14 @@ export const useCart = create<CartState>()(
       isOpen: false,
       addItem: (item, quantity = 1) =>
         set((state) => {
-          const existing = state.items.find((i) => i.productId === item.productId);
+          const key = cartKey(item.productId, item.variantLabel);
+          const existing = state.items.find(
+            (i) => cartKey(i.productId, i.variantLabel) === key
+          );
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.productId === item.productId
+                cartKey(i.productId, i.variantLabel) === key
                   ? { ...i, quantity: i.quantity + quantity }
                   : i
               ),
@@ -48,17 +57,23 @@ export const useCart = create<CartState>()(
             isOpen: true,
           };
         }),
-      removeItem: (productId) =>
-        set((state) => ({ items: state.items.filter((i) => i.productId !== productId) })),
-      updateQuantity: (productId, quantity) =>
-        set((state) => ({
-          items:
-            quantity <= 0
-              ? state.items.filter((i) => i.productId !== productId)
-              : state.items.map((i) =>
-                  i.productId === productId ? { ...i, quantity } : i
-                ),
-        })),
+      removeItem: (productId, variantLabel) =>
+        set((state) => {
+          const key = cartKey(productId, variantLabel);
+          return { items: state.items.filter((i) => cartKey(i.productId, i.variantLabel) !== key) };
+        }),
+      updateQuantity: (productId, quantity, variantLabel) =>
+        set((state) => {
+          const key = cartKey(productId, variantLabel);
+          return {
+            items:
+              quantity <= 0
+                ? state.items.filter((i) => cartKey(i.productId, i.variantLabel) !== key)
+                : state.items.map((i) =>
+                    cartKey(i.productId, i.variantLabel) === key ? { ...i, quantity } : i
+                  ),
+          };
+        }),
       clear: () => set({ items: [] }),
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),

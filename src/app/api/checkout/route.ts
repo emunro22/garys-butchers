@@ -14,6 +14,7 @@ const ItemSchema = z.object({
   imageUrl: z.string().optional(),
   quantity: z.number().int().min(1).max(99),
   weightLabel: z.string().optional(),
+  variantLabel: z.string().optional(),
 });
 
 const CheckoutSchema = z.object({
@@ -71,10 +72,22 @@ export async function POST(req: NextRequest) {
       if (!dbP || !dbP.isActive) {
         throw new Error(`Item "${i.name}" is no longer available.`);
       }
+
+      // Resolve price: if a variantLabel is given, use the matching variant price
+      let priceInPence = dbP.priceInPence;
+      if (i.variantLabel) {
+        const variants = dbP.variants as Array<{ label: string; priceInPence: number }> | null;
+        const variant = variants?.find((v) => v.label === i.variantLabel);
+        if (!variant) {
+          throw new Error(`Size "${i.variantLabel}" is no longer available for "${dbP.name}".`);
+        }
+        priceInPence = variant.priceInPence;
+      }
+
       return {
         productId: i.productId,
-        name: dbP.name,
-        priceInPence: dbP.priceInPence,
+        name: i.variantLabel ? `${dbP.name} (${i.variantLabel})` : dbP.name,
+        priceInPence,
         quantity: i.quantity,
         imageUrl: dbP.imageUrl ?? undefined,
       };

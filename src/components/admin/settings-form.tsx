@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
 type ShopSettings = { name: string; address: string; phone: string };
-type DeliverySettings = { freeThresholdPence: number; feePence: number };
+type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number };
 type AllSettings = { shop: ShopSettings; delivery: DeliverySettings };
 
 export function SettingsForm({ initial }: { initial: AllSettings }) {
   const [shop, setShop] = useState<ShopSettings>(initial.shop);
-  const [delivery, setDelivery] = useState<DeliverySettings>(initial.delivery);
+  const [delivery, setDelivery] = useState<DeliverySettings>({
+    freeThresholdPence: initial.delivery.freeThresholdPence,
+    feePence: initial.delivery.feePence,
+    radiusMiles: initial.delivery.radiusMiles ?? 5,
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,6 +127,35 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           Current: orders under <strong>£{(delivery.freeThresholdPence / 100).toFixed(2)}</strong> are
           charged <strong>£{(delivery.feePence / 100).toFixed(2)}</strong> for delivery.
           Orders of £{(delivery.freeThresholdPence / 100).toFixed(2)} or more get free delivery.
+        </div>
+      </section>
+
+      {/* Delivery radius */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Delivery radius</p>
+          <p className="text-xs text-ink-500">
+            The maximum distance from your shop that you offer home delivery. Displayed to customers
+            on the website — does not automatically restrict checkout.
+          </p>
+        </div>
+        <div className="max-w-[200px]">
+          <Label htmlFor="radius">Delivery radius (miles)</Label>
+          <Input
+            id="radius"
+            type="number"
+            step="0.5"
+            min="0"
+            max="100"
+            value={delivery.radiusMiles}
+            onChange={(e) =>
+              setDelivery({ ...delivery, radiusMiles: Number(e.target.value) })
+            }
+            required
+          />
+        </div>
+        <div className="text-sm text-ink-700 bg-cream-50 border border-ink-900/10 px-3 py-2">
+          You currently deliver within <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong> of the shop.
         </div>
       </section>
 

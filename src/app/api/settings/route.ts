@@ -31,6 +31,7 @@ const ShopSchema = z.object({
 const DeliverySchema = z.object({
   freeThresholdPence: z.number().int().min(0),
   feePence: z.number().int().min(0),
+  radiusMiles: z.number().min(0).max(100).optional(),
 });
 
 const PatchSchema = z.object({

@@ -71,6 +71,8 @@ export const products = pgTable(
     weightLabel: varchar('weight_label', { length: 80 }), // e.g. "approx 500g"
     // structured contents for meat packs (list of items in the box)
     packContents: jsonb('pack_contents').$type<string[]>().default([]).notNull(),
+    // size/weight variants (e.g. [{label:"7oz",priceInPence:999},{label:"10oz",priceInPence:1299}])
+    variants: jsonb('variants').$type<Array<{ label: string; priceInPence: number }>>().default([]).notNull(),
     isPack: boolean('is_pack').default(false).notNull(),
     isFeatured: boolean('is_featured').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),

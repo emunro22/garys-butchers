@@ -16,6 +16,7 @@ const PatchSchema = z.object({
   imageUrl: z.string().url().nullable().optional(),
   galleryUrls: z.array(z.string().url()).optional(),
   weightLabel: z.string().max(80).nullable().optional(),
+  variants: z.array(z.object({ label: z.string().min(1).max(80), priceInPence: z.number().int().min(0) })).optional(),
   packContents: z.array(z.string()).optional(),
   isPack: z.boolean().optional(),
   isFeatured: z.boolean().optional(),

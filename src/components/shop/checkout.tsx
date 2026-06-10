@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { loadStripe, type Stripe as StripeJS } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { useCart, cartSubtotal } from '@/lib/cart';
+import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
 import { formatPrice, calculateDelivery } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
@@ -422,7 +422,7 @@ export function Checkout() {
 
         <ul className="mt-5 divide-y divide-ink-900/10 border-b border-ink-900/10">
           {items.map((item) => (
-            <li key={item.productId} className="py-3 flex gap-3 items-center">
+            <li key={cartKey(item.productId, item.variantLabel)} className="py-3 flex gap-3 items-center">
               <div className="relative h-14 w-14 shrink-0 bg-ink-900/5">
                 {item.imageUrl ? (
                   <Image
@@ -439,8 +439,8 @@ export function Checkout() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-900 truncate">{item.name}</p>
-                {item.weightLabel && (
-                  <p className="text-xs text-ink-500">{item.weightLabel}</p>
+                {(item.variantLabel || item.weightLabel) && (
+                  <p className="text-xs text-ink-500">{item.variantLabel ?? item.weightLabel}</p>
                 )}
               </div>
               <p className="text-sm font-medium text-ink-900 tabular shrink-0">
