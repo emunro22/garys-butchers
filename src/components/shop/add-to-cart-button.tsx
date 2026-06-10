@@ -50,39 +50,41 @@ export function AddToCartButton({
   const stepperBorder =
     variant === 'dark' ? 'border-gold-400/40 text-cream-50' : 'border-ink-900/20';
   const stepperHover = variant === 'dark' ? 'hover:bg-cream-50/5' : 'hover:bg-ink-900/5';
+  const selectBg = variant === 'dark' ? 'bg-ink-800 border-gold-400/40 text-cream-50' : 'bg-cream-50 border-ink-900/15 text-ink-900';
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      {/* Variant dropdown */}
       {hasVariants && (
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500 mb-2">Size</p>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => {
-              const active = selectedVariant?.label === v.label;
-              return (
-                <button
-                  key={v.label}
-                  type="button"
-                  onClick={() => setSelectedVariant(v)}
-                  className={`px-4 py-2 border text-sm transition-colors ${
-                    active
-                      ? 'border-ink-900 bg-ink-900 text-cream-50'
-                      : variant === 'dark'
-                      ? 'border-gold-400/40 text-cream-50 hover:border-gold-400'
-                      : 'border-ink-900/20 text-ink-900 hover:border-ink-900'
-                  }`}
-                >
-                  <span className="font-medium">{v.label}</span>
-                  <span className={`ml-2 text-xs ${active ? 'text-cream-200' : 'text-ink-500'}`}>
-                    {formatPrice(v.priceInPence)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <p className={`text-xs uppercase tracking-[0.18em] mb-2 ${variant === 'dark' ? 'text-gold-400/70' : 'text-ink-500'}`}>
+            Choose size
+          </p>
+          <select
+            value={selectedVariant?.label ?? ''}
+            onChange={(e) => {
+              const v = variants.find((v) => v.label === e.target.value);
+              setSelectedVariant(v ?? null);
+            }}
+            className={`w-full border px-3 h-11 text-sm ${selectBg}`}
+          >
+            {variants.map((v) => (
+              <option key={v.label} value={v.label}>
+                {v.label} — {formatPrice(v.priceInPence)}
+              </option>
+            ))}
+          </select>
+
+          {/* Price updates as you pick a size */}
+          {selectedVariant && (
+            <p className={`font-display text-3xl mt-3 tabular ${variant === 'dark' ? 'text-cream-50' : 'text-ink-900'}`}>
+              {formatPrice(selectedVariant.priceInPence)}
+            </p>
+          )}
         </div>
       )}
 
+      {/* Quantity + add to basket */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className={`flex items-center border h-14 w-fit ${stepperBorder}`}>
           <button

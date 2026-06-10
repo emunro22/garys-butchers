@@ -9,6 +9,8 @@ import { formatPrice, cn } from '@/lib/utils';
 import { useCart } from '@/lib/cart';
 import type { Product } from '@/lib/db/schema';
 
+type Variant = { label: string; priceInPence: number };
+
 export function ProductCard({
   product,
   index = 0,
@@ -19,6 +21,12 @@ export function ProductCard({
   const addItem = useCart((s) => s.addItem);
   const [imgError, setImgError] = useState(false);
   const href = product.isPack ? `/meat-packs/${product.slug}` : `/product/${product.slug}`;
+
+  const variants = (product.variants as Variant[] | undefined) ?? [];
+  const hasVariants = variants.length > 0;
+  const displayPrice = hasVariants
+    ? Math.min(...variants.map((v) => v.priceInPence))
+    : product.priceInPence;
 
   return (
     <motion.article
@@ -59,23 +67,26 @@ export function ProductCard({
           </span>
         )}
 
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            addItem({
-              productId: product.id,
-              slug: product.slug,
-              name: product.name,
-              priceInPence: product.priceInPence,
-              imageUrl: product.imageUrl ?? undefined,
-              weightLabel: product.weightLabel ?? undefined,
-            });
-          }}
-          aria-label={`Add ${product.name} to basket`}
-          className="absolute bottom-3 right-3 h-11 w-11 bg-cream-50 text-ink-900 border border-ink-900/15 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all hover:bg-gold-400 hover:border-gold-500"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+        {/* Quick-add: only for products without variants (variants need the product page) */}
+        {!hasVariants && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              addItem({
+                productId: product.id,
+                slug: product.slug,
+                name: product.name,
+                priceInPence: product.priceInPence,
+                imageUrl: product.imageUrl ?? undefined,
+                weightLabel: product.weightLabel ?? undefined,
+              });
+            }}
+            aria-label={`Add ${product.name} to basket`}
+            className="absolute bottom-3 right-3 h-11 w-11 bg-cream-50 text-ink-900 border border-ink-900/15 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all hover:bg-gold-400 hover:border-gold-500"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        )}
       </Link>
 
       <div className="flex items-start justify-between gap-3">
@@ -91,9 +102,10 @@ export function ProductCard({
         </div>
         <div className="text-right shrink-0">
           <p className="tabular text-base font-medium text-ink-900">
-            {formatPrice(product.priceInPence)}
+            {hasVariants && <span className="text-xs text-ink-500 font-normal mr-0.5">From </span>}
+            {formatPrice(displayPrice)}
           </p>
-          {product.compareAtPriceInPence && (
+          {!hasVariants && product.compareAtPriceInPence && (
             <p className="text-xs text-ink-400 line-through tabular">
               {formatPrice(product.compareAtPriceInPence)}
             </p>
