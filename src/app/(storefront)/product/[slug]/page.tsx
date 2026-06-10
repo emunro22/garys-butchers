@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
+import { sql } from '@vercel/postgres';
 import { formatPrice } from '@/lib/utils';
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
 import { ProductCard } from '@/components/shop/product-card';
@@ -35,6 +36,10 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  try {
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb NOT NULL DEFAULT '[]'::jsonb`;
+  } catch { /* column already exists */ }
 
   let product: any = null;
   let category: any = null;

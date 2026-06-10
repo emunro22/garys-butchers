@@ -34,23 +34,21 @@ export function Header() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 transition-all duration-300',
-        scrolled
-          ? 'bg-cream-50/95 backdrop-blur-md border-b border-ink-900/10'
-          : 'bg-cream-50 border-b border-transparent'
+        'sticky top-0 z-40 transition-all duration-300 bg-cream-50 border-b border-ink-900/10',
+        scrolled && 'shadow-sm'
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
-        <div className="grid grid-cols-3 items-center h-20 lg:h-24">
+        <div className="grid grid-cols-3 items-center h-16 lg:h-20">
 
           {/* Left column: hamburger (mobile) | left nav (desktop) */}
           <div className="flex items-center">
             <button
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 -ml-2 text-ink-900"
+              className="lg:hidden flex items-center justify-center w-10 h-10 -ml-2 text-ink-900 hover:bg-ink-900/5 transition-colors"
               aria-label="Open menu"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             </button>
             <nav className="hidden lg:flex items-center gap-8">
               {nav.slice(0, 3).map((item) => (
@@ -69,7 +67,7 @@ export function Header() {
           {/* Centre column: logo — always perfectly centred */}
           <div className="flex items-center justify-center">
             <Link href="/" aria-label="Home">
-              <div className="h-14 lg:h-16 aspect-square rounded-full bg-ink-900 p-1.5 overflow-hidden flex items-center justify-center">
+              <div className="h-12 lg:h-14 aspect-square rounded-full bg-ink-900 p-1.5 overflow-hidden flex items-center justify-center">
                 <Image
                   src="/logo.png"
                   alt="Gary's Butchers & Fishmongers"
@@ -105,7 +103,7 @@ export function Header() {
             </Link>
             <button
               onClick={openCart}
-              className="relative p-2 text-ink-900 hover:bg-ink-900/5 transition-colors"
+              className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
               aria-label="Cart"
             >
               <ShoppingBag className="h-5 w-5" />
@@ -141,50 +139,44 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-cream-50 z-50 lg:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 w-[300px] max-w-[90vw] bg-ink-900 z-50 lg:hidden flex flex-col"
             >
-              <div className="flex items-center justify-between p-5 border-b border-ink-900/10">
-                <Image src="/logo.png" alt="" width={48} height={48} className="bg-ink-900 p-1" />
+              {/* Drawer header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-cream-50/10">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full bg-cream-50 p-1 overflow-hidden">
+                    <Image src="/logo.png" alt="" width={40} height={40} className="w-full h-full object-contain" />
+                  </div>
+                  <span className="eyebrow text-gold-400 text-[10px]">Gary&apos;s Butchers</span>
+                </div>
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="p-2 text-ink-900"
+                  className="flex items-center justify-center w-9 h-9 text-cream-50/70 hover:text-cream-50 hover:bg-cream-50/10 transition-colors"
                   aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <nav className="flex flex-col p-5 gap-1">
-                {nav.map((item) => (
+
+              {/* Nav links */}
+              <nav className="flex-1 overflow-y-auto py-2">
+                {[...nav, { label: 'About', href: '/about' }, { label: 'Contact', href: '/contact' }].map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className="font-display text-2xl py-3 border-b border-ink-900/10 text-ink-900"
+                    className="flex items-center px-5 py-4 font-display text-xl text-cream-50 hover:bg-cream-50/10 border-b border-cream-50/8 transition-colors"
                   >
                     {item.label}
                   </Link>
                 ))}
-                <Link
-                  href="/about"
-                  onClick={() => setMobileOpen(false)}
-                  className="font-display text-2xl py-3 border-b border-ink-900/10 text-ink-900"
-                >
-                  About
-                </Link>
-                <Link
-                  href="/contact"
-                  onClick={() => setMobileOpen(false)}
-                  className="font-display text-2xl py-3 text-ink-900"
-                >
-                  Contact
-                </Link>
               </nav>
-              <div className="mt-auto p-5 bg-ink-900 text-cream-50">
-                <p className="eyebrow text-gold-400 mb-2">Visit the shop</p>
-                <p className="text-sm leading-relaxed">
-                  Bridgewater Shopping Centre,
-                  <br />
-                  Erskine, PA8 7AA
+
+              {/* Footer strip */}
+              <div className="px-5 py-5 border-t border-cream-50/10">
+                <p className="eyebrow text-gold-400 mb-1">Visit us in store</p>
+                <p className="text-sm text-cream-50/70 leading-relaxed">
+                  Bridgewater Shopping Centre,<br />Erskine, PA8 7AA
                 </p>
               </div>
             </motion.div>
