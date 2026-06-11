@@ -4,8 +4,8 @@ import { settings } from '@/lib/db/schema';
 export const DEFAULT_SETTINGS = {
   shop: {
     name: "Gary's Butchers & Fishmongers",
-    address: 'Bridgewater Shopping Centre, Erskine PA8 7AA',
-    phone: '0141 555 1234',
+    address: '19 Park Glade Shops, Erskine, PA8 7HH',
+    phone: '0141 959 0478',
   },
   delivery: {
     freeThresholdPence: 2500,

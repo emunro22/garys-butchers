@@ -11,7 +11,7 @@ const faqs = [
   },
   {
     q: 'Can I click & collect?',
-    a: 'Absolutely. Place your order online, choose a pickup slot at checkout, and collect from our shop in Bridgewater Shopping Centre, Erskine. No charge for click & collect.',
+    a: 'Absolutely. Place your order online, choose a pickup slot at checkout, and collect from our shop at 19 Park Glade Shops, Erskine. No charge for click & collect.',
   },
   {
     q: 'How fresh is the meat?',

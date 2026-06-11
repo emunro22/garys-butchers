@@ -176,7 +176,7 @@ export function Header() {
               <div className="px-5 py-5 border-t border-cream-50/10">
                 <p className="eyebrow text-gold-400 mb-1">Visit us in store</p>
                 <p className="text-sm text-cream-50/70 leading-relaxed">
-                  Bridgewater Shopping Centre,<br />Erskine, PA8 7AA
+                  19 Park Glade Shops,<br />Erskine, PA8 7HH
                 </p>
               </div>
             </motion.div>

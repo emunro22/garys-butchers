@@ -33,7 +33,7 @@ export default function AboutPage() {
             </div>
             <div className="space-y-5 text-ink-700 leading-relaxed">
               <p>
-                Gary opened the shop in Bridgewater Shopping Centre in 2015 with a simple
+                Gary opened the shop in Park Glade Shops in 2015 with a simple
                 idea — give people in Erskine a proper local butcher again. Meat cut by
                 hand, fresh fish on the counter, and the kind of service you don&apos;t get
                 from the big chains.
@@ -80,7 +80,7 @@ export default function AboutPage() {
           <div>
             <p className="eyebrow text-ink-500 mb-3">Come and see us</p>
             <h2 className="font-display text-4xl md:text-5xl text-ink-900 leading-tight">
-              Bridgewater Shopping Centre, Erskine.
+              19 Park Glade Shops, Erskine.
             </h2>
             <p className="mt-6 text-ink-700 leading-relaxed">
               Pop in, have a chat, take home a real Scottish steak. We&apos;re happy to
@@ -96,12 +96,12 @@ export default function AboutPage() {
             <p className="eyebrow text-gold-400 mb-5">Opening hours</p>
             <dl className="space-y-2 text-sm">
               {[
-                ['Monday', '8:00 — 17:00'],
-                ['Tuesday', '8:00 — 17:00'],
-                ['Wednesday', '8:00 — 17:00'],
-                ['Thursday', '8:00 — 17:00'],
-                ['Friday', '8:00 — 17:00'],
-                ['Saturday', '8:00 — 16:00'],
+                ['Monday', 'Closed'],
+                ['Tuesday', '9:00 — 17:00'],
+                ['Wednesday', '9:00 — 17:00'],
+                ['Thursday', '9:00 — 17:00'],
+                ['Friday', '9:00 — 17:00'],
+                ['Saturday', '9:00 — 16:00'],
                 ['Sunday', 'Closed'],
               ].map(([d, h]) => (
                 <div key={d} className="flex justify-between border-b border-gold-400/10 pb-2">
@@ -113,11 +113,11 @@ export default function AboutPage() {
             <div className="mt-8 pt-6 border-t border-gold-400/20">
               <p className="text-xs uppercase tracking-[0.2em] text-gold-400 mb-2">Address</p>
               <p className="text-cream-100">
-                Bridgewater Shopping Centre<br />
-                Erskine PA8 7AA<br />
+                19 Park Glade Shops<br />
+                Erskine, PA8 7HH<br />
                 Scotland
               </p>
-              <p className="mt-4 text-cream-100 tabular">0141 555 1234</p>
+              <p className="mt-4 text-cream-100 tabular">0141 959 0478</p>
             </div>
           </div>
         </div>

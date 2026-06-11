@@ -36,9 +36,9 @@ export default async function ContactPage() {
               </div>
               <div>
                 <p className="eyebrow text-ink-500 mb-2">Hours</p>
-                <p>Monday — Friday · 8:00 — 17:00</p>
-                <p>Saturday · 8:00 — 16:00</p>
-                <p>Sunday · Closed</p>
+                <p>Tuesday — Friday · 9:00 — 17:00</p>
+                <p>Saturday · 9:00 — 16:00</p>
+                <p>Sunday &amp; Monday · Closed</p>
               </div>
             </div>
           </div>
