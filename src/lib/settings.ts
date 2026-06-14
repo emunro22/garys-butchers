@@ -10,7 +10,8 @@ export const DEFAULT_SETTINGS = {
   delivery: {
     freeThresholdPence: 2500,
     feePence: 350,
-    radiusMiles: 5,
+    radiusMiles: 10,
+    premiumFeePence: 500,
   },
 };
 

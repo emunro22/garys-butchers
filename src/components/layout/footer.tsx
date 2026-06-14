@@ -131,9 +131,9 @@ export async function Footer() {
               <li className="flex gap-3">
                 <Clock className="h-4 w-4 mt-0.5 text-gold-400 shrink-0" />
                 <span>
-                  Tue–Fri 9–5,
+                  Mon–Fri 7:30–5,
                   <br />
-                  Sat 9–4, Sun–Mon closed
+                  Sat 7:30–2, Sun closed
                 </span>
               </li>
             </ul>

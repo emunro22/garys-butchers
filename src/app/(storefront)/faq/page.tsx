@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const faqs = [
   {
     q: 'Do you deliver?',
-    a: 'Yes — free home delivery on orders over £25 in the local Erskine area. Below £25, delivery is £3.50. Orders placed before 10am are delivered same day where possible.',
+    a: 'Yes — free home delivery on orders over £25 within our near zone (up to 10 miles from the shop). Below £25 in the near zone, delivery is £3.50. For addresses beyond 10 miles, a £5 delivery charge applies. Orders placed before 10am are delivered same day where possible.',
   },
   {
     q: 'Can I click & collect?',

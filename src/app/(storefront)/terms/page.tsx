@@ -48,7 +48,7 @@ export default function TermsPage() {
 
           <h2 className="font-display text-2xl text-ink-900 mt-10 mb-4">Delivery &amp; collection</h2>
           <ul className="space-y-2 text-ink-700">
-            <li>Free delivery is available on orders over £25 within our local delivery area (Erskine and surrounding postcodes). A £3.50 charge applies below £25.</li>
+            <li>Free delivery is available on orders over £25 within our near zone (up to 10 miles from the shop). A small delivery fee applies on smaller orders within this zone. For addresses beyond 10 miles, a premium delivery charge applies regardless of order value.</li>
             <li>Orders placed before 10am are delivered the same day where possible. Next-day delivery applies otherwise.</li>
             <li>Click &amp; Collect is free. You will receive a ready notification by email or phone when your order is prepared.</li>
             <li>We are not responsible for failed deliveries caused by incorrect address information provided at checkout.</li>

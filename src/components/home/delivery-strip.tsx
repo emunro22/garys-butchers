@@ -12,7 +12,7 @@ const blocks = [
   {
     icon: Truck,
     title: 'Free home delivery',
-    body: 'Free local delivery on orders over £25 — across Erskine, Bishopton, Inchinnan and Renfrew. £3.50 below.',
+    body: 'Free delivery on orders over £25 within 10 miles. £3.50 for smaller orders nearby, £5 further afield.',
   },
   {
     icon: Clock,

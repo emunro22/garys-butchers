@@ -60,7 +60,38 @@ export function Checkout() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const subtotal = cartSubtotal(items);
-  const deliveryFee = calculateDelivery(subtotal, fulfilment);
+
+  const [postcodeFeePence, setPostcodeFeePence] = useState<number | null>(null);
+  const [postcodeFeePending, setPostcodeFeePending] = useState(false);
+
+  useEffect(() => {
+    if (fulfilment !== 'delivery' || form.postcode.replace(/\s/g, '').length < 5) {
+      setPostcodeFeePence(null);
+      return;
+    }
+    setPostcodeFeePending(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/delivery-fee?postcode=${encodeURIComponent(form.postcode)}&subtotal=${subtotal}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setPostcodeFeePence(data.feePence);
+        }
+      } finally {
+        setPostcodeFeePending(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.postcode, subtotal, fulfilment]);
+
+  const deliveryFee =
+    fulfilment === 'pickup'
+      ? 0
+      : postcodeFeePence !== null
+      ? postcodeFeePence
+      : calculateDelivery(subtotal, fulfilment);
 
   const totals = useMemo(() => {
     let discount = 0;
@@ -94,8 +125,8 @@ export function Checkout() {
       });
       const slotsToday =
         d.getDay() === 6
-          ? ['09:00', '11:00', '13:00', '15:00']
-          : ['09:00', '11:00', '13:00', '15:00', '16:30'];
+          ? ['08:00', '09:30', '11:00', '12:30']          // Sat 7:30–2
+          : ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30']; // Mon–Fri 7:30–5
       slotsToday.forEach((t) => {
         const iso = new Date(d);
         const [h, m] = t.split(':').map(Number);
@@ -259,7 +290,7 @@ export function Checkout() {
               <Truck className="h-6 w-6 mb-3" />
               <p className="font-display text-lg">Home delivery</p>
               <p className="text-xs opacity-70 mt-1">
-                Free over £25 · £3.50 otherwise
+                Free over £25 (near zone) · from £2.50
               </p>
             </button>
             <button
@@ -516,7 +547,11 @@ export function Checkout() {
               {fulfilment === 'delivery' ? 'Delivery' : 'Pickup'}
             </dt>
             <dd className="tabular text-ink-900">
-              {totals.deliveryFee === 0 ? 'Free' : formatPrice(totals.deliveryFee)}
+              {postcodeFeePending
+                ? 'Calculating…'
+                : totals.deliveryFee === 0
+                ? 'Free'
+                : formatPrice(totals.deliveryFee)}
             </dd>
           </div>
           <div className="flex justify-between pt-3 border-t border-ink-900/10 text-base">

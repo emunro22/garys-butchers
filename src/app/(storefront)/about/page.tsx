@@ -96,12 +96,12 @@ export default function AboutPage() {
             <p className="eyebrow text-gold-400 mb-5">Opening hours</p>
             <dl className="space-y-2 text-sm">
               {[
-                ['Monday', 'Closed'],
-                ['Tuesday', '9:00 — 17:00'],
-                ['Wednesday', '9:00 — 17:00'],
-                ['Thursday', '9:00 — 17:00'],
-                ['Friday', '9:00 — 17:00'],
-                ['Saturday', '9:00 — 16:00'],
+                ['Monday', '7:30 — 17:00'],
+                ['Tuesday', '7:30 — 17:00'],
+                ['Wednesday', '7:30 — 17:00'],
+                ['Thursday', '7:30 — 17:00'],
+                ['Friday', '7:30 — 17:00'],
+                ['Saturday', '7:30 — 14:00'],
                 ['Sunday', 'Closed'],
               ].map(([d, h]) => (
                 <div key={d} className="flex justify-between border-b border-gold-400/10 pb-2">

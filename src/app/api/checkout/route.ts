@@ -4,7 +4,8 @@ import { db } from '@/lib/db';
 import { orders, products, promotions } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
-import { calculateDelivery } from '@/lib/utils';
+import { calculateDelivery, getDistanceMiles, calculateDeliveryByDistance } from '@/lib/utils';
+import { getShopSettings } from '@/lib/settings';
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -99,7 +100,20 @@ export async function POST(req: NextRequest) {
     );
 
     let discount = 0;
-    let deliveryFee = calculateDelivery(subtotal, data.fulfilment);
+    let deliveryFee: number;
+    if (data.fulfilment === 'delivery' && data.deliveryAddress?.postcode) {
+      const { delivery } = await getShopSettings();
+      const settings = {
+        freeThresholdPence: delivery.freeThresholdPence,
+        feePence: delivery.feePence,
+        radiusMiles: delivery.radiusMiles,
+        premiumFeePence: delivery.premiumFeePence ?? 500,
+      };
+      const distanceMiles = await getDistanceMiles(data.deliveryAddress.postcode);
+      deliveryFee = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
+    } else {
+      deliveryFee = calculateDelivery(subtotal, data.fulfilment);
+    }
     let appliedPromoCode: string | null = null;
 
     if (data.promotionCode) {
