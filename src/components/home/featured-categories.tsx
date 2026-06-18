@@ -4,52 +4,28 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 
-const categories = [
-  {
-    name: 'Beef',
-    slug: 'beef',
-    description: 'Sirloin, popeseye, rump, mince, diced beef and roasting joints',
-    accent: '#8b1f1f',
-    illustration: 'bull',
-  },
-  {
-    name: 'Pork',
-    slug: 'pork',
-    description: 'Loin steaks, links, pork olives and traditional cuts',
-    accent: '#c9a961',
-    illustration: 'pig',
-  },
-  {
-    name: 'Chicken',
-    slug: 'chicken',
-    description: 'Free-range fillets, chicken burgers and prepared cuts',
-    accent: '#a3925d',
-    illustration: 'chicken',
-  },
-  {
-    name: 'Fish',
-    slug: 'fish',
-    description: 'Fresh salmon, haddock, cod and prawns from the Scottish coast',
-    accent: '#3a6571',
-    illustration: 'fish',
-  },
-  {
-    name: 'Sausages & Burgers',
-    slug: 'sausages-burgers',
-    description: 'Steak burgers, beef and pork links — made on site',
-    accent: '#6b3e1f',
-    illustration: 'sausage',
-  },
-  {
-    name: 'Pies & Bakery',
-    slug: 'pies-bakery',
-    description: 'Steak pies, scotch pies, family pies and tatty scones',
-    accent: '#8b6f3f',
-    illustration: 'pie',
-  },
-];
+const CATEGORY_ACCENTS: Record<string, string> = {
+  beef: '#8b1f1f',
+  pork: '#c9a961',
+  chicken: '#a3925d',
+  fish: '#3a6571',
+  'sausages-burgers': '#6b3e1f',
+  'pies-bakery': '#8b6f3f',
+  'breakfast-sides': '#b5651d',
+  'meat-packs': '#4a2c2a',
+};
 
-// Inline SVG illustrations matching the gold-on-black motif
+const CATEGORY_ILLUSTRATIONS: Record<string, string> = {
+  beef: 'bull',
+  pork: 'pig',
+  chicken: 'chicken',
+  fish: 'fish',
+  'sausages-burgers': 'sausage',
+  'pies-bakery': 'pie',
+  'breakfast-sides': 'breakfast',
+  'meat-packs': 'pack',
+};
+
 function Illustration({ kind }: { kind: string }) {
   const props = { className: 'h-20 w-20', stroke: 'currentColor', strokeWidth: 1.2, fill: 'none' };
   switch (kind) {
@@ -102,12 +78,45 @@ function Illustration({ kind }: { kind: string }) {
           <path d="M10 40c0-6 6-14 22-14s22 8 22 14M16 32l4-4M48 32l-4-4M32 26v-4M24 26l-2-3M40 26l2-3" />
         </svg>
       );
+    case 'breakfast':
+      return (
+        <svg viewBox="0 0 64 64" {...props}>
+          <ellipse cx="32" cy="36" rx="22" ry="14" />
+          <circle cx="24" cy="34" r="5" />
+          <circle cx="40" cy="34" r="5" />
+          <path d="M14 28h36M18 44h28" />
+        </svg>
+      );
+    case 'pack':
+      return (
+        <svg viewBox="0 0 64 64" {...props}>
+          <rect x="12" y="20" width="40" height="28" rx="2" />
+          <path d="M12 28h40M24 20v-4h16v4M28 34h8M28 38h8" />
+        </svg>
+      );
     default:
-      return null;
+      return (
+        <svg viewBox="0 0 64 64" {...props}>
+          <rect x="14" y="14" width="36" height="36" rx="4" />
+          <path d="M24 32h16M32 24v16" />
+        </svg>
+      );
   }
 }
 
-export function FeaturedCategories() {
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sortOrder: number;
+}
+
+export function FeaturedCategories({ categories }: { categories: Category[] }) {
+  const cats = categories.length > 0 ? categories : [];
+
+  if (cats.length === 0) return null;
+
   return (
     <section className="py-24 lg:py-32 bg-cream-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
@@ -127,41 +136,46 @@ export function FeaturedCategories() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-px bg-ink-900/10">
-          {categories.map((cat, i) => (
-            <motion.div
-              key={cat.slug}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-            >
-              <Link
-                href={`/shop/${cat.slug}`}
-                className="group relative block bg-cream-50 hover:bg-ink-900 transition-colors duration-300 aspect-square p-6 lg:p-10 overflow-hidden"
+          {cats.map((cat, i) => {
+            const accent = CATEGORY_ACCENTS[cat.slug] ?? '#555555';
+            const illustration = CATEGORY_ILLUSTRATIONS[cat.slug] ?? 'default';
+
+            return (
+              <motion.div
+                key={cat.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.5, delay: i * 0.05 }}
               >
-                <div
-                  className="absolute -top-12 -right-12 w-44 h-44 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500"
-                  style={{ background: cat.accent }}
-                />
-                <div className="relative h-full flex flex-col justify-between">
-                  <div className="text-ink-700 group-hover:text-gold-400 transition-colors">
-                    <Illustration kind={cat.illustration} />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-2xl lg:text-3xl mb-2 text-ink-900 group-hover:text-cream-50 transition-colors">
-                      {cat.name}
-                    </h3>
-                    <p className="text-sm text-ink-500 group-hover:text-cream-200 transition-colors max-w-[18rem] hidden sm:block">
-                      {cat.description}
-                    </p>
-                    <div className="mt-4 lg:mt-6 inline-flex items-center gap-2 eyebrow text-ink-900 group-hover:text-gold-400 transition-colors">
-                      Shop now <ArrowUpRight className="h-3.5 w-3.5" />
+                <Link
+                  href={`/shop/${cat.slug}`}
+                  className="group relative block bg-cream-50 hover:bg-ink-900 transition-colors duration-300 aspect-square p-6 lg:p-10 overflow-hidden"
+                >
+                  <div
+                    className="absolute -top-12 -right-12 w-44 h-44 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500"
+                    style={{ background: accent }}
+                  />
+                  <div className="relative h-full flex flex-col justify-between">
+                    <div className="text-ink-700 group-hover:text-gold-400 transition-colors">
+                      <Illustration kind={illustration} />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-2xl lg:text-3xl mb-2 text-ink-900 group-hover:text-cream-50 transition-colors">
+                        {cat.name}
+                      </h3>
+                      <p className="text-sm text-ink-500 group-hover:text-cream-200 transition-colors max-w-[18rem] hidden sm:block">
+                        {cat.description}
+                      </p>
+                      <div className="mt-4 lg:mt-6 inline-flex items-center gap-2 eyebrow text-ink-900 group-hover:text-gold-400 transition-colors">
+                        Shop now <ArrowUpRight className="h-3.5 w-3.5" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

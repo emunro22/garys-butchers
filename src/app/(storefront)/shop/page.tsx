@@ -65,7 +65,6 @@ export default async function ShopPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-b from-ink-900/30 via-ink-900/20 to-ink-900/85" />
               <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
-                <p className="eyebrow text-gold-400 mb-1">{String(c.sortOrder).padStart(2, '0')}</p>
                 <h3 className="font-display text-2xl md:text-3xl">{c.name}</h3>
                 <p className="text-xs text-cream-200/70 mt-2 line-clamp-2">
                   {c.description}

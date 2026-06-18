@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { products, reviews, categories } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 import { Hero } from '@/components/home/hero';
 import { FeaturedCategories } from '@/components/home/featured-categories';
 import { FeaturedPacks } from '@/components/home/featured-packs';
@@ -12,9 +12,8 @@ import { SeasonalDeals } from '@/components/home/seasonal-deals';
 export const revalidate = 60;
 
 async function getHomepageData() {
-  // Try to read from DB; fallback to empty arrays so the page still renders before seed
   try {
-    const [packsRes, reviewsRes] = await Promise.all([
+    const [packsRes, reviewsRes, catsRes] = await Promise.all([
       db
         .select()
         .from(products)
@@ -27,25 +26,30 @@ async function getHomepageData() {
         .where(eq(reviews.isFeatured, true))
         .orderBy(desc(reviews.publishedAt))
         .limit(6),
+      db
+        .select()
+        .from(categories)
+        .where(eq(categories.isActive, true))
+        .orderBy(asc(categories.sortOrder)),
     ]);
-    return { packs: packsRes, reviews: reviewsRes };
+    return { packs: packsRes, reviews: reviewsRes, cats: catsRes };
   } catch {
-    return { packs: [], reviews: [] };
+    return { packs: [], reviews: [], cats: [] };
   }
 }
 
 export default async function HomePage() {
-  const { packs, reviews } = await getHomepageData();
+  const { packs, reviews: reviewsData, cats } = await getHomepageData();
 
   return (
     <>
       <Hero />
       <DeliveryStrip />
       <SeasonalDeals />
-      <FeaturedCategories />
+      <FeaturedCategories categories={cats} />
       {packs.length > 0 && <FeaturedPacks packs={packs} />}
       <AboutStrip />
-      {reviews.length > 0 && <Reviews reviews={reviews} />}
+      {reviewsData.length > 0 && <Reviews reviews={reviewsData} />}
     </>
   );
 }
