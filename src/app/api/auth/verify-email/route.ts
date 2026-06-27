@@ -65,11 +65,15 @@ export async function POST(req: NextRequest) {
     });
     await setCustomerSessionCookie(token);
 
-    sendNewCustomerNotification({
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-    }).catch((e) => console.error('new-customer notification failed', e));
+    try {
+      await sendNewCustomerNotification({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      });
+    } catch (e) {
+      console.error('new-customer notification failed', e);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
