@@ -4,9 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ShoppingBag, Search, MapPin } from 'lucide-react';
+import { Menu, X, ShoppingBag, Search, MapPin, UserCircle } from 'lucide-react';
 import { useCart, cartItemCount } from '@/lib/cart';
 import { cn } from '@/lib/utils';
+import { useCustomerSession } from '@/components/account/session-provider';
 
 const nav = [
   { label: 'Shop all', href: '/shop' },
@@ -23,6 +24,7 @@ export function Header() {
   const items = useCart((s) => s.items);
   const openCart = useCart((s) => s.open);
   const count = cartItemCount(items);
+  const { user } = useCustomerSession();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -101,6 +103,16 @@ export function Header() {
               <MapPin className="h-3.5 w-3.5" />
               Erskine
             </Link>
+            <Link
+              href={user ? '/account' : '/account/login'}
+              className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
+              aria-label={user ? 'My account' : 'Sign in'}
+            >
+              <UserCircle className="h-5 w-5" />
+              {user && (
+                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gold-400" />
+              )}
+            </Link>
             <button
               onClick={openCart}
               className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
@@ -171,6 +183,18 @@ export function Header() {
                   </Link>
                 ))}
               </nav>
+
+              {/* Account link in mobile */}
+              <div className="px-3 pt-2 border-t border-cream-50/10">
+                <Link
+                  href={user ? '/account' : '/account/login'}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-2 py-3 text-sm text-gold-400 hover:bg-gold-400/10 transition-colors"
+                >
+                  <UserCircle className="h-5 w-5" />
+                  {user ? `My account (${user.name.split(' ')[0]})` : 'Sign in / Create account'}
+                </Link>
+              </div>
 
               {/* Footer strip */}
               <div className="px-5 py-5 border-t border-cream-50/10">

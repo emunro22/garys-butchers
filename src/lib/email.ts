@@ -225,6 +225,63 @@ function renderAdminHtml(o: OrderEmailPayload) {
 </html>`;
 }
 
+// ─── Verification code email ────────────────────────────────────────────────
+
+function renderVerificationHtml(name: string, code: string) {
+  return `<!doctype html>
+<html>
+  <body style="margin:0;background:#f8f5f0;font-family:Georgia,serif;color:#1a1815">
+    <div style="max-width:560px;margin:0 auto;padding:32px 24px">
+      <div style="text-align:center;padding-bottom:24px;border-bottom:2px solid #c9a961">
+        <p style="letter-spacing:0.3em;font-size:11px;color:#8e7138;margin:0">GARY'S BUTCHERS &amp; FISHMONGERS</p>
+        <h1 style="font-size:26px;margin:10px 0 4px;color:#0a0a0a">Verify your email</h1>
+        <p style="margin:0;color:#4a443a;font-size:14px">Welcome, ${name.split(' ')[0]}!</p>
+      </div>
+      <p style="margin:24px 0 8px;font-size:14px;color:#4a443a;line-height:1.7">
+        Enter this verification code to complete your registration:
+      </p>
+      <div style="margin:16px 0 24px;padding:20px;background:#0a0a0a;text-align:center;border-radius:4px">
+        <p style="margin:0;font-size:36px;letter-spacing:0.4em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
+      </div>
+      <p style="font-size:13px;color:#4a443a;line-height:1.7">
+        This code expires in <strong>15 minutes</strong>. If you didn't create an account, you can safely ignore this email.
+      </p>
+      <p style="margin-top:32px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #e8e0d4;padding-top:20px">
+        Thank you for joining us — we look forward to serving you.
+      </p>
+    </div>
+  </body>
+</html>`;
+}
+
+// ─── Password reset email ───────────────────────────────────────────────────
+
+function renderResetHtml(name: string, code: string) {
+  return `<!doctype html>
+<html>
+  <body style="margin:0;background:#f8f5f0;font-family:Georgia,serif;color:#1a1815">
+    <div style="max-width:560px;margin:0 auto;padding:32px 24px">
+      <div style="text-align:center;padding-bottom:24px;border-bottom:2px solid #c9a961">
+        <p style="letter-spacing:0.3em;font-size:11px;color:#8e7138;margin:0">GARY'S BUTCHERS &amp; FISHMONGERS</p>
+        <h1 style="font-size:26px;margin:10px 0 4px;color:#0a0a0a">Reset your password</h1>
+      </div>
+      <p style="margin:24px 0 8px;font-size:14px;color:#4a443a;line-height:1.7">
+        Hi ${name.split(' ')[0]}, we received a request to reset your password. Use this code:
+      </p>
+      <div style="margin:16px 0 24px;padding:20px;background:#0a0a0a;text-align:center;border-radius:4px">
+        <p style="margin:0;font-size:36px;letter-spacing:0.4em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
+      </div>
+      <p style="font-size:13px;color:#4a443a;line-height:1.7">
+        This code expires in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email — your password won't change.
+      </p>
+      <p style="margin-top:32px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #e8e0d4;padding-top:20px">
+        Need help? Reply to this email and we'll sort it out.
+      </p>
+    </div>
+  </body>
+</html>`;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function sendOrderConfirmation(payload: OrderEmailPayload) {
@@ -261,5 +318,58 @@ export async function sendContactMessage(opts: {
       <hr />
       <p style="white-space:pre-wrap">${opts.message.replace(/</g, '&lt;')}</p>
     `,
+  });
+}
+
+export async function sendVerificationCode(email: string, name: string, code: string) {
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: email,
+    subject: `Your verification code: ${code}`,
+    html: renderVerificationHtml(name, code),
+  });
+}
+
+export async function sendPasswordResetCode(email: string, name: string, code: string) {
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: email,
+    subject: `Password reset code: ${code}`,
+    html: renderResetHtml(name, code),
+  });
+}
+
+export async function sendNewCustomerNotification(customer: {
+  name: string;
+  email: string;
+  phone?: string | null;
+}) {
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: ADMIN_EMAILS,
+    subject: `New customer sign-up — ${customer.name}`,
+    html: `<!doctype html>
+<html>
+  <body style="margin:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#1a1815">
+    <div style="max-width:560px;margin:0 auto;padding:24px 16px">
+      <div style="background:#0a0a0a;color:#f8f5f0;padding:20px 24px;border-radius:6px 6px 0 0">
+        <p style="margin:0;font-size:11px;letter-spacing:0.25em;color:#c9a961">GARY'S BUTCHERS — NEW CUSTOMER</p>
+        <h1 style="margin:6px 0 0;font-size:22px">${customer.name}</h1>
+      </div>
+      <div style="background:#fff;padding:20px 24px;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr>
+            <td style="padding:6px 0;color:#6b5d4f;width:100px">Email</td>
+            <td style="padding:6px 0"><a href="mailto:${customer.email}" style="color:#1a4d8f">${customer.email}</a></td>
+          </tr>
+          ${customer.phone ? `<tr><td style="padding:6px 0;color:#6b5d4f">Phone</td><td style="padding:6px 0"><a href="tel:${customer.phone}" style="color:#1a1815">${customer.phone}</a></td></tr>` : ''}
+        </table>
+        <p style="margin:16px 0 0;font-size:13px;color:#6b5d4f">
+          Signed up on ${new Date().toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>`,
   });
 }

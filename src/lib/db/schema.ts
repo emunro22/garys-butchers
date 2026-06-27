@@ -16,6 +16,8 @@ import { relations } from 'drizzle-orm';
 
 // ---------- Enums ----------
 
+export const userRoleEnum = pgEnum('user_role', ['customer', 'admin']);
+
 export const orderStatusEnum = pgEnum('order_status', [
   'pending',
   'paid',
@@ -35,6 +37,34 @@ export const promotionTypeEnum = pgEnum('promotion_type', [
 ]);
 
 // ---------- Tables ----------
+
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: varchar('email', { length: 200 }).notNull(),
+    passwordHash: text('password_hash').notNull(),
+    name: varchar('name', { length: 160 }).notNull(),
+    phone: varchar('phone', { length: 40 }),
+    role: userRoleEnum('role').default('customer').notNull(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    verificationCode: varchar('verification_code', { length: 6 }),
+    verificationCodeExpiresAt: timestamp('verification_code_expires_at', { withTimezone: true }),
+    resetCode: varchar('reset_code', { length: 6 }),
+    resetCodeExpiresAt: timestamp('reset_code_expires_at', { withTimezone: true }),
+    defaultAddress: jsonb('default_address').$type<{
+      line1: string;
+      line2?: string;
+      city: string;
+      postcode: string;
+    } | null>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    emailIdx: uniqueIndex('users_email_idx').on(t.email),
+  })
+);
 
 export const categories = pgTable(
   'categories',
@@ -115,6 +145,7 @@ export const orders = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     orderNumber: serial('order_number').notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
     customerName: varchar('customer_name', { length: 160 }).notNull(),
     customerEmail: varchar('customer_email', { length: 200 }).notNull(),
     customerPhone: varchar('customer_phone', { length: 40 }),
@@ -216,6 +247,10 @@ export const deals = pgTable('deals', {
 
 // ---------- Relations ----------
 
+export const usersRelations = relations(users, ({ many }) => ({
+  orders: many(orders),
+}));
+
 export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
 }));
@@ -227,8 +262,17 @@ export const productsRelations = relations(products, ({ one }) => ({
   }),
 }));
 
+export const ordersRelations = relations(orders, ({ one }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+}));
+
 // ---------- Type exports ----------
 
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
 export type Product = typeof products.$inferSelect;

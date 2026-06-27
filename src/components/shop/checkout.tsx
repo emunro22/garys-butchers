@@ -11,6 +11,7 @@ import { formatPrice, calculateDelivery } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Tag, Check } from 'lucide-react';
+import { useCustomerSession } from '@/components/account/session-provider';
 
 // ---- Stripe loader ----
 let stripePromise: Promise<StripeJS | null> | null = null;
@@ -36,6 +37,7 @@ export function Checkout() {
   const router = useRouter();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
+  const { user } = useCustomerSession();
 
   const [fulfilment, setFulfilment] = useState<Fulfilment>('delivery');
   const [form, setForm] = useState({
@@ -49,6 +51,31 @@ export function Checkout() {
     slot: '',
     notes: '',
   });
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Auto-fill form from logged-in user's profile
+  useEffect(() => {
+    if (!user || prefilled) return;
+    fetch('/api/account/profile')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.profile) {
+          const p = data.profile;
+          setForm((prev) => ({
+            ...prev,
+            name: prev.name || p.name || '',
+            email: prev.email || p.email || '',
+            phone: prev.phone || p.phone || '',
+            line1: prev.line1 || p.defaultAddress?.line1 || '',
+            line2: prev.line2 || p.defaultAddress?.line2 || '',
+            city: prev.city || p.defaultAddress?.city || 'Erskine',
+            postcode: prev.postcode || p.defaultAddress?.postcode || '',
+          }));
+          setPrefilled(true);
+        }
+      })
+      .catch(() => {});
+  }, [user, prefilled]);
   const [promoCode, setPromoCode] = useState('');
   const [promo, setPromo] = useState<Promo>(null);
   const [promoError, setPromoError] = useState<string | null>(null);

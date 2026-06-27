@@ -1,15 +1,9 @@
-/**
- * Lightweight JWT-based admin auth.
- *
- * Why jose: works in both Node and the Edge runtime (so middleware can verify
- * sessions without bundling Node crypto).
- */
-
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 
-const SESSION_COOKIE = 'garys_session';
+const ADMIN_SESSION_COOKIE = 'garys_session';
+const CUSTOMER_SESSION_COOKIE = 'garys_customer_session';
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function getSecret() {
@@ -20,38 +14,58 @@ function getSecret() {
   return new TextEncoder().encode(secret);
 }
 
-export type Session = {
+export type AdminSession = {
   email: string;
   role: 'admin';
 };
 
-export async function signSession(payload: Session): Promise<string> {
-  return await new SignJWT(payload as Record<string, unknown>)
+export type CustomerSession = {
+  userId: string;
+  email: string;
+  name: string;
+  role: 'customer' | 'admin';
+};
+
+// Keep backward-compatible Session type for admin
+export type Session = AdminSession;
+
+async function signToken(payload: Record<string, unknown>): Promise<string> {
+  return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
     .sign(getSecret());
 }
 
-export async function verifySession(token: string): Promise<Session | null> {
+async function verifyToken<T>(token: string): Promise<T | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return payload as unknown as Session;
+    return payload as unknown as T;
   } catch {
     return null;
   }
 }
 
-export async function getSession(): Promise<Session | null> {
+// ─── Admin session helpers ────────────────────────────────────────────
+
+export async function signSession(payload: AdminSession): Promise<string> {
+  return signToken(payload as unknown as Record<string, unknown>);
+}
+
+export async function verifySession(token: string): Promise<AdminSession | null> {
+  return verifyToken<AdminSession>(token);
+}
+
+export async function getSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
   return verifySession(token);
 }
 
 export async function setSessionCookie(token: string) {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+  cookieStore.set(ADMIN_SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -62,13 +76,9 @@ export async function setSessionCookie(token: string) {
 
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
+  cookieStore.delete(ADMIN_SESSION_COOKIE);
 }
 
-/**
- * Verify a login attempt against env-configured admin credentials.
- * For multi-admin setups, swap this for a `users` table.
- */
 export async function verifyAdminLogin(email: string, password: string): Promise<boolean> {
   const expectedEmail = process.env.ADMIN_EMAIL;
   const hash = process.env.ADMIN_PASSWORD_HASH;
@@ -76,4 +86,49 @@ export async function verifyAdminLogin(email: string, password: string): Promise
   if (email.toLowerCase() !== expectedEmail.toLowerCase()) return false;
   return bcrypt.compare(password, hash);
 }
-export const SESSION_COOKIE_NAME = SESSION_COOKIE;
+
+// ─── Customer session helpers ─────────────────────────────────────────
+
+export async function signCustomerSession(payload: CustomerSession): Promise<string> {
+  return signToken(payload as unknown as Record<string, unknown>);
+}
+
+export async function getCustomerSession(): Promise<CustomerSession | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
+  if (!token) return null;
+  return verifyToken<CustomerSession>(token);
+}
+
+export async function setCustomerSessionCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(CUSTOMER_SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: SESSION_DURATION_SECONDS,
+  });
+}
+
+export async function clearCustomerSessionCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(CUSTOMER_SESSION_COOKIE);
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
+
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+export function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export const SESSION_COOKIE_NAME = ADMIN_SESSION_COOKIE;
+export const CUSTOMER_COOKIE_NAME = CUSTOMER_SESSION_COOKIE;

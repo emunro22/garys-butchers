@@ -6,6 +6,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
 import { calculateDelivery, getDistanceMiles, calculateDeliveryByDistance } from '@/lib/utils';
 import { getShopSettings } from '@/lib/settings';
+import { getCustomerSession } from '@/lib/auth';
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -146,10 +147,14 @@ export async function POST(req: NextRequest) {
 
     const slotDate = new Date(data.slot);
 
+    // Link order to logged-in user if available
+    const customerSession = await getCustomerSession().catch(() => null);
+
     // Insert order with status 'pending'
     const [order] = await db
       .insert(orders)
       .values({
+        userId: customerSession?.userId ?? null,
         customerName: data.customer.name,
         customerEmail: data.customer.email,
         customerPhone: data.customer.phone,
