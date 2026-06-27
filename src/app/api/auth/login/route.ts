@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { signSession, setSessionCookie, verifyAdminLogin } from '@/lib/auth';
+import { signSession, setSessionCookie, verifyAdminLogin, comparePassword, signCustomerSession, setCustomerSessionCookie } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 const Schema = z.object({
   email: z.string().email(),
@@ -36,12 +39,44 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 400 });
     }
-    const ok = await verifyAdminLogin(parsed.data.email, parsed.data.password);
-    if (!ok) {
+    const { email, password } = parsed.data;
+
+    // Try hardcoded env-var admin first
+    const envOk = await verifyAdminLogin(email, password);
+    if (envOk) {
+      const token = await signSession({ email, role: 'admin' });
+      await setSessionCookie(token);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Try database users with admin role
+    const normalizedEmail = email.toLowerCase().trim();
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
+
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
-    const token = await signSession({ email: parsed.data.email, role: 'admin' });
-    await setSessionCookie(token);
+
+    const valid = await comparePassword(password, user.passwordHash);
+    if (!valid) {
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    const adminToken = await signSession({ email: user.email, role: 'admin' });
+    await setSessionCookie(adminToken);
+
+    const customerToken = await signCustomerSession({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
+    await setCustomerSessionCookie(customerToken);
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('login error', err);
