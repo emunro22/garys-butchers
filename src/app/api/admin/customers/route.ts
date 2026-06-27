@@ -52,7 +52,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    if (parsed.data.userId === session.userId) {
+    const [target] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, parsed.data.userId))
+      .limit(1);
+
+    if (target?.email === session.email) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     }
 
