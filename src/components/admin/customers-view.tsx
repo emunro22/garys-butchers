@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Download, Mail, ShieldCheck, Crown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Download, Mail, ShieldCheck, Crown, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
@@ -25,6 +26,31 @@ type Customer = {
 export function CustomersView({ customers }: { customers: Customer[] }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'registered' | 'guest'>('all');
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function handleDelete(c: Customer) {
+    if (c.type !== 'registered') return;
+    if (!confirm(`Remove ${c.name} (${c.email})? This deletes their account permanently.`)) return;
+    setDeleting(c.id);
+    try {
+      const res = await fetch('/api/admin/customers', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: c.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error ?? 'Failed to delete customer');
+      } else {
+        router.refresh();
+      }
+    } catch {
+      alert('Failed to delete customer');
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     let list = customers;
@@ -108,41 +134,54 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
           {/* Mobile cards */}
           <div className="md:hidden space-y-2">
             {filtered.map((c) => (
-              <Link
+              <div
                 key={c.id}
-                href={`/admin/customers/${c.id}`}
-                className="block bg-cream-100 border border-ink-900/10 p-4 hover:border-ink-900/30 transition-colors"
+                className="bg-cream-100 border border-ink-900/10 p-4 hover:border-ink-900/30 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-ink-900 truncate">{c.name}</p>
+                  <Link href={`/admin/customers/${c.id}`} className="flex items-center gap-2 flex-1 min-w-0">
+                    <p className="font-medium text-ink-900 truncate">{c.name}</p>
+                    {c.type === 'registered' && (
+                      <ShieldCheck className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                    )}
+                    {c.role === 'admin' && (
+                      <Crown className="h-3.5 w-3.5 text-gold-600 shrink-0" />
+                    )}
+                  </Link>
                   {c.type === 'registered' && (
-                    <ShieldCheck className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                  )}
-                  {c.role === 'admin' && (
-                    <Crown className="h-3.5 w-3.5 text-gold-600 shrink-0" />
+                    <button
+                      onClick={() => handleDelete(c)}
+                      disabled={deleting === c.id}
+                      className="shrink-0 p-1.5 text-ink-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                      aria-label={`Remove ${c.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   )}
                 </div>
-                <p className="text-xs text-ink-700 break-all">{c.email}</p>
-                {c.phone && (
-                  <p className="text-xs text-ink-500 mt-0.5 tabular">{c.phone}</p>
-                )}
-                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-ink-900/5 text-xs">
-                  <div>
-                    <p className="eyebrow text-ink-500 mb-0.5 text-[9px]">Orders</p>
-                    <p className="font-medium text-ink-900 tabular">{c.orderCount}</p>
+                <Link href={`/admin/customers/${c.id}`}>
+                  <p className="text-xs text-ink-700 break-all">{c.email}</p>
+                  {c.phone && (
+                    <p className="text-xs text-ink-500 mt-0.5 tabular">{c.phone}</p>
+                  )}
+                  <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-ink-900/5 text-xs">
+                    <div>
+                      <p className="eyebrow text-ink-500 mb-0.5 text-[9px]">Orders</p>
+                      <p className="font-medium text-ink-900 tabular">{c.orderCount}</p>
+                    </div>
+                    <div>
+                      <p className="eyebrow text-ink-500 mb-0.5 text-[9px]">Spent</p>
+                      <p className="font-medium text-ink-900 tabular">
+                        {formatPrice(c.totalSpentInPence)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="eyebrow text-ink-500 mb-0.5 text-[9px]">Last</p>
+                      <p className="font-medium text-ink-900">{formatDate(c.lastOrder)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="eyebrow text-ink-500 mb-0.5 text-[9px]">Spent</p>
-                    <p className="font-medium text-ink-900 tabular">
-                      {formatPrice(c.totalSpentInPence)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="eyebrow text-ink-500 mb-0.5 text-[9px]">Last</p>
-                    <p className="font-medium text-ink-900">{formatDate(c.lastOrder)}</p>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
 
@@ -158,6 +197,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                   <th className="px-5 py-3 text-right">Orders</th>
                   <th className="px-5 py-3 text-right">Total spent</th>
                   <th className="px-5 py-3">Last order</th>
+                  <th className="px-5 py-3 w-12"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-900/5">
@@ -197,6 +237,18 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
                       {formatPrice(c.totalSpentInPence)}
                     </td>
                     <td className="px-5 py-3 text-ink-700">{formatDate(c.lastOrder)}</td>
+                    <td className="px-5 py-3">
+                      {c.type === 'registered' && (
+                        <button
+                          onClick={() => handleDelete(c)}
+                          disabled={deleting === c.id}
+                          className="p-1.5 text-ink-300 hover:text-red-600 transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+                          aria-label={`Remove ${c.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
