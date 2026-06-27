@@ -103,16 +103,40 @@ export function Header() {
               <MapPin className="h-3.5 w-3.5" />
               Erskine
             </Link>
-            <Link
-              href={user ? '/account' : '/account/login'}
-              className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
-              aria-label={user ? 'My account' : 'Sign in'}
-            >
-              <UserCircle className="h-5 w-5" />
-              {user && (
+            {user ? (
+              <Link
+                href="/account"
+                className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
+                aria-label="My account"
+              >
+                <UserCircle className="h-5 w-5" />
                 <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gold-400" />
-              )}
-            </Link>
+              </Link>
+            ) : (
+              <div className="hidden sm:flex items-center gap-1 mr-1">
+                <Link
+                  href="/account/login"
+                  className="eyebrow text-ink-700 hover:text-ink-900 px-2.5 py-1.5 transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/account/signup"
+                  className="eyebrow bg-ink-900 text-cream-50 hover:bg-ink-800 px-3 py-1.5 rounded transition-colors"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+            {!user && (
+              <Link
+                href="/account/login"
+                className="sm:hidden relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
+                aria-label="Sign in"
+              >
+                <UserCircle className="h-5 w-5" />
+              </Link>
+            )}
             <button
               onClick={openCart}
               className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
