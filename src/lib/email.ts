@@ -351,23 +351,48 @@ export async function sendNewCustomerNotification(customer: {
     html: `<!doctype html>
 <html>
   <body style="margin:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#1a1815">
-    <div style="max-width:560px;margin:0 auto;padding:24px 16px">
-      <div style="background:#0a0a0a;color:#f8f5f0;padding:20px 24px;border-radius:6px 6px 0 0">
-        <p style="margin:0;font-size:11px;letter-spacing:0.25em;color:#c9a961">GARY'S BUTCHERS — NEW CUSTOMER</p>
-        <h1 style="margin:6px 0 0;font-size:22px">${customer.name}</h1>
+    <div style="max-width:620px;margin:0 auto;padding:24px 16px">
+
+      <!-- Header -->
+      <div style="background:#0a0a0a;color:#f8f5f0;padding:24px 28px;border-radius:6px 6px 0 0">
+        <table style="width:100%"><tr>
+          <td>
+            <p style="margin:0;font-size:11px;letter-spacing:0.25em;color:#c9a961">GARY'S BUTCHERS &amp; FISHMONGERS</p>
+            <h1 style="margin:8px 0 0;font-size:22px;font-weight:700">New Customer Sign-Up</h1>
+          </td>
+          <td style="text-align:right;vertical-align:top">
+            <p style="margin:0;font-size:28px">👋</p>
+          </td>
+        </tr></table>
       </div>
-      <div style="background:#fff;padding:20px 24px;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px">
+
+      <!-- Customer details -->
+      <div style="background:#fff;padding:24px 28px;border:1px solid #ddd;border-top:none">
+        <h2 style="margin:0 0 14px;font-size:13px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Customer Details</h2>
         <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr>
-            <td style="padding:6px 0;color:#6b5d4f;width:100px">Email</td>
-            <td style="padding:6px 0"><a href="mailto:${customer.email}" style="color:#1a4d8f">${customer.email}</a></td>
+            <td style="padding:8px 0;color:#6b5d4f;width:110px;border-bottom:1px solid #f0ebe3">Name</td>
+            <td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3">${customer.name}</td>
           </tr>
-          ${customer.phone ? `<tr><td style="padding:6px 0;color:#6b5d4f">Phone</td><td style="padding:6px 0"><a href="tel:${customer.phone}" style="color:#1a1815">${customer.phone}</a></td></tr>` : ''}
+          <tr>
+            <td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Email</td>
+            <td style="padding:8px 0;border-bottom:1px solid #f0ebe3"><a href="mailto:${customer.email}" style="color:#1a4d8f;text-decoration:none">${customer.email}</a></td>
+          </tr>
+          ${customer.phone ? `<tr><td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Phone</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3"><a href="tel:${customer.phone}" style="color:#1a1815;text-decoration:none">${customer.phone}</a></td></tr>` : ''}
+          <tr>
+            <td style="padding:8px 0;color:#6b5d4f">Registered</td>
+            <td style="padding:8px 0">${new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+          </tr>
         </table>
-        <p style="margin:16px 0 0;font-size:13px;color:#6b5d4f">
-          Signed up on ${new Date().toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}.
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#faf8f5;padding:16px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px">
+        <p style="margin:0;font-size:12px;color:#8e7138;line-height:1.6">
+          This customer has verified their email and can now place orders. View their profile in the <a href="https://garysbutchers.co.uk/admin/customers" style="color:#1a4d8f;text-decoration:none;font-weight:600">admin dashboard</a>.
         </p>
       </div>
+
     </div>
   </body>
 </html>`,

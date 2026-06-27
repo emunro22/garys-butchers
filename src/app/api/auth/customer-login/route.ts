@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { comparePassword, signCustomerSession, setCustomerSessionCookie } from '@/lib/auth';
+import { comparePassword, signCustomerSession, setCustomerSessionCookie, signSession, setSessionCookie } from '@/lib/auth';
 
 const Schema = z.object({
   email: z.string().email(),
@@ -70,6 +70,11 @@ export async function POST(req: NextRequest) {
       role: user.role,
     });
     await setCustomerSessionCookie(token);
+
+    if (user.role === 'admin') {
+      const adminToken = await signSession({ email: user.email, role: 'admin' });
+      await setSessionCookie(adminToken);
+    }
 
     return NextResponse.json({ ok: true, user: { name: user.name, email: user.email, role: user.role } });
   } catch (err) {
