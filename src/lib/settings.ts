@@ -13,6 +13,16 @@ export const DEFAULT_SETTINGS = {
     radiusMiles: 10,
     premiumFeePence: 500,
   },
+  banner: {
+    messages: [
+      '🥩  Free home delivery on orders over £25',
+      '⭐  Rated 5/5 by our customers in Erskine',
+      '🐟  Fresh fish delivered daily — Tuesday to Saturday',
+      '🎁  Use code WELCOME10 for 10% off your first order',
+    ],
+    showCountdown: true,
+    cutoffHour: 18,
+  },
 };
 
 export type AppSettings = typeof DEFAULT_SETTINGS;
@@ -23,16 +33,23 @@ export async function getShopSettings(): Promise<AppSettings> {
     const result: AppSettings = {
       shop: { ...DEFAULT_SETTINGS.shop },
       delivery: { ...DEFAULT_SETTINGS.delivery },
+      banner: { ...DEFAULT_SETTINGS.banner },
     };
     for (const row of rows) {
       if (row.key === 'shop') {
         result.shop = { ...DEFAULT_SETTINGS.shop, ...(row.value as AppSettings['shop']) };
       } else if (row.key === 'delivery') {
         result.delivery = { ...DEFAULT_SETTINGS.delivery, ...(row.value as AppSettings['delivery']) };
+      } else if (row.key === 'banner') {
+        result.banner = { ...DEFAULT_SETTINGS.banner, ...(row.value as AppSettings['banner']) };
       }
     }
     return result;
   } catch {
-    return { shop: { ...DEFAULT_SETTINGS.shop }, delivery: { ...DEFAULT_SETTINGS.delivery } };
+    return {
+      shop: { ...DEFAULT_SETTINGS.shop },
+      delivery: { ...DEFAULT_SETTINGS.delivery },
+      banner: { ...DEFAULT_SETTINGS.banner },
+    };
   }
 }

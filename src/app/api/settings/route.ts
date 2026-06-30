@@ -35,9 +35,16 @@ const DeliverySchema = z.object({
   premiumFeePence: z.number().int().min(0).optional(),
 });
 
+const BannerSchema = z.object({
+  messages: z.array(z.string().min(1).max(200)).max(12),
+  showCountdown: z.boolean(),
+  cutoffHour: z.number().int().min(0).max(23),
+});
+
 const PatchSchema = z.object({
   shop: ShopSchema.optional(),
   delivery: DeliverySchema.optional(),
+  banner: BannerSchema.optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -72,6 +79,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.delivery, updatedAt: new Date() },
+        });
+    }
+
+    if (data.banner) {
+      await db
+        .insert(settings)
+        .values({ key: 'banner', value: data.banner, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.banner, updatedAt: new Date() },
         });
     }
 

@@ -79,6 +79,19 @@
     animation: marquee 40s linear infinite;
   }
 
+  /* Defined here (not just in tailwind.config) because Tailwind's JIT only
+     emits keyframes for animations whose `animate-*` utility class is found
+     in the scanned content — nothing uses `animate-marquee`, so relying on
+     the config alone silently produced no @keyframes and the bar never moved. */
+  @keyframes marquee {
+    from {
+      transform: translateX(-50%);
+    }
+    to {
+      transform: translateX(0%);
+    }
+  }
+
   /* Card with a faint inner gold rule like a menu plate */
   .menu-plate {
     @apply relative rounded-sm bg-ink-900 text-cream-50;
