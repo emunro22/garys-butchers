@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
-import { and, eq, asc } from 'drizzle-orm';
+import { and, eq, asc, desc } from 'drizzle-orm';
 import { ProductCard } from '@/components/shop/product-card';
+import { ProductSort } from '@/components/shop/product-sort';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
 
@@ -31,12 +33,29 @@ export async function generateMetadata({
   }
 }
 
+function sortOrderBy(sort: string | undefined) {
+  switch (sort) {
+    case 'price-asc':
+      return [asc(products.priceInPence)];
+    case 'price-desc':
+      return [desc(products.priceInPence)];
+    case 'name':
+      return [asc(products.name)];
+    case 'bestseller':
+    default:
+      return [desc(products.isFeatured), asc(products.name)];
+  }
+}
+
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ category: string }>;
+  searchParams: Promise<{ sort?: string }>;
 }) {
   const { category } = await params;
+  const { sort } = await searchParams;
 
   let cat: any = null;
   let items: any[] = [];
@@ -49,7 +68,7 @@ export default async function CategoryPage({
       .select()
       .from(products)
       .where(and(eq(products.categoryId, cat.id), eq(products.isActive, true)))
-      .orderBy(asc(products.name));
+      .orderBy(...sortOrderBy(sort));
     allCats = await db
       .select()
       .from(categories)
@@ -82,27 +101,34 @@ export default async function CategoryPage({
       <SeasonalDeals compact />
 
       <section className="mx-auto max-w-7xl px-4 md:px-8 py-12 md:py-16">
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-2 mb-10">
-          <Link
-            href="/shop"
-            className="px-4 py-2 text-xs uppercase tracking-[0.18em] border border-ink-900/15 hover:border-ink-900 transition-colors"
-          >
-            All
-          </Link>
-          {allCats.map((c) => (
+        {/* Category pills + sort */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
+          <div className="flex flex-wrap gap-2">
             <Link
-              key={c.id}
-              href={`/shop/${c.slug}`}
-              className={`px-4 py-2 text-xs uppercase tracking-[0.18em] border transition-colors ${
-                c.id === cat.id
-                  ? 'bg-ink-900 text-cream-50 border-ink-900'
-                  : 'border-ink-900/15 hover:border-ink-900'
-              }`}
+              href="/shop"
+              className="px-4 py-2 text-xs uppercase tracking-[0.18em] border border-ink-900/15 hover:border-ink-900 transition-colors"
             >
-              {c.name}
+              All
             </Link>
-          ))}
+            {allCats.map((c) => (
+              <Link
+                key={c.id}
+                href={`/shop/${c.slug}`}
+                className={`px-4 py-2 text-xs uppercase tracking-[0.18em] border transition-colors ${
+                  c.id === cat.id
+                    ? 'bg-ink-900 text-cream-50 border-ink-900'
+                    : 'border-ink-900/15 hover:border-ink-900'
+                }`}
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+          {items.length > 0 && (
+            <Suspense fallback={null}>
+              <ProductSort />
+            </Suspense>
+          )}
         </div>
 
         {items.length === 0 ? (

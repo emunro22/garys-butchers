@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 type SessionUser = {
   userId: string;
@@ -18,6 +19,7 @@ type SessionCtx = {
 const Ctx = createContext<SessionCtx>({ user: null, loading: true, refresh: () => {} });
 
 export function CustomerSessionProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<SessionUser>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,9 +31,12 @@ export function CustomerSessionProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }
 
+  // Re-check the session on every navigation, since logging in/out on one
+  // page doesn't remount this provider — without this the header would
+  // keep showing whatever was true when the app first loaded.
   useEffect(() => {
     fetchSession();
-  }, []);
+  }, [pathname]);
 
   return (
     <Ctx.Provider value={{ user, loading, refresh: fetchSession }}>
