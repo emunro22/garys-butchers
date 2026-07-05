@@ -48,8 +48,15 @@ export function AnnouncementBarClient({
     return () => clearInterval(id);
   }, [showCountdown]);
 
-  const allMessages =
-    showCountdown && now ? [...messages, getDeliveryMessage(now, cutoffHour)] : messages;
+  // Reserve the countdown slot from first paint so the track's width — and
+  // the marquee animation running over it — doesn't jump once the real
+  // countdown text swaps in after mount.
+  const countdownMessage = showCountdown
+    ? now
+      ? getDeliveryMessage(now, cutoffHour)
+      : '⏰  Order today for next-day delivery'
+    : null;
+  const allMessages = countdownMessage ? [...messages, countdownMessage] : messages;
   // Triple the array so the marquee always has content as it loops
   const loop = [...allMessages, ...allMessages, ...allMessages];
 

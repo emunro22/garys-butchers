@@ -76,7 +76,7 @@
   .marquee-track {
     display: flex;
     width: max-content;
-    animation: marquee 40s linear infinite;
+    animation: marquee 75s linear infinite;
   }
 
   /* Defined here (not just in tailwind.config) because Tailwind's JIT only
