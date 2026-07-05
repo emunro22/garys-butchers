@@ -67,7 +67,7 @@ ADMIN_PASSWORD_HASH="$2b$10$..." # see below
 BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
 
 # Site URL (for OG metadata, links in emails)
-NEXT_PUBLIC_SITE_URL="https://garysbutchers.co.uk"
+NEXT_PUBLIC_SITE_URL="https://garysbutchersandfishmongers.co.uk"
 ```
 
 ### 4. Generate the admin password hash

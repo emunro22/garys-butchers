@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
-const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchers.co.uk';
+const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmongers.co.uk';
 
 // Admin/shop notification recipient — all order and contact emails go here
 const ADMIN_EMAILS = [
@@ -389,7 +389,7 @@ export async function sendNewCustomerNotification(customer: {
       <!-- Footer -->
       <div style="background:#faf8f5;padding:16px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px">
         <p style="margin:0;font-size:12px;color:#8e7138;line-height:1.6">
-          This customer has verified their email and can now place orders. View their profile in the <a href="https://garysbutchers.co.uk/admin/customers" style="color:#1a4d8f;text-decoration:none;font-weight:600">admin dashboard</a>.
+          This customer has verified their email and can now place orders. View their profile in the <a href="https://garysbutchersandfishmongers.co.uk/admin/customers" style="color:#1a4d8f;text-decoration:none;font-weight:600">admin dashboard</a>.
         </p>
       </div>
 
