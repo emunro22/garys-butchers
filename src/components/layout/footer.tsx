@@ -10,7 +10,7 @@ const cols = [
     links: [
       { label: 'All products', href: '/shop' },
       { label: 'Beef', href: '/shop/beef' },
-      { label: 'Pork', href: '/shop/pork' },
+      { label: 'Pork/Ham', href: '/shop/pork-ham' },
       { label: 'Chicken', href: '/shop/chicken' },
       { label: 'Fish', href: '/shop/fish' },
       { label: 'Meat packs', href: '/meat-packs' },

@@ -39,6 +39,9 @@ export function ProductForm({
     compareAtPriceInPence: initial?.compareAtPriceInPence ?? 0,
     weightLabel: initial?.weightLabel ?? '',
     badge: initial?.badge ?? '',
+    cookingTips: initial?.cookingTips ?? '',
+    ingredients: initial?.ingredients ?? '',
+    allergyInfo: initial?.allergyInfo ?? '',
     imageUrl: initial?.imageUrl ?? '',
     isPack: initial?.isPack ?? false,
     isFeatured: initial?.isFeatured ?? false,
@@ -145,6 +148,9 @@ export function ProductForm({
         imageUrl: form.imageUrl || null,
         weightLabel: form.weightLabel || null,
         badge: form.badge || null,
+        cookingTips: form.cookingTips || null,
+        ingredients: form.ingredients || null,
+        allergyInfo: form.allergyInfo || null,
         isPack: form.isPack,
         isFeatured: form.isFeatured,
         isActive: form.isActive,
@@ -238,6 +244,36 @@ export function ProductForm({
               rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="ingredients">Ingredients (optional)</Label>
+            <Textarea
+              id="ingredients"
+              rows={3}
+              placeholder="e.g. Pork, salt, black pepper, sage, rusk (wheat)"
+              value={form.ingredients ?? ''}
+              onChange={(e) => setForm({ ...form, ingredients: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="allergyInfo">Allergy information (optional)</Label>
+            <Textarea
+              id="allergyInfo"
+              rows={3}
+              placeholder="e.g. Contains gluten, sulphites. May contain traces of nuts."
+              value={form.allergyInfo ?? ''}
+              onChange={(e) => setForm({ ...form, allergyInfo: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="cookingTips">Cooking tips (optional)</Label>
+            <Textarea
+              id="cookingTips"
+              rows={3}
+              placeholder="e.g. Grill or fry over medium heat for 15-18 mins, turning occasionally."
+              value={form.cookingTips ?? ''}
+              onChange={(e) => setForm({ ...form, cookingTips: e.target.value })}
             />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">

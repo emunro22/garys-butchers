@@ -160,6 +160,35 @@ export default async function MeatPackPage({
               Free home delivery available on orders over £25 in the local area. Click &amp;
               collect from our Erskine shop, no charge.
             </p>
+
+            {(pack.cookingTips || pack.ingredients || pack.allergyInfo) && (
+              <div className="mt-8 border-t border-gold-400/20 pt-8 space-y-6">
+                {pack.cookingTips && (
+                  <div>
+                    <p className="eyebrow text-gold-400 mb-2">Cooking tips</p>
+                    <p className="text-sm text-cream-200/80 leading-relaxed whitespace-pre-line max-w-prose">
+                      {pack.cookingTips}
+                    </p>
+                  </div>
+                )}
+                {pack.ingredients && (
+                  <div>
+                    <p className="eyebrow text-gold-400 mb-2">Ingredients</p>
+                    <p className="text-sm text-cream-200/80 leading-relaxed whitespace-pre-line max-w-prose">
+                      {pack.ingredients}
+                    </p>
+                  </div>
+                )}
+                {pack.allergyInfo && (
+                  <div>
+                    <p className="eyebrow text-gold-400 mb-2">Allergy information</p>
+                    <p className="text-sm text-cream-200/80 leading-relaxed whitespace-pre-line max-w-prose">
+                      {pack.allergyInfo}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>

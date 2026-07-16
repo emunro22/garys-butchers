@@ -9,22 +9,37 @@ import { useCart, cartItemCount } from '@/lib/cart';
 import { cn } from '@/lib/utils';
 import { useCustomerSession } from '@/components/account/session-provider';
 
-const nav = [
-  { label: 'Shop all', href: '/shop' },
-  { label: 'Beef', href: '/shop/beef' },
-  { label: 'Pork', href: '/shop/pork' },
-  { label: 'Chicken', href: '/shop/chicken' },
-  { label: 'Fish', href: '/shop/fish' },
-  { label: 'Meat packs', href: '/meat-packs' },
-];
+const CURATED_SLUGS = ['beef', 'pork-ham', 'chicken', 'fish'];
 
-export function Header() {
+export function Header({ categories }: { categories: { name: string; slug: string }[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const items = useCart((s) => s.items);
   const openCart = useCart((s) => s.open);
   const count = cartItemCount(items);
   const { user } = useCustomerSession();
+
+  const curated = CURATED_SLUGS
+    .map((slug) => categories.find((c) => c.slug === slug))
+    .filter((c): c is { name: string; slug: string } => Boolean(c));
+
+  const nav = [
+    { label: 'Shop all', href: '/shop' },
+    ...curated.map((c) => ({ label: c.name, href: `/shop/${c.slug}` })),
+    { label: 'Meat packs', href: '/meat-packs' },
+  ];
+
+  const allCategoryLinks = categories
+    .filter((c) => c.slug !== 'meat-packs')
+    .map((c) => ({ label: c.name, href: `/shop/${c.slug}` }));
+
+  const mobileNav = [
+    { label: 'Shop all', href: '/shop' },
+    ...allCategoryLinks,
+    { label: 'Meat packs', href: '/meat-packs' },
+    { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -172,7 +187,7 @@ export function Header() {
 
               {/* Nav links */}
               <nav className="flex-1 overflow-y-auto py-2">
-                {[...nav, { label: 'About', href: '/about' }, { label: 'Contact', href: '/contact' }].map((item) => (
+                {mobileNav.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

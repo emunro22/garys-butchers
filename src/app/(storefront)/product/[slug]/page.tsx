@@ -178,6 +178,36 @@ export default async function ProductPage({
                 Click &amp; collect from our Erskine shop, no charge.
               </li>
             </ul>
+
+            {/* Cooking tips, ingredients, allergy info */}
+            {(product.cookingTips || product.ingredients || product.allergyInfo) && (
+              <div className="mt-10 border-t border-ink-900/10 pt-8 space-y-6">
+                {product.cookingTips && (
+                  <div>
+                    <p className="eyebrow text-ink-500 mb-2">Cooking tips</p>
+                    <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line max-w-prose">
+                      {product.cookingTips}
+                    </p>
+                  </div>
+                )}
+                {product.ingredients && (
+                  <div>
+                    <p className="eyebrow text-ink-500 mb-2">Ingredients</p>
+                    <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line max-w-prose">
+                      {product.ingredients}
+                    </p>
+                  </div>
+                )}
+                {product.allergyInfo && (
+                  <div>
+                    <p className="eyebrow text-ink-500 mb-2">Allergy information</p>
+                    <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line max-w-prose">
+                      {product.allergyInfo}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>

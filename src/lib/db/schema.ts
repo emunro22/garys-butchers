@@ -99,6 +99,9 @@ export const products = pgTable(
     imageUrl: text('image_url'),
     galleryUrls: jsonb('gallery_urls').$type<string[]>().default([]).notNull(),
     weightLabel: varchar('weight_label', { length: 80 }), // e.g. "approx 500g"
+    cookingTips: text('cooking_tips'),
+    ingredients: text('ingredients'),
+    allergyInfo: text('allergy_info'),
     // structured contents for meat packs (list of items in the box)
     packContents: jsonb('pack_contents').$type<string[]>().default([]).notNull(),
     // size/weight variants (e.g. [{label:"7oz",priceInPence:999},{label:"10oz",priceInPence:1299}])
