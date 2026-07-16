@@ -19,6 +19,7 @@ const PatchSchema = z.object({
   cookingTips: z.string().max(4000).nullable().optional(),
   ingredients: z.string().max(4000).nullable().optional(),
   allergyInfo: z.string().max(4000).nullable().optional(),
+  nutritionInfo: z.string().max(4000).nullable().optional(),
   variants: z.array(z.object({ label: z.string().min(1).max(80), priceInPence: z.number().int().min(0) })).optional(),
   packContents: z.array(z.string()).optional(),
   isPack: z.boolean().optional(),

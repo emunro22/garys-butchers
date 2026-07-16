@@ -102,6 +102,7 @@ export const products = pgTable(
     cookingTips: text('cooking_tips'),
     ingredients: text('ingredients'),
     allergyInfo: text('allergy_info'),
+    nutritionInfo: text('nutrition_info'),
     // structured contents for meat packs (list of items in the box)
     packContents: jsonb('pack_contents').$type<string[]>().default([]).notNull(),
     // size/weight variants (e.g. [{label:"7oz",priceInPence:999},{label:"10oz",priceInPence:1299}])

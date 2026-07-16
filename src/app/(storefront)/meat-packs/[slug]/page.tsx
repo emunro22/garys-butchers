@@ -161,7 +161,7 @@ export default async function MeatPackPage({
               collect from our Erskine shop, no charge.
             </p>
 
-            {(pack.cookingTips || pack.ingredients || pack.allergyInfo) && (
+            {(pack.cookingTips || pack.ingredients || pack.allergyInfo || pack.nutritionInfo) && (
               <div className="mt-8 border-t border-gold-400/20 pt-8 space-y-6">
                 {pack.cookingTips && (
                   <div>
@@ -184,6 +184,14 @@ export default async function MeatPackPage({
                     <p className="eyebrow text-gold-400 mb-2">Allergy information</p>
                     <p className="text-sm text-cream-200/80 leading-relaxed whitespace-pre-line max-w-prose">
                       {pack.allergyInfo}
+                    </p>
+                  </div>
+                )}
+                {pack.nutritionInfo && (
+                  <div>
+                    <p className="eyebrow text-gold-400 mb-2">Nutritional information</p>
+                    <p className="text-sm text-cream-200/80 leading-relaxed whitespace-pre-line max-w-prose">
+                      {pack.nutritionInfo}
                     </p>
                   </div>
                 )}
