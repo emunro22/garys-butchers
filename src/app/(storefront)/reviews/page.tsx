@@ -1,8 +1,10 @@
 import { db } from '@/lib/db';
 import { reviews } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
-import { Quote, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import type { Metadata } from 'next';
+import { avatarColor, timeAgo } from '@/lib/utils';
+import { GoogleLogo } from '@/components/ui/google-logo';
 
 export const metadata: Metadata = {
   title: 'Reviews — Gary’s Butchers & Fishmongers',
@@ -35,7 +37,8 @@ export default async function ReviewsPage() {
             <span className="font-display italic text-gold-400"> saying.</span>
           </h1>
           <div className="mt-8 flex items-center gap-4">
-            <div className="flex gap-1 text-gold-400">
+            <GoogleLogo className="h-8 w-8" />
+            <div className="flex gap-1 text-[#FBBC04]">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="h-5 w-5" fill="currentColor" />
               ))}
@@ -61,21 +64,29 @@ export default async function ReviewsPage() {
                   key={r.id}
                   className="bg-cream-100 border border-ink-900/10 p-6 md:p-8 relative"
                 >
-                  <Quote className="absolute top-6 right-6 h-8 w-8 text-gold-400/40" />
-                  <div className="flex gap-1 text-gold-500 mb-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className="h-11 w-11 rounded-full flex items-center justify-center text-white font-medium shrink-0"
+                      style={{ background: avatarColor(r.authorName) }}
+                    >
+                      {r.authorName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-ink-900 truncate">{r.authorName}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <GoogleLogo className="h-3 w-3" />
+                        <span className="text-xs text-ink-400">
+                          {timeAgo(r.publishedAt)} · via Google
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 text-[#FBBC04] mb-4">
                     {Array.from({ length: r.rating }).map((_, i) => (
                       <Star key={i} className="h-4 w-4" fill="currentColor" />
                     ))}
                   </div>
-                  <p className="font-display text-xl text-ink-900 leading-snug">
-                    &ldquo;{r.body}&rdquo;
-                  </p>
-                  <div className="mt-6 pt-4 border-t border-ink-900/10 flex items-center justify-between">
-                    <p className="text-sm font-medium text-ink-900">{r.authorName}</p>
-                    <p className="text-xs uppercase tracking-[0.2em] text-ink-500">
-                      via {r.source ?? 'Google'}
-                    </p>
-                  </div>
+                  <p className="text-ink-700 leading-relaxed">{r.body}</p>
                 </article>
               ))}
             </div>

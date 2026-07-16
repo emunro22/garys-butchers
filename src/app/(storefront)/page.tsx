@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { products, reviews, categories } from '@/lib/db/schema';
 import { eq, desc, asc } from 'drizzle-orm';
+import { getCategoryImageMap } from '@/lib/db/category-images';
 import { Hero } from '@/components/home/hero';
 import { FeaturedCategories } from '@/components/home/featured-categories';
 import { FeaturedPacks } from '@/components/home/featured-packs';
@@ -13,7 +14,7 @@ export const revalidate = 60;
 
 async function getHomepageData() {
   try {
-    const [packsRes, reviewsRes, catsRes] = await Promise.all([
+    const [packsRes, reviewsRes, catsRes, categoryImages] = await Promise.all([
       db
         .select()
         .from(products)
@@ -31,8 +32,10 @@ async function getHomepageData() {
         .from(categories)
         .where(eq(categories.isActive, true))
         .orderBy(asc(categories.sortOrder)),
+      getCategoryImageMap(),
     ]);
-    return { packs: packsRes, reviews: reviewsRes, cats: catsRes };
+    const cats = catsRes.map((c) => ({ ...c, imageUrl: categoryImages[c.id] ?? null }));
+    return { packs: packsRes, reviews: reviewsRes, cats };
   } catch {
     return { packs: [], reviews: [], cats: [] };
   }

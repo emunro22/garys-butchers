@@ -610,6 +610,85 @@ const seedReviews = [
       'Went here for the first time last week. The steak pies were great. Will definitely be back to try other meats.',
     isFeatured: false,
   },
+  {
+    authorName: 'Beverley Malsher',
+    rating: 5,
+    body: 'An amazing butchers, very good quality, great prices and an amazing young man. Good job Gary.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Arran Stewart',
+    rating: 5,
+    body:
+      "Used Gary's for a while now and always impressed. Will continue to support and would recommend to anyone looking for fresh meat.",
+    isFeatured: false,
+  },
+  {
+    authorName: 'Derek Condy',
+    rating: 5,
+    body: 'Quality service and quality food, never disappointed and always great selection, strongly advise to try.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'David Hunter',
+    rating: 5,
+    body: 'Excellent butcher, top quality produce at great prices.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Ricky Whiteside',
+    rating: 5,
+    body:
+      'Brilliant butchers. Best by far in Erskine. Must trys are the Texan steaks, chicken stir fry, large bridies — half the size of a dinner plate — and all his selection of pies. Well done Gary and keep it going.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Nicola Winning',
+    rating: 5,
+    body: 'Fantastic quality meat at great prices.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Fiona Crawford',
+    rating: 5,
+    body:
+      "Gary's butchers is absolutely fantastic — chicken stir fry, sirloin steaks to pies are amazing. Lean cuts, I'll never go to another butchers.",
+    isFeatured: false,
+  },
+  {
+    authorName: 'Pam Doherty',
+    rating: 5,
+    body: 'Excellent quality produce, always friendly, helpful and accommodating.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Jonathan McLeish',
+    rating: 5,
+    body:
+      'Very good hidden gem at Park Glade shops. Use Gary for Christmas and try and get in as often as permits. Square sausage better than any supermarket brand. Never had a bad order!',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Colin S',
+    rating: 5,
+    body:
+      "Been buying from Gary for a number of years now. All the products I've bought (meat, pies, poultry, fish) have all been excellent quality and great value for money. Very happy with the customer service as well, home delivery even in some horrendous weather!",
+    isFeatured: false,
+  },
+  {
+    authorName: 'P. I. Ward',
+    rating: 5,
+    body:
+      'Best butcher ever by a country mile. Nothing too much trouble and excellent value for money, especially their sirloin steak deals! Highly recommend.',
+    isFeatured: false,
+  },
+  {
+    authorName: 'Arlo Ruby',
+    rating: 5,
+    body:
+      "Great wee family butcher in Erskine, meat is great quality, and price. Give this wee business a try, you won't be disappointed. Gary is also local to Erskine.",
+    isFeatured: false,
+  },
 ];
 
 // ---------- Runner ----------

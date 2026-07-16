@@ -1,7 +1,9 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
+import { getCategoryImageMap } from '@/lib/db/category-images';
 import { ProductCard } from '@/components/shop/product-card';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
@@ -18,11 +20,15 @@ export default async function ShopPage() {
   let cats: Awaited<ReturnType<typeof db.select>> extends never ? never : any[] = [];
   let bestsellers: any[] = [];
   try {
-    cats = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.isActive, true))
-      .orderBy(asc(categories.sortOrder));
+    const [catsRes, categoryImages] = await Promise.all([
+      db
+        .select()
+        .from(categories)
+        .where(eq(categories.isActive, true))
+        .orderBy(asc(categories.sortOrder)),
+      getCategoryImageMap(),
+    ]);
+    cats = catsRes.map((c) => ({ ...c, imageUrl: categoryImages[c.id] ?? null }));
     bestsellers = await db
       .select()
       .from(products)
@@ -63,6 +69,15 @@ export default async function ShopPage() {
               href={`/shop/${c.slug}`}
               className="group block aspect-[4/5] relative overflow-hidden bg-ink-900 text-cream-50"
             >
+              {c.imageUrl && (
+                <Image
+                  src={c.imageUrl}
+                  alt={c.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-b from-ink-900/30 via-ink-900/20 to-ink-900/85" />
               <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
                 <h3 className="font-display text-2xl md:text-3xl">{c.name}</h3>
