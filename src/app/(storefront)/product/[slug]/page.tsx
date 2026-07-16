@@ -179,8 +179,8 @@ export default async function ProductPage({
               </li>
             </ul>
 
-            {/* Cooking tips, ingredients, allergy info, nutritional info */}
-            {(product.cookingTips || product.ingredients || product.allergyInfo || product.nutritionInfo) && (
+            {/* Cooking tips, ingredients, allergy info */}
+            {(product.cookingTips || product.ingredients || product.allergyInfo) && (
               <div className="mt-10 border-t border-ink-900/10 pt-8 space-y-6">
                 {product.cookingTips && (
                   <div>
@@ -203,14 +203,6 @@ export default async function ProductPage({
                     <p className="eyebrow text-ink-500 mb-2">Allergy information</p>
                     <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line max-w-prose">
                       {product.allergyInfo}
-                    </p>
-                  </div>
-                )}
-                {product.nutritionInfo && (
-                  <div>
-                    <p className="eyebrow text-ink-500 mb-2">Nutritional information</p>
-                    <p className="text-sm text-ink-700 leading-relaxed whitespace-pre-line max-w-prose">
-                      {product.nutritionInfo}
                     </p>
                   </div>
                 )}

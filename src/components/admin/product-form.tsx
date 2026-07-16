@@ -42,7 +42,6 @@ export function ProductForm({
     cookingTips: initial?.cookingTips ?? '',
     ingredients: initial?.ingredients ?? '',
     allergyInfo: initial?.allergyInfo ?? '',
-    nutritionInfo: initial?.nutritionInfo ?? '',
     imageUrl: initial?.imageUrl ?? '',
     isPack: initial?.isPack ?? false,
     isFeatured: initial?.isFeatured ?? false,
@@ -152,7 +151,6 @@ export function ProductForm({
         cookingTips: form.cookingTips || null,
         ingredients: form.ingredients || null,
         allergyInfo: form.allergyInfo || null,
-        nutritionInfo: form.nutritionInfo || null,
         isPack: form.isPack,
         isFeatured: form.isFeatured,
         isActive: form.isActive,
@@ -276,16 +274,6 @@ export function ProductForm({
               placeholder="e.g. Grill or fry over medium heat for 15-18 mins, turning occasionally."
               value={form.cookingTips ?? ''}
               onChange={(e) => setForm({ ...form, cookingTips: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="nutritionInfo">Nutritional information (optional)</Label>
-            <Textarea
-              id="nutritionInfo"
-              rows={3}
-              placeholder="e.g. Typical values per 100g: Energy 250kcal, Fat 15g, Protein 20g, Carbohydrate 2g"
-              value={form.nutritionInfo ?? ''}
-              onChange={(e) => setForm({ ...form, nutritionInfo: e.target.value })}
             />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
