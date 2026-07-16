@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Hero() {
@@ -70,25 +70,6 @@ export function Hero() {
                   Browse the counter
                 </Button>
               </Link>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="mt-12 flex items-center gap-6 pt-8 border-t border-cream-50/10"
-            >
-              <div className="stars">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm text-cream-200/80">
-                <span className="text-cream-50 font-semibold">5.0</span> from local Google reviews —
-                <Link href="/reviews" className="text-gold-400 hover:underline ml-1">
-                  read them all
-                </Link>
-              </p>
             </motion.div>
           </div>
 

@@ -6,6 +6,7 @@ import { Hero } from '@/components/home/hero';
 import { FeaturedCategories } from '@/components/home/featured-categories';
 import { FeaturedPacks } from '@/components/home/featured-packs';
 import { Reviews } from '@/components/home/reviews';
+import { ReviewsStrip } from '@/components/home/reviews-strip';
 import { AboutStrip } from '@/components/home/about-strip';
 import { DeliveryStrip } from '@/components/home/delivery-strip';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
@@ -47,9 +48,10 @@ export default async function HomePage() {
   return (
     <>
       <Hero />
+      <FeaturedCategories categories={cats} />
+      <ReviewsStrip />
       <DeliveryStrip />
       <SeasonalDeals />
-      <FeaturedCategories categories={cats} />
       {packs.length > 0 && <FeaturedPacks packs={packs} />}
       <AboutStrip />
       {reviewsData.length > 0 && <Reviews reviews={reviewsData} />}
