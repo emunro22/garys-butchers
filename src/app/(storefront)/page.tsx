@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { products, reviews, categories } from '@/lib/db/schema';
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc, count } from 'drizzle-orm';
 import { getCategoryImageMap } from '@/lib/db/category-images';
 import { Hero } from '@/components/home/hero';
 import { FeaturedCategories } from '@/components/home/featured-categories';
@@ -15,13 +15,17 @@ export const revalidate = 60;
 
 async function getHomepageData() {
   try {
-    const [packsRes, reviewsRes, catsRes, categoryImages] = await Promise.all([
+    const [packsRes, packCountRes, reviewsRes, catsRes, categoryImages] = await Promise.all([
       db
         .select()
         .from(products)
         .where(eq(products.isPack, true))
         .orderBy(desc(products.isFeatured))
         .limit(6),
+      db
+        .select({ value: count() })
+        .from(products)
+        .where(and(eq(products.isPack, true), eq(products.isActive, true))),
       db
         .select()
         .from(reviews)
@@ -36,14 +40,14 @@ async function getHomepageData() {
       getCategoryImageMap(),
     ]);
     const cats = catsRes.map((c) => ({ ...c, imageUrl: categoryImages[c.id] ?? null }));
-    return { packs: packsRes, reviews: reviewsRes, cats };
+    return { packs: packsRes, packCount: packCountRes[0]?.value ?? 0, reviews: reviewsRes, cats };
   } catch {
-    return { packs: [], reviews: [], cats: [] };
+    return { packs: [], packCount: 0, reviews: [], cats: [] };
   }
 }
 
 export default async function HomePage() {
-  const { packs, reviews: reviewsData, cats } = await getHomepageData();
+  const { packs, packCount, reviews: reviewsData, cats } = await getHomepageData();
 
   return (
     <>
@@ -52,7 +56,7 @@ export default async function HomePage() {
       <ReviewsStrip />
       <DeliveryStrip />
       <SeasonalDeals />
-      {packs.length > 0 && <FeaturedPacks packs={packs} />}
+      {packs.length > 0 && <FeaturedPacks packs={packs} packCount={packCount} />}
       <AboutStrip />
       {reviewsData.length > 0 && <Reviews reviews={reviewsData} />}
     </>

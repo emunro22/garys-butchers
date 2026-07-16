@@ -150,19 +150,31 @@ export function Checkout() {
         day: 'numeric',
         month: 'short',
       });
-      const slotsToday =
-        d.getDay() === 6
-          ? ['08:00', '09:30', '11:00', '12:30']          // Sat 7:30–2
-          : ['08:00', '09:30', '11:00', '12:30', '14:00', '15:30']; // Mon–Fri 7:30–5
-      slotsToday.forEach((t) => {
-        const iso = new Date(d);
-        const [h, m] = t.split(':').map(Number);
-        iso.setHours(h, m, 0, 0);
-        out.push({
-          value: iso.toISOString(),
-          label: `${dateStr} · ${t}`,
+      if (d.getDay() === 6) {
+        // Sat 7:30–2, unchanged
+        ['08:00', '09:30', '11:00', '12:30'].forEach((t) => {
+          const iso = new Date(d);
+          const [h, m] = t.split(':').map(Number);
+          iso.setHours(h, m, 0, 0);
+          out.push({ value: iso.toISOString(), label: `${dateStr} · ${t}` });
         });
-      });
+      } else {
+        // Mon–Fri 9–6, hourly slots
+        const hourRanges = [
+          [9, 10], [10, 11], [11, 12], [12, 13],
+          [13, 14], [14, 15], [15, 16], [16, 17], [17, 18],
+        ];
+        const fmt = (h: number) => (h > 12 ? h - 12 : h);
+        const suffix = (h: number) => (h >= 12 ? 'pm' : 'am');
+        hourRanges.forEach(([startHour, endHour]) => {
+          const iso = new Date(d);
+          iso.setHours(startHour, 0, 0, 0);
+          out.push({
+            value: iso.toISOString(),
+            label: `${dateStr} · ${fmt(startHour)}-${fmt(endHour)}${suffix(endHour)}`,
+          });
+        });
+      }
     }
     return out;
   }, []);
