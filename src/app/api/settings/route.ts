@@ -41,10 +41,19 @@ const BannerSchema = z.object({
   cutoffHour: z.number().int().min(0).max(23),
 });
 
+const DeliverySlotsSchema = z.object({
+  capacity: z.object({
+    morning: z.number().int().min(0),
+    midday: z.number().int().min(0),
+    afternoon: z.number().int().min(0),
+  }),
+});
+
 const PatchSchema = z.object({
   shop: ShopSchema.optional(),
   delivery: DeliverySchema.optional(),
   banner: BannerSchema.optional(),
+  deliverySlots: DeliverySlotsSchema.optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -89,6 +98,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.banner, updatedAt: new Date() },
+        });
+    }
+
+    if (data.deliverySlots) {
+      await db
+        .insert(settings)
+        .values({ key: 'deliverySlots', value: data.deliverySlots, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.deliverySlots, updatedAt: new Date() },
         });
     }
 

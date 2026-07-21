@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') ?? '/account';
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,7 +41,9 @@ export default function SignupPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(`/account/verify?email=${encodeURIComponent(data.email)}`);
+      router.push(
+        `/account/verify?email=${encodeURIComponent(data.email)}&next=${encodeURIComponent(next)}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create account');
     } finally {
@@ -130,7 +134,10 @@ export default function SignupPage() {
 
             <p className="text-sm text-ink-500 text-center">
               Already have an account?{' '}
-              <Link href="/account/login" className="text-gold-700 hover:text-gold-800 font-medium transition-colors">
+              <Link
+                href={`/account/login?next=${encodeURIComponent(next)}`}
+                className="text-gold-700 hover:text-gold-800 font-medium transition-colors"
+              >
                 Sign in
               </Link>
             </p>
@@ -138,5 +145,13 @@ export default function SignupPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

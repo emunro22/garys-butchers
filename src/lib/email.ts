@@ -4,10 +4,8 @@ const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmongers.co.uk';
 
-// Admin/shop notification recipient — all order and contact emails go here
-const ADMIN_EMAILS = [
-  process.env.SHOP_NOTIFY_EMAIL || 'garysbutchers-confirmation@outlook.com',
-];
+// Admin/shop notification recipient — same address used to log into the admin portal
+const ADMIN_EMAILS = [process.env.ADMIN_EMAIL!];
 
 type OrderEmailPayload = {
   orderNumber: number;

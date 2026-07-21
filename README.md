@@ -56,7 +56,6 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 # Resend
 RESEND_API_KEY="re_..."
 RESEND_FROM_EMAIL="orders@yourdomain.co.uk"
-SHOP_NOTIFY_EMAIL="gary@yourdomain.co.uk"
 
 # Admin auth
 AUTH_SECRET="..."           # openssl rand -base64 32
@@ -130,7 +129,7 @@ Use Stripe's test cards (e.g. `4242 4242 4242 4242`, any future expiry, any 3-di
 ### Process orders
 - New orders arrive at `/admin/orders` with status `paid`
 - Mark them `preparing` → `ready` → `completed` as you work through them
-- Email notifications go to `SHOP_NOTIFY_EMAIL` for every paid order
+- Email notifications go to `ADMIN_EMAIL` (the same address used to log into the admin portal) for every paid order
 
 ## Project structure
 

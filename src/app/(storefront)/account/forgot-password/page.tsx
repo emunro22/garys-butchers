@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') ?? '/account';
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,7 +26,9 @@ export default function ForgotPasswordPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(`/account/reset-password?email=${encodeURIComponent(email)}`);
+      router.push(
+        `/account/reset-password?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -70,7 +74,10 @@ export default function ForgotPasswordPage() {
             </Button>
 
             <p className="text-sm text-ink-500 text-center">
-              <Link href="/account/login" className="text-gold-700 hover:text-gold-800 font-medium transition-colors">
+              <Link
+                href={`/account/login?next=${encodeURIComponent(next)}`}
+                className="text-gold-700 hover:text-gold-800 font-medium transition-colors"
+              >
                 Back to sign in
               </Link>
             </p>
@@ -78,5 +85,13 @@ export default function ForgotPasswordPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

@@ -7,6 +7,8 @@ import { stripe } from '@/lib/stripe';
 import { calculateDelivery, getDistanceMiles, calculateDeliveryByDistance } from '@/lib/utils';
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
+import { bucketKey, getDeliveryBlockKey, getDeliveryDateKey } from '@/lib/delivery-slots';
+import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -52,6 +54,11 @@ export async function POST(req: NextRequest) {
       );
     }
     const data = parsed.data;
+
+    const customerSession = await getCustomerSession();
+    if (!customerSession) {
+      return NextResponse.json({ error: 'Please sign in to checkout' }, { status: 401 });
+    }
 
     if (data.fulfilment === 'delivery' && !data.deliveryAddress) {
       return NextResponse.json(
@@ -147,14 +154,28 @@ export async function POST(req: NextRequest) {
 
     const slotDate = new Date(data.slot);
 
-    // Link order to logged-in user if available
-    const customerSession = await getCustomerSession().catch(() => null);
+    if (data.fulfilment === 'delivery') {
+      const blockKey = getDeliveryBlockKey(slotDate);
+      if (!blockKey) {
+        return NextResponse.json({ error: 'That delivery slot is no longer valid' }, { status: 400 });
+      }
+      const { deliverySlots } = await getShopSettings();
+      const counts = await getDeliveryBucketCounts();
+      const key = bucketKey(getDeliveryDateKey(slotDate), blockKey);
+      const capacity = deliverySlots.capacity[blockKey];
+      if ((counts[key] ?? 0) >= capacity) {
+        return NextResponse.json(
+          { error: 'That delivery slot is fully booked — please choose another.' },
+          { status: 400 }
+        );
+      }
+    }
 
     // Insert order with status 'pending'
     const [order] = await db
       .insert(orders)
       .values({
-        userId: customerSession?.userId ?? null,
+        userId: customerSession.userId,
         customerName: data.customer.name,
         customerEmail: data.customer.email,
         customerPhone: data.customer.phone,

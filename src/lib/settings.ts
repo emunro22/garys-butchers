@@ -23,6 +23,13 @@ export const DEFAULT_SETTINGS = {
     showCountdown: true,
     cutoffHour: 18,
   },
+  deliverySlots: {
+    capacity: {
+      morning: 8,
+      midday: 8,
+      afternoon: 8,
+    },
+  },
 };
 
 export type AppSettings = typeof DEFAULT_SETTINGS;
@@ -34,6 +41,9 @@ export async function getShopSettings(): Promise<AppSettings> {
       shop: { ...DEFAULT_SETTINGS.shop },
       delivery: { ...DEFAULT_SETTINGS.delivery },
       banner: { ...DEFAULT_SETTINGS.banner },
+      deliverySlots: {
+        capacity: { ...DEFAULT_SETTINGS.deliverySlots.capacity },
+      },
     };
     for (const row of rows) {
       if (row.key === 'shop') {
@@ -42,6 +52,11 @@ export async function getShopSettings(): Promise<AppSettings> {
         result.delivery = { ...DEFAULT_SETTINGS.delivery, ...(row.value as AppSettings['delivery']) };
       } else if (row.key === 'banner') {
         result.banner = { ...DEFAULT_SETTINGS.banner, ...(row.value as AppSettings['banner']) };
+      } else if (row.key === 'deliverySlots') {
+        const value = row.value as AppSettings['deliverySlots'];
+        result.deliverySlots = {
+          capacity: { ...DEFAULT_SETTINGS.deliverySlots.capacity, ...value?.capacity },
+        };
       }
     }
     return result;
@@ -50,6 +65,9 @@ export async function getShopSettings(): Promise<AppSettings> {
       shop: { ...DEFAULT_SETTINGS.shop },
       delivery: { ...DEFAULT_SETTINGS.delivery },
       banner: { ...DEFAULT_SETTINGS.banner },
+      deliverySlots: {
+        capacity: { ...DEFAULT_SETTINGS.deliverySlots.capacity },
+      },
     };
   }
 }

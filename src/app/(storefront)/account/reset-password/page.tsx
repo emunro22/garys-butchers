@@ -10,6 +10,7 @@ function ResetForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') ?? '';
+  const next = searchParams.get('next') ?? '/account';
 
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [newPassword, setNewPassword] = useState('');
@@ -96,7 +97,7 @@ function ResetForm() {
             <div className="bg-green-50 border border-green-200 p-6">
               <p className="text-green-800 font-medium">Your password has been reset successfully.</p>
             </div>
-            <Link href="/account/login">
+            <Link href={`/account/login?next=${encodeURIComponent(next)}`}>
               <Button variant="primary" size="lg" className="w-full mt-4">
                 Sign in
               </Button>

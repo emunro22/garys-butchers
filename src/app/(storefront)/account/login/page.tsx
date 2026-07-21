@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') ?? '/account';
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,12 +27,14 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.needsVerification) {
-          router.push(`/account/verify?email=${encodeURIComponent(data.email)}`);
+          router.push(
+            `/account/verify?email=${encodeURIComponent(data.email)}&next=${encodeURIComponent(next)}`
+          );
           return;
         }
         throw new Error(data.error);
       }
-      router.push('/account');
+      router.push(next);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign in');
@@ -85,10 +89,16 @@ export default function LoginPage() {
             </Button>
 
             <div className="flex items-center justify-between text-sm">
-              <Link href="/account/forgot-password" className="text-ink-500 hover:text-ink-900 transition-colors">
+              <Link
+                href={`/account/forgot-password?next=${encodeURIComponent(next)}`}
+                className="text-ink-500 hover:text-ink-900 transition-colors"
+              >
                 Forgot password?
               </Link>
-              <Link href="/account/signup" className="text-gold-700 hover:text-gold-800 font-medium transition-colors">
+              <Link
+                href={`/account/signup?next=${encodeURIComponent(next)}`}
+                className="text-gold-700 hover:text-gold-800 font-medium transition-colors"
+              >
                 Create account
               </Link>
             </div>
@@ -96,5 +106,13 @@ export default function LoginPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

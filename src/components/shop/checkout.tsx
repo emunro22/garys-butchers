@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Tag, Check } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
+import { generateDeliverySlots, bucketKey, type DeliveryBlockKey } from '@/lib/delivery-slots';
 
 // ---- Stripe loader ----
 let stripePromise: Promise<StripeJS | null> | null = null;
@@ -136,9 +137,9 @@ export function Checkout() {
     return { discount, deliveryFee: dFee, total };
   }, [subtotal, deliveryFee, promo]);
 
-  // Generate next 7 collection / delivery slots (skip Sunday)
-  const slots = useMemo(() => {
-    const out: { value: string; label: string }[] = [];
+  // Pickup: next 7 collection slots (skip Sunday) — hourly Mon-Fri, fixed Saturday slots.
+  const pickupSlots = useMemo(() => {
+    const out: { value: string; label: string; blockKey?: undefined; dateKey?: undefined }[] = [];
     const now = new Date();
     let d = new Date(now);
     d.setHours(0, 0, 0, 0);
@@ -178,6 +179,37 @@ export function Checkout() {
     }
     return out;
   }, []);
+
+  // Delivery: next 7 eligible days (skip Sunday), 3-hour blocks (9-12 / 12-3 / 3-6).
+  const deliverySlots = useMemo(() => generateDeliverySlots(7), []);
+
+  const slots = fulfilment === 'delivery' ? deliverySlots : pickupSlots;
+
+  // Clear the chosen slot if it's no longer valid for the current fulfilment type.
+  useEffect(() => {
+    if (form.slot && !slots.some((s) => s.value === form.slot)) {
+      setForm((prev) => ({ ...prev, slot: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fulfilment]);
+
+  // Delivery slot availability (only relevant for delivery)
+  const [availability, setAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
+
+  useEffect(() => {
+    if (fulfilment !== 'delivery') return;
+    fetch('/api/delivery-availability')
+      .then((r) => r.json())
+      .then((data) => setAvailability(data.availability ?? {}))
+      .catch(() => {});
+  }, [fulfilment]);
+
+  function isSlotFull(s: { blockKey?: DeliveryBlockKey; dateKey?: string }) {
+    if (!s.blockKey || !s.dateKey) return false;
+    const info = availability[bucketKey(s.dateKey, s.blockKey)];
+    if (!info) return false;
+    return info.count >= info.capacity;
+  }
 
   async function applyPromo() {
     if (!promoCode.trim()) return;
@@ -439,20 +471,27 @@ export function Checkout() {
             {fulfilment === 'delivery' ? '4. Delivery slot' : '3. Pickup slot'}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
-            {slots.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => setForm({ ...form, slot: s.value })}
-                className={`px-3 py-3 text-xs uppercase tracking-[0.18em] border transition-colors ${
-                  form.slot === s.value
-                    ? 'bg-ink-900 text-cream-50 border-ink-900'
-                    : 'bg-cream-100 border-ink-900/15 hover:border-ink-900'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
+            {slots.map((s) => {
+              const full = isSlotFull(s);
+              return (
+                <button
+                  key={s.value}
+                  type="button"
+                  disabled={full}
+                  onClick={() => setForm({ ...form, slot: s.value })}
+                  className={`px-3 py-3 text-xs uppercase tracking-[0.18em] border transition-colors ${
+                    full
+                      ? 'bg-cream-100 border-ink-900/10 text-ink-400 cursor-not-allowed'
+                      : form.slot === s.value
+                      ? 'bg-ink-900 text-cream-50 border-ink-900'
+                      : 'bg-cream-100 border-ink-900/15 hover:border-ink-900'
+                  }`}
+                >
+                  {s.label}
+                  {full && <span className="block mt-1 text-[10px] normal-case tracking-normal">Fully booked</span>}
+                </button>
+              );
+            })}
           </div>
         </section>
 

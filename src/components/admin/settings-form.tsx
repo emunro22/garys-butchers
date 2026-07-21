@@ -8,7 +8,13 @@ import { Input, Label } from '@/components/ui/input';
 type ShopSettings = { name: string; address: string; phone: string };
 type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number; premiumFeePence: number };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
-type AllSettings = { shop: ShopSettings; delivery: DeliverySettings; banner: BannerSettings };
+type DeliverySlotsSettings = { capacity: { morning: number; midday: number; afternoon: number } };
+type AllSettings = {
+  shop: ShopSettings;
+  delivery: DeliverySettings;
+  banner: BannerSettings;
+  deliverySlots: DeliverySlotsSettings;
+};
 
 export function SettingsForm({ initial }: { initial: AllSettings }) {
   const [shop, setShop] = useState<ShopSettings>(initial.shop);
@@ -22,6 +28,13 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     messages: initial.banner?.messages?.length ? initial.banner.messages : [''],
     showCountdown: initial.banner?.showCountdown ?? true,
     cutoffHour: initial.banner?.cutoffHour ?? 18,
+  });
+  const [deliverySlots, setDeliverySlots] = useState<DeliverySlotsSettings>({
+    capacity: {
+      morning: initial.deliverySlots?.capacity?.morning ?? 8,
+      midday: initial.deliverySlots?.capacity?.midday ?? 8,
+      afternoon: initial.deliverySlots?.capacity?.afternoon ?? 8,
+    },
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -60,6 +73,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           shop,
           delivery,
           banner: { ...banner, messages: cleanedMessages },
+          deliverySlots,
         }),
       });
       const data = await res.json();
@@ -205,6 +219,67 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           free over £{(delivery.freeThresholdPence / 100).toFixed(0)}, otherwise £{(delivery.feePence / 100).toFixed(2)}.
           Beyond <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong>:{' '}
           always £{(delivery.premiumFeePence / 100).toFixed(2)}.
+        </div>
+      </section>
+
+      {/* Delivery slot capacity */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Delivery slot capacity</p>
+          <p className="text-xs text-ink-500">
+            Maximum number of home deliveries allowed per 3-hour block, every day. Once a block
+            is full, customers can no longer select it at checkout.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="capMorning">9am – 12pm</Label>
+            <Input
+              id="capMorning"
+              type="number"
+              min="0"
+              step="1"
+              value={deliverySlots.capacity.morning}
+              onChange={(e) =>
+                setDeliverySlots({
+                  capacity: { ...deliverySlots.capacity, morning: Number(e.target.value) },
+                })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="capMidday">12 – 3pm</Label>
+            <Input
+              id="capMidday"
+              type="number"
+              min="0"
+              step="1"
+              value={deliverySlots.capacity.midday}
+              onChange={(e) =>
+                setDeliverySlots({
+                  capacity: { ...deliverySlots.capacity, midday: Number(e.target.value) },
+                })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="capAfternoon">3 – 6pm</Label>
+            <Input
+              id="capAfternoon"
+              type="number"
+              min="0"
+              step="1"
+              value={deliverySlots.capacity.afternoon}
+              onChange={(e) =>
+                setDeliverySlots({
+                  capacity: { ...deliverySlots.capacity, afternoon: Number(e.target.value) },
+                })
+              }
+              required
+            />
+          </div>
         </div>
       </section>
 

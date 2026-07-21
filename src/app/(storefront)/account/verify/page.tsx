@@ -8,6 +8,7 @@ function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') ?? '';
+  const next = searchParams.get('next') ?? '/account';
 
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +62,7 @@ function VerifyForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push('/account');
+      router.push(next);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
