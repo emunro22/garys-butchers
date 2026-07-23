@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Tag, Check } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
-import { generateDeliverySlots, bucketKey, type DeliveryBlockKey } from '@/lib/delivery-slots';
+import { generateDeliverySlots, getDeliveryDateKey, bucketKey, type DeliveryBlockKey } from '@/lib/delivery-slots';
+import { noticeLabel } from '@/lib/notice';
 
 // ---- Stripe loader ----
 let stripePromise: Promise<StripeJS | null> | null = null;
@@ -91,10 +92,12 @@ export function Checkout() {
 
   const [postcodeFeePence, setPostcodeFeePence] = useState<number | null>(null);
   const [postcodeFeePending, setPostcodeFeePending] = useState(false);
+  const [withinRadius, setWithinRadius] = useState(true);
 
   useEffect(() => {
     if (fulfilment !== 'delivery' || form.postcode.replace(/\s/g, '').length < 5) {
       setPostcodeFeePence(null);
+      setWithinRadius(true);
       return;
     }
     setPostcodeFeePending(true);
@@ -106,6 +109,7 @@ export function Checkout() {
         if (res.ok) {
           const data = await res.json();
           setPostcodeFeePence(data.feePence);
+          setWithinRadius(data.withinRadius ?? true);
         }
       } finally {
         setPostcodeFeePending(false);
@@ -139,7 +143,7 @@ export function Checkout() {
 
   // Pickup: next 7 collection slots (skip Sunday) — hourly Mon-Fri, fixed Saturday slots.
   const pickupSlots = useMemo(() => {
-    const out: { value: string; label: string; blockKey?: undefined; dateKey?: undefined }[] = [];
+    const out: { value: string; label: string; blockKey?: undefined; dateKey: string }[] = [];
     const now = new Date();
     let d = new Date(now);
     d.setHours(0, 0, 0, 0);
@@ -151,13 +155,14 @@ export function Checkout() {
         day: 'numeric',
         month: 'short',
       });
+      const dateKey = getDeliveryDateKey(d);
       if (d.getDay() === 6) {
         // Sat 7:30–2, unchanged
         ['08:00', '09:30', '11:00', '12:30'].forEach((t) => {
           const iso = new Date(d);
           const [h, m] = t.split(':').map(Number);
           iso.setHours(h, m, 0, 0);
-          out.push({ value: iso.toISOString(), label: `${dateStr} · ${t}` });
+          out.push({ value: iso.toISOString(), label: `${dateStr} · ${t}`, dateKey });
         });
       } else {
         // Mon–Fri 9–6, hourly slots
@@ -173,6 +178,7 @@ export function Checkout() {
           out.push({
             value: iso.toISOString(),
             label: `${dateStr} · ${fmt(startHour)}-${fmt(endHour)}${suffix(endHour)}`,
+            dateKey,
           });
         });
       }
@@ -185,13 +191,32 @@ export function Checkout() {
 
   const slots = fulfilment === 'delivery' ? deliverySlots : pickupSlots;
 
-  // Clear the chosen slot if it's no longer valid for the current fulfilment type.
+  // Earliest allowed date given the most demanding notice period among cart items.
+  const maxNoticeDays = useMemo(
+    () => items.reduce((max, i) => Math.max(max, i.noticeDays ?? 0), 0),
+    [items]
+  );
+  const earliestSlotDateKey = slots[0]?.dateKey;
+  const minAllowedDateKey = useMemo(() => {
+    if (maxNoticeDays === 0 || !earliestSlotDateKey) return earliestSlotDateKey;
+    const d = new Date(`${earliestSlotDateKey}T00:00:00`);
+    d.setDate(d.getDate() + maxNoticeDays);
+    return getDeliveryDateKey(d);
+  }, [maxNoticeDays, earliestSlotDateKey]);
+
+  function isSlotTooSoon(s: { dateKey?: string }) {
+    if (!s.dateKey || !minAllowedDateKey) return false;
+    return s.dateKey < minAllowedDateKey;
+  }
+
+  // Clear the chosen slot if it's no longer valid for the current fulfilment type or notice period.
   useEffect(() => {
-    if (form.slot && !slots.some((s) => s.value === form.slot)) {
+    const current = slots.find((s) => s.value === form.slot);
+    if (form.slot && (!current || isSlotTooSoon(current))) {
       setForm((prev) => ({ ...prev, slot: '' }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fulfilment]);
+  }, [fulfilment, minAllowedDateKey]);
 
   // Delivery slot availability (only relevant for delivery)
   const [availability, setAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
@@ -247,9 +272,14 @@ export function Checkout() {
     if (!form.email) return 'Please enter your email.';
     if (!form.phone) return 'Please enter a phone number.';
     if (!form.slot) return 'Please choose a time slot.';
+    const chosenSlot = slots.find((s) => s.value === form.slot);
+    if (chosenSlot && isSlotTooSoon(chosenSlot)) {
+      return `That slot doesn't meet the ${noticeLabel(maxNoticeDays).toLowerCase()} for an item in your basket.`;
+    }
     if (fulfilment === 'delivery') {
       if (!form.line1) return 'Please enter your delivery address.';
       if (!form.postcode) return 'Please enter your postcode.';
+      if (!withinRadius) return "Sorry, that address is outside our 30 mile delivery area — please choose pickup instead.";
     }
     return null;
   }
@@ -382,7 +412,17 @@ export function Checkout() {
 
         {/* Contact details */}
         <section>
-          <h2 className="font-display text-2xl text-ink-900 mb-4">2. Your details</h2>
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="font-display text-2xl text-ink-900">2. Your details</h2>
+            {!user && (
+              <Link
+                href="/account/login?next=/checkout"
+                className="text-xs uppercase tracking-[0.15em] text-ink-500 hover:text-ink-900 underline"
+              >
+                Already have an account? Sign in
+              </Link>
+            )}
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <Label htmlFor="name">Full name</Label>
@@ -461,6 +501,21 @@ export function Checkout() {
                   required
                 />
               </div>
+              {!postcodeFeePending && !withinRadius && (
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-butcher-500 border border-butcher-500/30 bg-butcher-500/5 px-4 py-3">
+                    Sorry — that&apos;s outside our 30 mile delivery area. Please choose{' '}
+                    <button
+                      type="button"
+                      onClick={() => setFulfilment('pickup')}
+                      className="underline font-medium"
+                    >
+                      click &amp; collect
+                    </button>{' '}
+                    instead.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -470,17 +525,24 @@ export function Checkout() {
           <h2 className="font-display text-2xl text-ink-900 mb-4">
             {fulfilment === 'delivery' ? '4. Delivery slot' : '3. Pickup slot'}
           </h2>
+          {maxNoticeDays > 0 && (
+            <p className="text-xs text-butcher-500 mb-3">
+              Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()} — earlier slots are unavailable.
+            </p>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
             {slots.map((s) => {
               const full = isSlotFull(s);
+              const tooSoon = !full && isSlotTooSoon(s);
+              const disabled = full || tooSoon;
               return (
                 <button
                   key={s.value}
                   type="button"
-                  disabled={full}
+                  disabled={disabled}
                   onClick={() => setForm({ ...form, slot: s.value })}
                   className={`px-3 py-3 text-xs uppercase tracking-[0.18em] border transition-colors ${
-                    full
+                    disabled
                       ? 'bg-cream-100 border-ink-900/10 text-ink-400 cursor-not-allowed'
                       : form.slot === s.value
                       ? 'bg-ink-900 text-cream-50 border-ink-900'
@@ -489,6 +551,7 @@ export function Checkout() {
                 >
                   {s.label}
                   {full && <span className="block mt-1 text-[10px] normal-case tracking-normal">Fully booked</span>}
+                  {tooSoon && <span className="block mt-1 text-[10px] normal-case tracking-normal">Notice required</span>}
                 </button>
               );
             })}
@@ -519,7 +582,7 @@ export function Checkout() {
           size="lg"
           className="w-full"
           onClick={handleProceed}
-          disabled={creating}
+          disabled={creating || (fulfilment === 'delivery' && !withinRadius)}
         >
           {creating ? 'Preparing payment…' : 'Continue to payment'}
         </Button>

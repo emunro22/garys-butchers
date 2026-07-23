@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import type { Category, Product } from '@/lib/db/schema';
 import { formatPrice } from '@/lib/utils';
+import { NOTICE_OPTIONS } from '@/lib/notice';
 
 type Variant = { label: string; priceInPence: number };
 
@@ -47,6 +48,7 @@ export function ProductForm({
     isPack: initial?.isPack ?? false,
     isFeatured: initial?.isFeatured ?? false,
     isActive: initial?.isActive ?? true,
+    noticeDays: initial?.noticeDays ?? 0,
   });
   const [packContents, setPackContents] = useState<string[]>(
     initial?.packContents ?? []
@@ -156,6 +158,7 @@ export function ProductForm({
         isPack: form.isPack,
         isFeatured: form.isFeatured,
         isActive: form.isActive,
+        noticeDays: form.noticeDays,
         packContents: form.isPack ? packContents : [],
         variants,
       };
@@ -368,6 +371,22 @@ export function ProductForm({
       <section>
         <h2 className="font-display text-xl text-ink-900 mb-4">Settings</h2>
         <div className="space-y-3">
+          <div className="p-3 border border-ink-900/10">
+            <Label htmlFor="noticeDays">Order notice</Label>
+            <select
+              id="noticeDays"
+              value={form.noticeDays}
+              onChange={(e) => setForm({ ...form, noticeDays: Number(e.target.value) })}
+              className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm mt-1"
+            >
+              {NOTICE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-ink-500 mt-2">
+              How much extra advance notice this product needs beyond the normal earliest slot. Shown to customers and enforced at checkout.
+            </p>
+          </div>
           <Toggle
             checked={form.isPack}
             onChange={(v) => setForm({ ...form, isPack: v })}

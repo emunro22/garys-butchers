@@ -12,6 +12,7 @@ export type CartItem = {
   quantity: number;
   weightLabel?: string;
   variantLabel?: string;
+  noticeDays?: number;
 };
 
 // Unique key per cart line (product + optional variant)

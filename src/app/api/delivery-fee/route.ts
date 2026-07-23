@@ -16,14 +16,14 @@ export async function GET(req: NextRequest) {
     freeThresholdPence: delivery.freeThresholdPence,
     feePence: delivery.feePence,
     radiusMiles: delivery.radiusMiles,
-    premiumFeePence: delivery.premiumFeePence ?? 500,
   };
 
   const distanceMiles = await getDistanceMiles(postcode);
-  const feePence = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
+  const result = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
 
   return NextResponse.json({
-    feePence,
+    feePence: result.feePence,
+    withinRadius: result.withinRadius,
     distanceMiles: distanceMiles !== null ? Math.round(distanceMiles * 10) / 10 : null,
   });
 }

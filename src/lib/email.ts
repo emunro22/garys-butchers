@@ -3,6 +3,8 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmongers.co.uk';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garysbutchersandfishmongers.co.uk';
+const LOGO_URL = `${SITE_URL}/logo-email.png`;
 
 // Admin/shop notification recipient — same address used to log into the admin portal
 const ADMIN_EMAILS = [process.env.ADMIN_EMAIL!];
@@ -39,6 +41,44 @@ function formatSlot(iso: string | null | undefined) {
   });
 }
 
+// ─── Shared layout — every email in the app renders through this ───────────
+
+const FONT_STACK = `-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+
+function renderEmailLayout(opts: {
+  eyebrow?: string;
+  title: string;
+  intro?: string;
+  bodyHtml: string;
+}) {
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:32px 16px;background:#f4f1ea;font-family:${FONT_STACK};color:#1a1815">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(10,10,10,0.1)">
+
+      <div style="background:#0a0a0a;padding:28px 24px;text-align:center">
+        <img src="${LOGO_URL}" width="56" height="56" alt="Gary's Butchers &amp; Fishmongers" style="display:block;margin:0 auto 10px;border-radius:50%" />
+        <p style="margin:0;letter-spacing:0.2em;font-size:11px;color:#c9a961;text-transform:uppercase">Gary's Butchers &amp; Fishmongers</p>
+      </div>
+
+      <div style="padding:32px 28px">
+        ${opts.eyebrow ? `<p style="margin:0 0 6px;letter-spacing:0.18em;font-size:11px;color:#8e7138;text-transform:uppercase">${opts.eyebrow}</p>` : ''}
+        <h1 style="margin:0 0 10px;font-size:23px;color:#0a0a0a">${opts.title}</h1>
+        ${opts.intro ? `<p style="margin:0 0 22px;color:#4a443a;font-size:14px;line-height:1.6">${opts.intro}</p>` : ''}
+        ${opts.bodyHtml}
+      </div>
+
+      <div style="padding:18px 28px;border-top:1px solid #eee2d0;background:#faf8f5">
+        <p style="margin:0;font-size:12px;color:#8e7138;line-height:1.6">
+          Gary's Butchers &amp; Fishmongers · 19 Park Glade Shops, Erskine, PA8 7HH · 0141 959 0478
+        </p>
+      </div>
+
+    </div>
+  </body>
+</html>`;
+}
+
 // ─── Customer confirmation email ────────────────────────────────────────────
 
 function renderCustomerHtml(o: OrderEmailPayload) {
@@ -46,8 +86,8 @@ function renderCustomerHtml(o: OrderEmailPayload) {
     .map(
       (i) => `
     <tr>
-      <td style="padding:10px 0;color:#1a1815;border-bottom:1px solid #e8e0d4">${i.quantity} × ${i.name}</td>
-      <td style="padding:10px 0;text-align:right;color:#1a1815;border-bottom:1px solid #e8e0d4">${fmt(i.priceInPence * i.quantity)}</td>
+      <td style="padding:10px 0;color:#1a1815;border-bottom:1px solid #f0ebe3">${i.quantity} × ${i.name}</td>
+      <td style="padding:10px 0;text-align:right;color:#1a1815;border-bottom:1px solid #f0ebe3">${fmt(i.priceInPence * i.quantity)}</td>
     </tr>`
     )
     .join('');
@@ -57,50 +97,44 @@ function renderCustomerHtml(o: OrderEmailPayload) {
       ? `<strong>Collection:</strong> ${formatSlot(o.pickupSlot)}`
       : `<strong>Home delivery:</strong> ${formatSlot(o.deliverySlot)}`;
 
-  return `<!doctype html>
-<html>
-  <body style="margin:0;background:#f8f5f0;font-family:Georgia,serif;color:#1a1815">
-    <div style="max-width:560px;margin:0 auto;padding:32px 24px">
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:14px;color:#4a443a">
+      Order <strong>#${String(o.orderNumber).padStart(5, '0')}</strong>
+    </p>
 
-      <div style="text-align:center;padding-bottom:24px;border-bottom:2px solid #c9a961">
-        <p style="letter-spacing:0.3em;font-size:11px;color:#8e7138;margin:0">GARY'S BUTCHERS &amp; FISHMONGERS</p>
-        <h1 style="font-size:26px;margin:10px 0 4px;color:#0a0a0a">Thanks, ${o.customerName.split(' ')[0]}.</h1>
-        <p style="margin:0;color:#4a443a;font-size:14px">Your order has been confirmed.</p>
-      </div>
-
-      <p style="margin:24px 0 0;font-size:14px;color:#4a443a">
-        Order <strong>#${String(o.orderNumber).padStart(5, '0')}</strong>
-      </p>
-
-      <div style="margin-top:16px;padding:16px;background:#0a0a0a;color:#f8f5f0;border-radius:4px;font-size:14px;line-height:1.6">
-        ${slotLine}
-        ${
-          o.fulfilment === 'delivery' && o.deliveryAddress
-            ? `<br/><span style="color:#c9a961">${o.deliveryAddress.line1}${o.deliveryAddress.line2 ? ', ' + o.deliveryAddress.line2 : ''}, ${o.deliveryAddress.city}, ${o.deliveryAddress.postcode.toUpperCase()}</span>`
-            : ''
-        }
-      </div>
-
-      <table style="width:100%;border-collapse:collapse;font-size:15px;margin-top:24px">
-        ${itemsHtml}
-      </table>
-
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:16px">
-        <tr><td style="padding:4px 0;color:#4a443a">Subtotal</td><td style="text-align:right">${fmt(o.subtotalInPence)}</td></tr>
-        ${o.discountInPence > 0 ? `<tr><td style="padding:4px 0;color:#8b1f1f">Discount${o.promotionCode ? ` (${o.promotionCode})` : ''}</td><td style="text-align:right;color:#8b1f1f">−${fmt(o.discountInPence)}</td></tr>` : ''}
-        <tr><td style="padding:4px 0;color:#4a443a">${o.fulfilment === 'pickup' ? 'Collection' : 'Delivery'}</td><td style="text-align:right">${o.deliveryInPence === 0 ? 'Free' : fmt(o.deliveryInPence)}</td></tr>
-        <tr style="border-top:2px solid #c9a961">
-          <td style="padding:10px 0 0;font-weight:bold;font-size:17px">Total paid</td>
-          <td style="padding:10px 0 0;text-align:right;font-weight:bold;font-size:17px">${fmt(o.totalInPence)}</td>
-        </tr>
-      </table>
-
-      <p style="margin-top:32px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #e8e0d4;padding-top:20px">
-        Any questions, give us a ring and we'll sort it out. Thank you for supporting a local independent business.
-      </p>
+    <div style="margin-bottom:20px;padding:16px;background:#0a0a0a;color:#f8f5f0;border-radius:8px;font-size:14px;line-height:1.6">
+      ${slotLine}
+      ${
+        o.fulfilment === 'delivery' && o.deliveryAddress
+          ? `<br/><span style="color:#c9a961">${o.deliveryAddress.line1}${o.deliveryAddress.line2 ? ', ' + o.deliveryAddress.line2 : ''}, ${o.deliveryAddress.city}, ${o.deliveryAddress.postcode.toUpperCase()}</span>`
+          : ''
+      }
     </div>
-  </body>
-</html>`;
+
+    <table style="width:100%;border-collapse:collapse;font-size:15px">
+      ${itemsHtml}
+    </table>
+
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:14px">
+      <tr><td style="padding:4px 0;color:#4a443a">Subtotal</td><td style="text-align:right">${fmt(o.subtotalInPence)}</td></tr>
+      ${o.discountInPence > 0 ? `<tr><td style="padding:4px 0;color:#8b1f1f">Discount${o.promotionCode ? ` (${o.promotionCode})` : ''}</td><td style="text-align:right;color:#8b1f1f">−${fmt(o.discountInPence)}</td></tr>` : ''}
+      <tr><td style="padding:4px 0;color:#4a443a">${o.fulfilment === 'pickup' ? 'Collection' : 'Delivery'}</td><td style="text-align:right">${o.deliveryInPence === 0 ? 'Free' : fmt(o.deliveryInPence)}</td></tr>
+      <tr style="border-top:2px solid #c9a961">
+        <td style="padding:10px 0 0;font-weight:bold;font-size:17px">Total paid</td>
+        <td style="padding:10px 0 0;text-align:right;font-weight:bold;font-size:17px">${fmt(o.totalInPence)}</td>
+      </tr>
+    </table>
+
+    <p style="margin-top:24px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #f0ebe3;padding-top:18px">
+      Any questions, give us a ring and we'll sort it out. Thank you for supporting a local independent business.
+    </p>`;
+
+  return renderEmailLayout({
+    eyebrow: 'Order confirmed',
+    title: `Thanks, ${o.customerName.split(' ')[0]}.`,
+    intro: 'Your order has been confirmed.',
+    bodyHtml,
+  });
 }
 
 // ─── Admin / shop notification email ────────────────────────────────────────
@@ -110,8 +144,8 @@ function renderAdminHtml(o: OrderEmailPayload) {
     .map(
       (i) => `
     <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #e8e0d4">${i.quantity} × ${i.name}</td>
-      <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e8e0d4">${fmt(i.priceInPence * i.quantity)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #f0ebe3">${i.quantity} × ${i.name}</td>
+      <td style="padding:8px 0;text-align:right;border-bottom:1px solid #f0ebe3">${fmt(i.priceInPence * i.quantity)}</td>
     </tr>`
     )
     .join('');
@@ -147,137 +181,109 @@ function renderAdminHtml(o: OrderEmailPayload) {
             : ''
         }`;
 
-  return `<!doctype html>
-<html>
-  <body style="margin:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#1a1815">
-    <div style="max-width:620px;margin:0 auto;padding:24px 16px">
-
-      <div style="background:#0a0a0a;color:#f8f5f0;padding:20px 24px;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <p style="margin:0;font-size:11px;letter-spacing:0.25em;color:#c9a961">GARY'S BUTCHERS — NEW ORDER</p>
-          <h1 style="margin:6px 0 0;font-size:24px">Order #${String(o.orderNumber).padStart(5, '0')}</h1>
-        </div>
-        <div style="text-align:right">
-          <p style="margin:0;font-size:22px;font-weight:bold;color:#c9a961">${fmt(o.totalInPence)}</p>
-          <p style="margin:4px 0 0;font-size:11px;color:#aaa">${new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-        </div>
-      </div>
-
-      <!-- Customer details -->
-      <div style="background:#fff;padding:20px 24px;border:1px solid #ddd;border-top:none">
-        <h2 style="margin:0 0 12px;font-size:13px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Customer</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <tr>
-            <td style="padding:5px 0;color:#6b5d4f;width:110px">Name</td>
-            <td style="padding:5px 0;font-weight:600">${o.customerName}</td>
-          </tr>
-          <tr>
-            <td style="padding:5px 0;color:#6b5d4f">Email</td>
-            <td style="padding:5px 0"><a href="mailto:${o.customerEmail}" style="color:#1a4d8f">${o.customerEmail}</a></td>
-          </tr>
-          ${o.customerPhone ? `<tr><td style="padding:5px 0;color:#6b5d4f">Phone</td><td style="padding:5px 0;font-weight:600"><a href="tel:${o.customerPhone}" style="color:#1a1815">${o.customerPhone}</a></td></tr>` : ''}
-        </table>
-      </div>
-
-      <!-- Fulfilment -->
-      <div style="background:#fff;padding:20px 24px;border:1px solid #ddd;border-top:none">
-        <h2 style="margin:0 0 12px;font-size:13px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Fulfilment</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          ${fulfilmentBlock}
-        </table>
-      </div>
-
-      <!-- Items -->
-      <div style="background:#fff;padding:20px 24px;border:1px solid #ddd;border-top:none">
-        <h2 style="margin:0 0 12px;font-size:13px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Items ordered</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          ${itemsHtml}
-        </table>
-      </div>
-
-      <!-- Totals -->
-      <div style="background:#fff;padding:20px 24px;border:1px solid #ddd;border-top:none">
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <tr><td style="padding:4px 0;color:#6b5d4f">Subtotal</td><td style="text-align:right">${fmt(o.subtotalInPence)}</td></tr>
-          ${o.discountInPence > 0 ? `<tr><td style="padding:4px 0;color:#8b1f1f">Discount${o.promotionCode ? ` — code: <strong>${o.promotionCode}</strong>` : ''}</td><td style="text-align:right;color:#8b1f1f">−${fmt(o.discountInPence)}</td></tr>` : ''}
-          ${o.promotionCode && o.discountInPence === 0 ? `<tr><td style="padding:4px 0;color:#6b5d4f">Promo code</td><td style="text-align:right">${o.promotionCode} (free delivery)</td></tr>` : ''}
-          <tr><td style="padding:4px 0;color:#6b5d4f">${o.fulfilment === 'pickup' ? 'Collection' : 'Delivery'}</td><td style="text-align:right">${o.deliveryInPence === 0 ? 'Free' : fmt(o.deliveryInPence)}</td></tr>
-          <tr style="border-top:2px solid #c9a961">
-            <td style="padding:10px 0 0;font-weight:bold;font-size:16px">Total</td>
-            <td style="padding:10px 0 0;text-align:right;font-weight:bold;font-size:16px">${fmt(o.totalInPence)}</td>
-          </tr>
-        </table>
-      </div>
-
-      ${
-        o.notes
-          ? `<div style="background:#fffbf0;padding:16px 24px;border:1px solid #f0d080;border-top:none;border-radius:0 0 6px 6px">
-              <h2 style="margin:0 0 6px;font-size:12px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Customer notes</h2>
-              <p style="margin:0;font-size:14px;color:#1a1815;white-space:pre-wrap">${o.notes.replace(/</g, '&lt;')}</p>
-            </div>`
-          : '<div style="height:6px;background:#0a0a0a;border-radius:0 0 6px 6px"></div>'
-      }
-
+  const bodyHtml = `
+    <div style="margin-bottom:20px;padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px">
+      <h2 style="margin:0 0 12px;font-size:12px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Customer</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr>
+          <td style="padding:5px 0;color:#6b5d4f;width:110px">Name</td>
+          <td style="padding:5px 0;font-weight:600">${o.customerName}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0;color:#6b5d4f">Email</td>
+          <td style="padding:5px 0"><a href="mailto:${o.customerEmail}" style="color:#1a4d8f">${o.customerEmail}</a></td>
+        </tr>
+        ${o.customerPhone ? `<tr><td style="padding:5px 0;color:#6b5d4f">Phone</td><td style="padding:5px 0;font-weight:600"><a href="tel:${o.customerPhone}" style="color:#1a1815">${o.customerPhone}</a></td></tr>` : ''}
+      </table>
     </div>
-  </body>
-</html>`;
+
+    <div style="margin-bottom:20px;padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px">
+      <h2 style="margin:0 0 12px;font-size:12px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Fulfilment</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${fulfilmentBlock}
+      </table>
+    </div>
+
+    <div style="margin-bottom:20px;padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px">
+      <h2 style="margin:0 0 12px;font-size:12px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Items ordered</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${itemsHtml}
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:10px">
+        <tr><td style="padding:4px 0;color:#6b5d4f">Subtotal</td><td style="text-align:right">${fmt(o.subtotalInPence)}</td></tr>
+        ${o.discountInPence > 0 ? `<tr><td style="padding:4px 0;color:#8b1f1f">Discount${o.promotionCode ? ` — code: <strong>${o.promotionCode}</strong>` : ''}</td><td style="text-align:right;color:#8b1f1f">−${fmt(o.discountInPence)}</td></tr>` : ''}
+        ${o.promotionCode && o.discountInPence === 0 ? `<tr><td style="padding:4px 0;color:#6b5d4f">Promo code</td><td style="text-align:right">${o.promotionCode} (free delivery)</td></tr>` : ''}
+        <tr><td style="padding:4px 0;color:#6b5d4f">${o.fulfilment === 'pickup' ? 'Collection' : 'Delivery'}</td><td style="text-align:right">${o.deliveryInPence === 0 ? 'Free' : fmt(o.deliveryInPence)}</td></tr>
+        <tr style="border-top:2px solid #c9a961">
+          <td style="padding:10px 0 0;font-weight:bold;font-size:16px">Total</td>
+          <td style="padding:10px 0 0;text-align:right;font-weight:bold;font-size:16px">${fmt(o.totalInPence)}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${
+      o.notes
+        ? `<div style="padding:16px;background:#fffbf0;border:1px solid #f0d080;border-radius:8px">
+            <h2 style="margin:0 0 6px;font-size:12px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Customer notes</h2>
+            <p style="margin:0;font-size:14px;color:#1a1815;white-space:pre-wrap">${o.notes.replace(/</g, '&lt;')}</p>
+          </div>`
+        : ''
+    }`;
+
+  return renderEmailLayout({
+    eyebrow: 'New order',
+    title: `Order #${String(o.orderNumber).padStart(5, '0')} — ${fmt(o.totalInPence)}`,
+    intro: new Date().toLocaleString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+    bodyHtml,
+  });
 }
 
 // ─── Verification code email ────────────────────────────────────────────────
 
 function renderVerificationHtml(name: string, code: string) {
-  return `<!doctype html>
-<html>
-  <body style="margin:0;background:#f8f5f0;font-family:Georgia,serif;color:#1a1815">
-    <div style="max-width:560px;margin:0 auto;padding:32px 24px">
-      <div style="text-align:center;padding-bottom:24px;border-bottom:2px solid #c9a961">
-        <p style="letter-spacing:0.3em;font-size:11px;color:#8e7138;margin:0">GARY'S BUTCHERS &amp; FISHMONGERS</p>
-        <h1 style="font-size:26px;margin:10px 0 4px;color:#0a0a0a">Verify your email</h1>
-        <p style="margin:0;color:#4a443a;font-size:14px">Welcome, ${name.split(' ')[0]}!</p>
-      </div>
-      <p style="margin:24px 0 8px;font-size:14px;color:#4a443a;line-height:1.7">
-        Enter this verification code to complete your registration:
-      </p>
-      <div style="margin:16px 0 24px;padding:20px;background:#0a0a0a;text-align:center;border-radius:4px">
-        <p style="margin:0;font-size:36px;letter-spacing:0.4em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
-      </div>
-      <p style="font-size:13px;color:#4a443a;line-height:1.7">
-        This code expires in <strong>15 minutes</strong>. If you didn't create an account, you can safely ignore this email.
-      </p>
-      <p style="margin-top:32px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #e8e0d4;padding-top:20px">
-        Thank you for joining us — we look forward to serving you.
-      </p>
+  const bodyHtml = `
+    <p style="margin:0 0 8px;font-size:14px;color:#4a443a;line-height:1.7">
+      Enter this verification code to complete your registration:
+    </p>
+    <div style="margin:16px 0 24px;padding:20px;background:#0a0a0a;text-align:center;border-radius:8px">
+      <p style="margin:0;font-size:34px;letter-spacing:0.35em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
     </div>
-  </body>
-</html>`;
+    <p style="font-size:13px;color:#4a443a;line-height:1.7">
+      This code expires in <strong>15 minutes</strong>. If you didn't create an account, you can safely ignore this email.
+    </p>`;
+
+  return renderEmailLayout({
+    eyebrow: 'Welcome',
+    title: `Verify your email, ${name.split(' ')[0]}!`,
+    bodyHtml,
+  });
 }
 
 // ─── Password reset email ───────────────────────────────────────────────────
 
 function renderResetHtml(name: string, code: string) {
-  return `<!doctype html>
-<html>
-  <body style="margin:0;background:#f8f5f0;font-family:Georgia,serif;color:#1a1815">
-    <div style="max-width:560px;margin:0 auto;padding:32px 24px">
-      <div style="text-align:center;padding-bottom:24px;border-bottom:2px solid #c9a961">
-        <p style="letter-spacing:0.3em;font-size:11px;color:#8e7138;margin:0">GARY'S BUTCHERS &amp; FISHMONGERS</p>
-        <h1 style="font-size:26px;margin:10px 0 4px;color:#0a0a0a">Reset your password</h1>
-      </div>
-      <p style="margin:24px 0 8px;font-size:14px;color:#4a443a;line-height:1.7">
-        Hi ${name.split(' ')[0]}, we received a request to reset your password. Use this code:
-      </p>
-      <div style="margin:16px 0 24px;padding:20px;background:#0a0a0a;text-align:center;border-radius:4px">
-        <p style="margin:0;font-size:36px;letter-spacing:0.4em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
-      </div>
-      <p style="font-size:13px;color:#4a443a;line-height:1.7">
-        This code expires in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email — your password won't change.
-      </p>
-      <p style="margin-top:32px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #e8e0d4;padding-top:20px">
-        Need help? Reply to this email and we'll sort it out.
-      </p>
+  const bodyHtml = `
+    <p style="margin:0 0 8px;font-size:14px;color:#4a443a;line-height:1.7">
+      Hi ${name.split(' ')[0]}, we received a request to reset your password. Use this code:
+    </p>
+    <div style="margin:16px 0 24px;padding:20px;background:#0a0a0a;text-align:center;border-radius:8px">
+      <p style="margin:0;font-size:34px;letter-spacing:0.35em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
     </div>
-  </body>
-</html>`;
+    <p style="font-size:13px;color:#4a443a;line-height:1.7">
+      This code expires in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email — your password won't change.
+    </p>`;
+
+  return renderEmailLayout({
+    eyebrow: 'Account security',
+    title: 'Reset your password',
+    bodyHtml,
+  });
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -306,16 +312,22 @@ export async function sendContactMessage(opts: {
   phone?: string;
   message: string;
 }) {
+  const bodyHtml = `
+    <div style="margin-bottom:16px;padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px;font-size:14px">
+      <strong>${opts.name}</strong> &lt;<a href="mailto:${opts.email}" style="color:#1a4d8f">${opts.email}</a>&gt;${opts.phone ? ' · ' + opts.phone : ''}
+    </div>
+    <p style="margin:0;font-size:14px;color:#1a1815;white-space:pre-wrap;line-height:1.6">${opts.message.replace(/</g, '&lt;')}</p>`;
+
   await resend.emails.send({
     from: `Gary's Website <${FROM}>`,
     to: ADMIN_EMAILS,
     replyTo: opts.email,
     subject: `New enquiry from ${opts.name}`,
-    html: `
-      <p><strong>${opts.name}</strong> &lt;${opts.email}&gt;${opts.phone ? ' · ' + opts.phone : ''}</p>
-      <hr />
-      <p style="white-space:pre-wrap">${opts.message.replace(/</g, '&lt;')}</p>
-    `,
+    html: renderEmailLayout({
+      eyebrow: 'Website enquiry',
+      title: `New enquiry from ${opts.name}`,
+      bodyHtml,
+    }),
   });
 }
 
@@ -342,57 +354,37 @@ export async function sendNewCustomerNotification(customer: {
   email: string;
   phone?: string | null;
 }) {
+  const bodyHtml = `
+    <div style="padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr>
+          <td style="padding:8px 0;color:#6b5d4f;width:110px;border-bottom:1px solid #f0ebe3">Name</td>
+          <td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3">${customer.name}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Email</td>
+          <td style="padding:8px 0;border-bottom:1px solid #f0ebe3"><a href="mailto:${customer.email}" style="color:#1a4d8f">${customer.email}</a></td>
+        </tr>
+        ${customer.phone ? `<tr><td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Phone</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3"><a href="tel:${customer.phone}" style="color:#1a1815">${customer.phone}</a></td></tr>` : ''}
+        <tr>
+          <td style="padding:8px 0;color:#6b5d4f">Registered</td>
+          <td style="padding:8px 0">${new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="margin:16px 0 0;font-size:12px;color:#8e7138;line-height:1.6">
+      This customer has verified their email and can now place orders. View their profile in the
+      <a href="${SITE_URL}/admin/customers" style="color:#1a4d8f;font-weight:600">admin dashboard</a>.
+    </p>`;
+
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: ADMIN_EMAILS,
     subject: `New customer sign-up — ${customer.name}`,
-    html: `<!doctype html>
-<html>
-  <body style="margin:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#1a1815">
-    <div style="max-width:620px;margin:0 auto;padding:24px 16px">
-
-      <!-- Header -->
-      <div style="background:#0a0a0a;color:#f8f5f0;padding:24px 28px;border-radius:6px 6px 0 0">
-        <table style="width:100%"><tr>
-          <td>
-            <p style="margin:0;font-size:11px;letter-spacing:0.25em;color:#c9a961">GARY'S BUTCHERS &amp; FISHMONGERS</p>
-            <h1 style="margin:8px 0 0;font-size:22px;font-weight:700">New Customer Sign-Up</h1>
-          </td>
-          <td style="text-align:right;vertical-align:top">
-            <p style="margin:0;font-size:28px">👋</p>
-          </td>
-        </tr></table>
-      </div>
-
-      <!-- Customer details -->
-      <div style="background:#fff;padding:24px 28px;border:1px solid #ddd;border-top:none">
-        <h2 style="margin:0 0 14px;font-size:13px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Customer Details</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <tr>
-            <td style="padding:8px 0;color:#6b5d4f;width:110px;border-bottom:1px solid #f0ebe3">Name</td>
-            <td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3">${customer.name}</td>
-          </tr>
-          <tr>
-            <td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Email</td>
-            <td style="padding:8px 0;border-bottom:1px solid #f0ebe3"><a href="mailto:${customer.email}" style="color:#1a4d8f;text-decoration:none">${customer.email}</a></td>
-          </tr>
-          ${customer.phone ? `<tr><td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Phone</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3"><a href="tel:${customer.phone}" style="color:#1a1815;text-decoration:none">${customer.phone}</a></td></tr>` : ''}
-          <tr>
-            <td style="padding:8px 0;color:#6b5d4f">Registered</td>
-            <td style="padding:8px 0">${new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-          </tr>
-        </table>
-      </div>
-
-      <!-- Footer -->
-      <div style="background:#faf8f5;padding:16px 28px;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px">
-        <p style="margin:0;font-size:12px;color:#8e7138;line-height:1.6">
-          This customer has verified their email and can now place orders. View their profile in the <a href="https://garysbutchersandfishmongers.co.uk/admin/customers" style="color:#1a4d8f;text-decoration:none;font-weight:600">admin dashboard</a>.
-        </p>
-      </div>
-
-    </div>
-  </body>
-</html>`,
+    html: renderEmailLayout({
+      eyebrow: 'New customer',
+      title: 'New Customer Sign-Up',
+      bodyHtml,
+    }),
   });
 }

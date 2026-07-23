@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
 type ShopSettings = { name: string; address: string; phone: string };
-type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number; premiumFeePence: number };
+type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
 type DeliverySlotsSettings = { capacity: { morning: number; midday: number; afternoon: number } };
 type AllSettings = {
@@ -21,8 +21,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
   const [delivery, setDelivery] = useState<DeliverySettings>({
     freeThresholdPence: initial.delivery.freeThresholdPence,
     feePence: initial.delivery.feePence,
-    radiusMiles: initial.delivery.radiusMiles ?? 10,
-    premiumFeePence: initial.delivery.premiumFeePence ?? 500,
+    radiusMiles: initial.delivery.radiusMiles ?? 30,
   });
   const [banner, setBanner] = useState<BannerSettings>({
     messages: initial.banner?.messages?.length ? initial.banner.messages : [''],
@@ -171,54 +170,36 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
         </div>
       </section>
 
-      {/* Distance-based delivery pricing */}
+      {/* Delivery radius */}
       <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
         <div>
-          <p className="eyebrow text-ink-500 mb-1">Distance pricing</p>
+          <p className="eyebrow text-ink-500 mb-1">Delivery radius</p>
           <p className="text-xs text-ink-500">
-            Set a radius boundary. Orders within the radius use the standard fee above (or get free delivery over the threshold).
-            Orders beyond the radius are always charged the premium fee.
+            Orders within the radius use the standard fee above (or get free delivery over the threshold).
+            Addresses beyond the radius cannot be delivered to — customers are told to choose pickup instead.
             Distance is calculated automatically from the customer&apos;s postcode at checkout.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="radius">Near zone radius (miles)</Label>
-            <Input
-              id="radius"
-              type="number"
-              step="0.5"
-              min="0"
-              max="100"
-              value={delivery.radiusMiles}
-              onChange={(e) =>
-                setDelivery({ ...delivery, radiusMiles: Number(e.target.value) })
-              }
-              required
-            />
-            <p className="text-xs text-ink-500 mt-1">Orders within this distance use the standard fee.</p>
-          </div>
-          <div>
-            <Label htmlFor="premiumFee">Premium delivery fee — beyond radius (£)</Label>
-            <Input
-              id="premiumFee"
-              type="number"
-              step="0.01"
-              min="0"
-              value={(delivery.premiumFeePence / 100).toFixed(2)}
-              onChange={(e) =>
-                setDelivery({ ...delivery, premiumFeePence: priceToPence(e.target.value) })
-              }
-              required
-            />
-            <p className="text-xs text-ink-500 mt-1">Always charged for addresses beyond the radius.</p>
-          </div>
+        <div>
+          <Label htmlFor="radius">Delivery radius (miles)</Label>
+          <Input
+            id="radius"
+            type="number"
+            step="0.5"
+            min="0"
+            max="100"
+            value={delivery.radiusMiles}
+            onChange={(e) =>
+              setDelivery({ ...delivery, radiusMiles: Number(e.target.value) })
+            }
+            required
+          />
+          <p className="text-xs text-ink-500 mt-1">Orders beyond this distance can&apos;t be delivered.</p>
         </div>
         <div className="text-sm text-ink-700 bg-cream-50 border border-ink-900/10 px-3 py-2">
           Within <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong>:{' '}
           free over £{(delivery.freeThresholdPence / 100).toFixed(0)}, otherwise £{(delivery.feePence / 100).toFixed(2)}.
-          Beyond <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong>:{' '}
-          always £{(delivery.premiumFeePence / 100).toFixed(2)}.
+          Beyond <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong>: delivery not available.
         </div>
       </section>
 

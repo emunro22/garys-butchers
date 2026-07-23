@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { formatPrice, cn } from '@/lib/utils';
 import { useCart } from '@/lib/cart';
+import { noticeLabel } from '@/lib/notice';
 import type { Product } from '@/lib/db/schema';
 
 type Variant = { label: string; priceInPence: number };
@@ -79,6 +80,7 @@ export function ProductCard({
                 priceInPence: product.priceInPence,
                 imageUrl: product.imageUrl ?? undefined,
                 weightLabel: product.weightLabel ?? undefined,
+                noticeDays: product.noticeDays,
               });
             }}
             aria-label={`Add ${product.name} to basket`}
@@ -98,6 +100,9 @@ export function ProductCard({
           </Link>
           {product.weightLabel && (
             <p className="text-xs text-ink-500 mt-1">{product.weightLabel}</p>
+          )}
+          {product.noticeDays > 0 && (
+            <p className="text-xs text-butcher-500 mt-1">{noticeLabel(product.noticeDays)}</p>
           )}
         </div>
         <div className="text-right shrink-0">

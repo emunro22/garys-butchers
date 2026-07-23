@@ -27,6 +27,7 @@ const PatchSchema = z.object({
   isActive: z.boolean().optional(),
   stockCount: z.number().int().nullable().optional(),
   badge: z.string().max(40).nullable().optional(),
+  noticeDays: z.number().int().min(0).max(30).optional(),
 });
 
 export async function GET(

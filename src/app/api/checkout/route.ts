@@ -56,9 +56,6 @@ export async function POST(req: NextRequest) {
     const data = parsed.data;
 
     const customerSession = await getCustomerSession();
-    if (!customerSession) {
-      return NextResponse.json({ error: 'Please sign in to checkout' }, { status: 401 });
-    }
 
     if (data.fulfilment === 'delivery' && !data.deliveryAddress) {
       return NextResponse.json(
@@ -107,6 +104,27 @@ export async function POST(req: NextRequest) {
       0
     );
 
+    const slotDate = new Date(data.slot);
+
+    // Some products require extra notice beyond the earliest available slot (always "tomorrow").
+    const maxNoticeDays = Math.max(
+      0,
+      ...data.items.map((i) => priceMap.get(i.productId)?.noticeDays ?? 0)
+    );
+    if (maxNoticeDays > 0) {
+      const minAllowed = new Date();
+      minAllowed.setHours(0, 0, 0, 0);
+      minAllowed.setDate(minAllowed.getDate() + 1 + maxNoticeDays);
+      if (getDeliveryDateKey(slotDate) < getDeliveryDateKey(minAllowed)) {
+        return NextResponse.json(
+          {
+            error: `Sorry, an item in your basket needs ${maxNoticeDays} day${maxNoticeDays === 1 ? '' : 's'} notice — please choose a later date.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     let discount = 0;
     let deliveryFee: number;
     if (data.fulfilment === 'delivery' && data.deliveryAddress?.postcode) {
@@ -115,10 +133,18 @@ export async function POST(req: NextRequest) {
         freeThresholdPence: delivery.freeThresholdPence,
         feePence: delivery.feePence,
         radiusMiles: delivery.radiusMiles,
-        premiumFeePence: delivery.premiumFeePence ?? 500,
       };
       const distanceMiles = await getDistanceMiles(data.deliveryAddress.postcode);
-      deliveryFee = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
+      const result = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
+      if (!result.withinRadius) {
+        return NextResponse.json(
+          {
+            error: `Sorry, that address is outside our ${settings.radiusMiles} mile delivery area. Please choose pickup instead.`,
+          },
+          { status: 400 }
+        );
+      }
+      deliveryFee = result.feePence;
     } else {
       deliveryFee = calculateDelivery(subtotal, data.fulfilment);
     }
@@ -152,8 +178,6 @@ export async function POST(req: NextRequest) {
 
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
-    const slotDate = new Date(data.slot);
-
     if (data.fulfilment === 'delivery') {
       const blockKey = getDeliveryBlockKey(slotDate);
       if (!blockKey) {
@@ -175,7 +199,7 @@ export async function POST(req: NextRequest) {
     const [order] = await db
       .insert(orders)
       .values({
-        userId: customerSession.userId,
+        userId: customerSession?.userId ?? null,
         customerName: data.customer.name,
         customerEmail: data.customer.email,
         customerPhone: data.customer.phone,

@@ -112,6 +112,8 @@ export const products = pgTable(
     isActive: boolean('is_active').default(true).notNull(),
     stockCount: integer('stock_count'), // null = unlimited / made fresh
     badge: varchar('badge', { length: 40 }), // "Bestseller", "New", etc.
+    // extra days notice needed beyond the normal earliest slot (0 = no extra notice required)
+    noticeDays: integer('notice_days').default(0).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

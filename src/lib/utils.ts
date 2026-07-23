@@ -101,15 +101,12 @@ export async function getDistanceMiles(customerPostcode: string): Promise<number
 export function calculateDeliveryByDistance(
   subtotalInPence: number,
   distanceMiles: number | null,
-  settings: { freeThresholdPence: number; feePence: number; radiusMiles: number; premiumFeePence: number }
-): number {
-  // Unknown distance → fall back to standard fee logic
-  if (distanceMiles === null) {
-    return subtotalInPence >= settings.freeThresholdPence ? 0 : settings.feePence;
+  settings: { freeThresholdPence: number; feePence: number; radiusMiles: number }
+): { feePence: number; withinRadius: boolean } {
+  // Unknown distance (geocoding failed) → can't verify, fall back to standard fee logic
+  if (distanceMiles !== null && distanceMiles > settings.radiusMiles) {
+    return { feePence: 0, withinRadius: false };
   }
-  if (distanceMiles <= settings.radiusMiles) {
-    return subtotalInPence >= settings.freeThresholdPence ? 0 : settings.feePence;
-  }
-  // Beyond radius – premium fee always applies
-  return settings.premiumFeePence;
+  const feePence = subtotalInPence >= settings.freeThresholdPence ? 0 : settings.feePence;
+  return { feePence, withinRadius: true };
 }

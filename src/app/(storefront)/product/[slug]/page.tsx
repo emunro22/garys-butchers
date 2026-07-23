@@ -6,6 +6,7 @@ import { products, categories } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
 import { sql } from '@vercel/postgres';
 import { formatPrice } from '@/lib/utils';
+import { noticeLabel } from '@/lib/notice';
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
 import { ProductCard } from '@/components/shop/product-card';
 import type { Metadata } from 'next';
@@ -151,6 +152,9 @@ export default async function ProductPage({
             )}
             {product.weightLabel && (
               <p className="text-sm text-ink-500 mt-2">{product.weightLabel}</p>
+            )}
+            {product.noticeDays > 0 && (
+              <p className="text-sm text-butcher-500 mt-2 font-medium">{noticeLabel(product.noticeDays)}</p>
             )}
 
             {product.description && (

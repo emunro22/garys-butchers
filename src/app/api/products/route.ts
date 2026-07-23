@@ -27,6 +27,7 @@ const ProductSchema = z.object({
   isActive: z.boolean().optional(),
   stockCount: z.number().int().nullable().optional(),
   badge: z.string().max(40).nullable().optional(),
+  noticeDays: z.number().int().min(0).max(30).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
         isActive: data.isActive ?? true,
         stockCount: data.stockCount ?? null,
         badge: data.badge ?? null,
+        noticeDays: data.noticeDays ?? 0,
       })
       .returning();
     return NextResponse.json({ product: created });

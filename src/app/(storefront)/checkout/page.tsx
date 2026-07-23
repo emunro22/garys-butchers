@@ -1,6 +1,4 @@
-import { redirect } from 'next/navigation';
 import { Checkout } from '@/components/shop/checkout';
-import { getCustomerSession } from '@/lib/auth';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,9 +9,6 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function CheckoutPage() {
-  const session = await getCustomerSession();
-  if (!session) redirect('/account/login?next=/checkout');
-
   return (
     <div className="bg-cream-50">
       <section className="border-b border-ink-900/10 py-10 md:py-14">

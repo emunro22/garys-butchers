@@ -40,6 +40,7 @@ export function AddToCartButton({
         imageUrl: product.imageUrl ?? undefined,
         weightLabel: product.weightLabel ?? undefined,
         variantLabel: selectedVariant?.label,
+        noticeDays: product.noticeDays,
       },
       quantity
     );
