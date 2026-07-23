@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
+import { noticeLabel } from '@/lib/notice';
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
 import type { Metadata } from 'next';
 
@@ -138,6 +139,12 @@ export default async function MeatPackPage({
                 </p>
               )}
             </div>
+
+            {pack.noticeDays > 0 ? (
+              <p className="mt-3 text-sm text-gold-400 font-medium">{noticeLabel(pack.noticeDays)}</p>
+            ) : (
+              <p className="mt-3 text-sm text-green-400 font-medium">{noticeLabel(0)}</p>
+            )}
 
             {/* Contents in two-column menu plate */}
             <div className="mt-10 border-y border-gold-400/20 py-8">

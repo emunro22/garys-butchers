@@ -153,8 +153,10 @@ export default async function ProductPage({
             {product.weightLabel && (
               <p className="text-sm text-ink-500 mt-2">{product.weightLabel}</p>
             )}
-            {product.noticeDays > 0 && (
+            {product.noticeDays > 0 ? (
               <p className="text-sm text-butcher-500 mt-2 font-medium">{noticeLabel(product.noticeDays)}</p>
+            ) : (
+              <p className="text-sm text-green-600 mt-2 font-medium">{noticeLabel(0)}</p>
             )}
 
             {product.description && (

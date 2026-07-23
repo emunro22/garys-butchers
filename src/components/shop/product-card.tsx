@@ -101,8 +101,10 @@ export function ProductCard({
           {product.weightLabel && (
             <p className="text-xs text-ink-500 mt-1">{product.weightLabel}</p>
           )}
-          {product.noticeDays > 0 && (
+          {product.noticeDays > 0 ? (
             <p className="text-xs text-butcher-500 mt-1">{noticeLabel(product.noticeDays)}</p>
+          ) : (
+            <p className="text-xs text-green-600 mt-1">{noticeLabel(0)}</p>
           )}
         </div>
         <div className="text-right shrink-0">
