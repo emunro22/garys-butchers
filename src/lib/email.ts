@@ -7,6 +7,26 @@ const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmonger
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garysbutchersandfishmongers.co.uk';
 const LOGO_URL = `${SITE_URL}/logo-email.png`;
 
+// Most mail clients (Gmail, Outlook, etc.) hide remote <img> sources behind a
+// "display images" click-through by default, which made the logo look
+// "missing" even though the URL was correct. Embedding it as an inline
+// (cid:) attachment instead renders immediately, with no click-through.
+const LOGO_CID = 'garys-logo';
+let logoAttachmentCache: Array<{ filename: string; content: Buffer; contentType: string; inlineContentId: string }> | null = null;
+
+async function getLogoAttachment() {
+  if (logoAttachmentCache) return logoAttachmentCache;
+  try {
+    const res = await fetch(LOGO_URL);
+    if (!res.ok) return [];
+    const content = Buffer.from(await res.arrayBuffer());
+    logoAttachmentCache = [{ filename: 'logo.png', content, contentType: 'image/png', inlineContentId: LOGO_CID }];
+    return logoAttachmentCache;
+  } catch {
+    return [];
+  }
+}
+
 // Admin/shop notification recipient — same address used to log into the admin portal
 const ADMIN_EMAILS = [process.env.ADMIN_EMAIL!];
 
@@ -58,7 +78,7 @@ function renderEmailLayout(opts: {
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(10,10,10,0.1)">
 
       <div style="background:#0a0a0a;padding:28px 24px;text-align:center">
-        <img src="${LOGO_URL}" width="56" height="56" alt="Gary's Butchers &amp; Fishmongers" style="display:block;margin:0 auto 10px;border-radius:50%" />
+        <img src="cid:${LOGO_CID}" width="56" height="56" alt="Gary's Butchers &amp; Fishmongers" style="display:block;margin:0 auto 10px;border-radius:50%" />
         <p style="margin:0;letter-spacing:0.2em;font-size:11px;color:#c9a961;text-transform:uppercase">Gary's Butchers &amp; Fishmongers</p>
       </div>
 
@@ -297,6 +317,7 @@ export async function sendOrderConfirmation(payload: OrderEmailPayload) {
     to: payload.customerEmail,
     subject: `Order confirmed — #${String(payload.orderNumber).padStart(5, '0')}`,
     html: renderCustomerHtml(payload),
+    attachments: await getLogoAttachment(),
   });
 }
 
@@ -309,6 +330,7 @@ export async function sendShopNotification(payload: OrderEmailPayload) {
     to: ADMIN_EMAILS,
     subject: `${prefix} New order #${String(payload.orderNumber).padStart(5, '0')} — ${payload.customerName} — ${fmt(payload.totalInPence)}`,
     html: renderAdminHtml(payload),
+    attachments: await getLogoAttachment(),
   });
 }
 
@@ -334,6 +356,33 @@ export async function sendContactMessage(opts: {
       title: `New enquiry from ${opts.name}`,
       bodyHtml,
     }),
+    attachments: await getLogoAttachment(),
+  });
+}
+
+export async function sendContactConfirmation(opts: { name: string; message: string; email: string }) {
+  const bodyHtml = `
+    <p style="margin:0 0 20px;font-size:14px;color:#4a443a;line-height:1.7">
+      We've received your message and someone from the team will get back to you shortly.
+    </p>
+    <div style="padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px">
+      <h2 style="margin:0 0 8px;font-size:12px;letter-spacing:0.15em;color:#8e7138;text-transform:uppercase">Your message</h2>
+      <p style="margin:0;font-size:14px;color:#1a1815;white-space:pre-wrap;line-height:1.6">${opts.message.replace(/</g, '&lt;')}</p>
+    </div>
+    <p style="margin-top:24px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #f0ebe3;padding-top:18px">
+      In a hurry? Give us a ring and we'll help out directly.
+    </p>`;
+
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: opts.email,
+    subject: "Thanks for your enquiry — Gary's Butchers & Fishmongers",
+    html: renderEmailLayout({
+      eyebrow: 'Enquiry received',
+      title: `Thanks, ${opts.name.split(' ')[0]}.`,
+      bodyHtml,
+    }),
+    attachments: await getLogoAttachment(),
   });
 }
 
@@ -343,6 +392,7 @@ export async function sendVerificationCode(email: string, name: string, code: st
     to: email,
     subject: `Your verification code: ${code}`,
     html: renderVerificationHtml(name, code),
+    attachments: await getLogoAttachment(),
   });
 }
 
@@ -352,6 +402,7 @@ export async function sendPasswordResetCode(email: string, name: string, code: s
     to: email,
     subject: `Password reset code: ${code}`,
     html: renderResetHtml(name, code),
+    attachments: await getLogoAttachment(),
   });
 }
 
@@ -392,5 +443,40 @@ export async function sendNewCustomerNotification(customer: {
       title: 'New Customer Sign-Up',
       bodyHtml,
     }),
+    attachments: await getLogoAttachment(),
+  });
+}
+
+// ─── Admin reports ───────────────────────────────────────────────────────────
+
+const REPORT_RECIPIENTS = [
+  'gazapeline@outlook.com',
+  'garysbutchers-orders@outlook.com',
+  'euanmunroo@gmail.com',
+];
+
+export async function sendReportEmail(opts: {
+  title: string;
+  summaryHtml: string;
+  filename: string;
+  csvContent: string;
+}) {
+  await resend.emails.send({
+    from: `Gary's Butchers Reports <${FROM}>`,
+    to: REPORT_RECIPIENTS,
+    subject: `📊 ${opts.title}`,
+    html: renderEmailLayout({
+      eyebrow: 'Report',
+      title: opts.title,
+      bodyHtml: opts.summaryHtml,
+    }),
+    attachments: [
+      ...(await getLogoAttachment()),
+      {
+        filename: opts.filename,
+        content: Buffer.from(opts.csvContent, 'utf-8'),
+        contentType: 'text/csv',
+      },
+    ],
   });
 }

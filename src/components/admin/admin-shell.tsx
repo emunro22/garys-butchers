@@ -18,6 +18,7 @@ import {
   X,
   Sparkles,
   ExternalLink,
+  FileBarChart,
 } from 'lucide-react';
 
 const NAV = [
@@ -29,6 +30,7 @@ const NAV = [
   { href: '/admin/deals', label: 'Seasonal Deals', icon: Sparkles },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/subscribers', label: 'Mailing list', icon: Mail },
+  { href: '/admin/reports', label: 'Reports', icon: FileBarChart },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

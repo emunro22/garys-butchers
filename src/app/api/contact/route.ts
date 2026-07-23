@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sendContactMessage } from '@/lib/email';
+import { sendContactMessage, sendContactConfirmation } from '@/lib/email';
 
 const ContactSchema = z.object({
   name: z.string().min(1).max(160),
@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
       );
     }
     await sendContactMessage(parsed.data);
+    // Best-effort — the enquiry itself is already safely sent to the shop above.
+    sendContactConfirmation(parsed.data).catch((err) => console.error('contact confirmation error', err));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('contact error', err);
