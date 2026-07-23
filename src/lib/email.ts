@@ -4,7 +4,11 @@ import { isToday } from '@/lib/same-day-slots';
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmongers.co.uk';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garysbutchersandfishmongers.co.uk';
+// NOTE: garysbutchersandfishmongers.co.uk is currently a parked domain (not
+// connected to this app) — falls back to the real deployment URL so links/the
+// logo don't silently point at a dead domain. Once the custom domain is
+// connected in Vercel + DNS, set NEXT_PUBLIC_SITE_URL and this stops mattering.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garys-butchers.vercel.app';
 const LOGO_URL = `${SITE_URL}/logo-email.png`;
 
 // Most mail clients (Gmail, Outlook, etc.) hide remote <img> sources behind a
@@ -19,6 +23,10 @@ async function getLogoAttachment() {
   try {
     const res = await fetch(LOGO_URL);
     if (!res.ok) return [];
+    // Guard against a misconfigured/dead domain returning an HTML error or
+    // parked-domain page with a 200 status — don't attach that as an "image".
+    const contentType = res.headers.get('content-type') ?? '';
+    if (!contentType.startsWith('image/')) return [];
     const content = Buffer.from(await res.arrayBuffer());
     logoAttachmentCache = [{ filename: 'logo.png', content, contentType: 'image/png', inlineContentId: LOGO_CID }];
     return logoAttachmentCache;
