@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { isToday } from '@/lib/same-day-slots';
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
@@ -150,6 +151,8 @@ function renderAdminHtml(o: OrderEmailPayload) {
     )
     .join('');
 
+  const isSameDayOrder = o.fulfilment === 'delivery' && !!o.deliverySlot && isToday(new Date(o.deliverySlot));
+
   const fulfilmentBlock =
     o.fulfilment === 'pickup'
       ? `<tr>
@@ -162,7 +165,7 @@ function renderAdminHtml(o: OrderEmailPayload) {
         </tr>`
       : `<tr>
           <td style="padding:6px 0;color:#6b5d4f;width:130px">Type</td>
-          <td style="padding:6px 0;font-weight:600;color:#1a4d8f">HOME DELIVERY</td>
+          <td style="padding:6px 0;font-weight:600;color:#1a4d8f">HOME DELIVERY${isSameDayOrder ? ' — SAME DAY' : ''}</td>
         </tr>
         <tr>
           <td style="padding:6px 0;color:#6b5d4f">Slot</td>
@@ -298,10 +301,13 @@ export async function sendOrderConfirmation(payload: OrderEmailPayload) {
 }
 
 export async function sendShopNotification(payload: OrderEmailPayload) {
+  const isSameDayOrder =
+    payload.fulfilment === 'delivery' && !!payload.deliverySlot && isToday(new Date(payload.deliverySlot));
+  const prefix = isSameDayOrder ? '⚡ SAME-DAY' : '🥩';
   await resend.emails.send({
     from: `Gary's Butchers Orders <${FROM}>`,
     to: ADMIN_EMAILS,
-    subject: `🥩 New order #${String(payload.orderNumber).padStart(5, '0')} — ${payload.customerName} — ${fmt(payload.totalInPence)}`,
+    subject: `${prefix} New order #${String(payload.orderNumber).padStart(5, '0')} — ${payload.customerName} — ${fmt(payload.totalInPence)}`,
     html: renderAdminHtml(payload),
   });
 }

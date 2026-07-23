@@ -48,11 +48,20 @@ const DeliverySlotsSchema = z.object({
   }),
 });
 
+const SameDaySchema = z.object({
+  capacity: z.object({
+    nineEleven: z.number().int().min(0),
+    elevenOne: z.number().int().min(0),
+    oneThree: z.number().int().min(0),
+  }),
+});
+
 const PatchSchema = z.object({
   shop: ShopSchema.optional(),
   delivery: DeliverySchema.optional(),
   banner: BannerSchema.optional(),
   deliverySlots: DeliverySlotsSchema.optional(),
+  sameDay: SameDaySchema.optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -107,6 +116,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.deliverySlots, updatedAt: new Date() },
+        });
+    }
+
+    if (data.sameDay) {
+      await db
+        .insert(settings)
+        .values({ key: 'sameDay', value: data.sameDay, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.sameDay, updatedAt: new Date() },
         });
     }
 

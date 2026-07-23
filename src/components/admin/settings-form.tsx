@@ -9,11 +9,13 @@ type ShopSettings = { name: string; address: string; phone: string };
 type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
 type DeliverySlotsSettings = { capacity: { morning: number; midday: number; afternoon: number } };
+type SameDaySettings = { capacity: { nineEleven: number; elevenOne: number; oneThree: number } };
 type AllSettings = {
   shop: ShopSettings;
   delivery: DeliverySettings;
   banner: BannerSettings;
   deliverySlots: DeliverySlotsSettings;
+  sameDay: SameDaySettings;
 };
 
 export function SettingsForm({ initial }: { initial: AllSettings }) {
@@ -33,6 +35,13 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
       morning: initial.deliverySlots?.capacity?.morning ?? 8,
       midday: initial.deliverySlots?.capacity?.midday ?? 8,
       afternoon: initial.deliverySlots?.capacity?.afternoon ?? 8,
+    },
+  });
+  const [sameDay, setSameDay] = useState<SameDaySettings>({
+    capacity: {
+      nineEleven: initial.sameDay?.capacity?.nineEleven ?? 4,
+      elevenOne: initial.sameDay?.capacity?.elevenOne ?? 4,
+      oneThree: initial.sameDay?.capacity?.oneThree ?? 4,
     },
   });
   const [saving, setSaving] = useState(false);
@@ -73,6 +82,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           delivery,
           banner: { ...banner, messages: cleanedMessages },
           deliverySlots,
+          sameDay,
         }),
       });
       const data = await res.json();
@@ -256,6 +266,68 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
               onChange={(e) =>
                 setDeliverySlots({
                   capacity: { ...deliverySlots.capacity, afternoon: Number(e.target.value) },
+                })
+              }
+              required
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Same-day delivery capacity */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Same-day delivery capacity</p>
+          <p className="text-xs text-ink-500">
+            Maximum number of same-day deliveries per 2-hour block, today only. Only products
+            marked &quot;Available same day&quot; are eligible — a basket with any item requiring
+            advance notice can&apos;t use same-day delivery. Set a block to 0 to turn it off.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="capNineEleven">9 – 11am</Label>
+            <Input
+              id="capNineEleven"
+              type="number"
+              min="0"
+              step="1"
+              value={sameDay.capacity.nineEleven}
+              onChange={(e) =>
+                setSameDay({
+                  capacity: { ...sameDay.capacity, nineEleven: Number(e.target.value) },
+                })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="capElevenOne">11am – 1pm</Label>
+            <Input
+              id="capElevenOne"
+              type="number"
+              min="0"
+              step="1"
+              value={sameDay.capacity.elevenOne}
+              onChange={(e) =>
+                setSameDay({
+                  capacity: { ...sameDay.capacity, elevenOne: Number(e.target.value) },
+                })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="capOneThree">1 – 3pm</Label>
+            <Input
+              id="capOneThree"
+              type="number"
+              min="0"
+              step="1"
+              value={sameDay.capacity.oneThree}
+              onChange={(e) =>
+                setSameDay({
+                  capacity: { ...sameDay.capacity, oneThree: Number(e.target.value) },
                 })
               }
               required

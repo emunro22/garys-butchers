@@ -9,6 +9,8 @@ import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
 import { bucketKey, getDeliveryBlockKey, getDeliveryDateKey } from '@/lib/delivery-slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
+import { SAME_DAY_BLOCKS, getSameDayBlockKey, isToday } from '@/lib/same-day-slots';
+import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -111,7 +113,37 @@ export async function POST(req: NextRequest) {
       0,
       ...data.items.map((i) => priceMap.get(i.productId)?.noticeDays ?? 0)
     );
-    if (maxNoticeDays > 0) {
+
+    // A "delivery" order dated today is only ever a same-day order — the regular
+    // delivery slot list never offers today (it starts tomorrow), so this is unambiguous.
+    const sameDayBlockKey =
+      data.fulfilment === 'delivery' && isToday(slotDate) ? getSameDayBlockKey(slotDate) : null;
+    const isSameDaySlot = sameDayBlockKey !== null;
+
+    if (isSameDaySlot) {
+      if (maxNoticeDays > 0) {
+        return NextResponse.json(
+          { error: "Sorry, an item in your basket isn't available for same-day delivery — please choose a later date." },
+          { status: 400 }
+        );
+      }
+      const now = new Date();
+      const block = SAME_DAY_BLOCKS.find((b) => b.key === sameDayBlockKey)!;
+      if (!isToday(slotDate, now) || now.getHours() >= block.endHour || now.getDay() === 0) {
+        return NextResponse.json(
+          { error: 'That same-day slot has passed — please choose another time.' },
+          { status: 400 }
+        );
+      }
+      const { sameDay } = await getShopSettings();
+      const counts = await getSameDayBucketCounts();
+      if ((counts[sameDayBlockKey] ?? 0) >= sameDay.capacity[sameDayBlockKey]) {
+        return NextResponse.json(
+          { error: 'That same-day slot is fully booked — please choose another.' },
+          { status: 400 }
+        );
+      }
+    } else if (maxNoticeDays > 0) {
       const minAllowed = new Date();
       minAllowed.setHours(0, 0, 0, 0);
       minAllowed.setDate(minAllowed.getDate() + 1 + maxNoticeDays);
@@ -178,7 +210,7 @@ export async function POST(req: NextRequest) {
 
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
-    if (data.fulfilment === 'delivery') {
+    if (data.fulfilment === 'delivery' && !isSameDaySlot) {
       const blockKey = getDeliveryBlockKey(slotDate);
       if (!blockKey) {
         return NextResponse.json({ error: 'That delivery slot is no longer valid' }, { status: 400 });

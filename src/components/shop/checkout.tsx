@@ -10,9 +10,10 @@ import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
 import { formatPrice, calculateDelivery } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
-import { Truck, Store, Tag, Check } from 'lucide-react';
+import { Truck, Store, Zap, Tag, Check } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
 import { generateDeliverySlots, getDeliveryDateKey, bucketKey, type DeliveryBlockKey } from '@/lib/delivery-slots';
+import { generateSameDaySlots } from '@/lib/same-day-slots';
 import { noticeLabel } from '@/lib/notice';
 
 // ---- Stripe loader ----
@@ -25,7 +26,7 @@ function getStripe() {
   return stripePromise;
 }
 
-type Fulfilment = 'pickup' | 'delivery';
+type Fulfilment = 'pickup' | 'delivery' | 'sameDay';
 
 type Promo = {
   id: string;
@@ -95,7 +96,7 @@ export function Checkout() {
   const [withinRadius, setWithinRadius] = useState(true);
 
   useEffect(() => {
-    if (fulfilment !== 'delivery' || form.postcode.replace(/\s/g, '').length < 5) {
+    if (fulfilment === 'pickup' || form.postcode.replace(/\s/g, '').length < 5) {
       setPostcodeFeePence(null);
       setWithinRadius(true);
       return;
@@ -123,7 +124,7 @@ export function Checkout() {
       ? 0
       : postcodeFeePence !== null
       ? postcodeFeePence
-      : calculateDelivery(subtotal, fulfilment);
+      : calculateDelivery(subtotal, 'delivery');
 
   const totals = useMemo(() => {
     let discount = 0;
@@ -189,13 +190,25 @@ export function Checkout() {
   // Delivery: next 7 eligible days (skip Sunday), 3-hour blocks (9-12 / 12-3 / 3-6).
   const deliverySlots = useMemo(() => generateDeliverySlots(7), []);
 
-  const slots = fulfilment === 'delivery' ? deliverySlots : pickupSlots;
+  // Same-day: today only, 2-hour blocks (9-11 / 11-1 / 1-3) — empty on Sundays
+  // or once every block has ended for the day.
+  const sameDaySlotsList = useMemo(() => generateSameDaySlots(), []);
+
+  const slots = fulfilment === 'delivery' ? deliverySlots : fulfilment === 'sameDay' ? sameDaySlotsList : pickupSlots;
 
   // Earliest allowed date given the most demanding notice period among cart items.
   const maxNoticeDays = useMemo(
     () => items.reduce((max, i) => Math.max(max, i.noticeDays ?? 0), 0),
     [items]
   );
+  const sameDayEligible = maxNoticeDays === 0;
+  const sameDayDisabledReason =
+    !sameDayEligible
+      ? 'An item in your basket needs advance notice'
+      : sameDaySlotsList.length === 0
+      ? 'Same-day delivery has finished for today'
+      : null;
+
   const earliestSlotDateKey = slots[0]?.dateKey;
   const minAllowedDateKey = useMemo(() => {
     if (maxNoticeDays === 0 || !earliestSlotDateKey) return earliestSlotDateKey;
@@ -205,6 +218,7 @@ export function Checkout() {
   }, [maxNoticeDays, earliestSlotDateKey]);
 
   function isSlotTooSoon(s: { dateKey?: string }) {
+    if (fulfilment === 'sameDay') return false; // same-day mode is only reachable when notice-eligible
     if (!s.dateKey || !minAllowedDateKey) return false;
     return s.dateKey < minAllowedDateKey;
   }
@@ -218,6 +232,14 @@ export function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fulfilment, minAllowedDateKey]);
 
+  // Drop out of same-day mode automatically if the basket stops qualifying.
+  useEffect(() => {
+    if (fulfilment === 'sameDay' && sameDayDisabledReason) {
+      setFulfilment('delivery');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sameDayDisabledReason]);
+
   // Delivery slot availability (only relevant for delivery)
   const [availability, setAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
 
@@ -229,9 +251,27 @@ export function Checkout() {
       .catch(() => {});
   }, [fulfilment]);
 
-  function isSlotFull(s: { blockKey?: DeliveryBlockKey; dateKey?: string }) {
+  function isSlotFull(s: { blockKey?: string; dateKey?: string }) {
     if (!s.blockKey || !s.dateKey) return false;
-    const info = availability[bucketKey(s.dateKey, s.blockKey)];
+    const info = availability[bucketKey(s.dateKey, s.blockKey as DeliveryBlockKey)];
+    if (!info) return false;
+    return info.count >= info.capacity;
+  }
+
+  // Same-day slot availability (only relevant when in same-day mode)
+  const [sameDayAvailability, setSameDayAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
+
+  useEffect(() => {
+    if (fulfilment !== 'sameDay') return;
+    fetch('/api/same-day-availability')
+      .then((r) => r.json())
+      .then((data) => setSameDayAvailability(data.availability ?? {}))
+      .catch(() => {});
+  }, [fulfilment]);
+
+  function isSameDaySlotFull(s: { blockKey?: string }) {
+    if (!s.blockKey) return false;
+    const info = sameDayAvailability[s.blockKey];
     if (!info) return false;
     return info.count >= info.capacity;
   }
@@ -276,7 +316,7 @@ export function Checkout() {
     if (chosenSlot && isSlotTooSoon(chosenSlot)) {
       return `That slot doesn't meet the ${noticeLabel(maxNoticeDays).toLowerCase()} for an item in your basket.`;
     }
-    if (fulfilment === 'delivery') {
+    if (fulfilment !== 'pickup') {
       if (!form.line1) return 'Please enter your delivery address.';
       if (!form.postcode) return 'Please enter your postcode.';
       if (!withinRadius) return "Sorry, that address is outside our 30 mile delivery area — please choose pickup instead.";
@@ -298,14 +338,14 @@ export function Checkout() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           items,
-          fulfilment,
+          fulfilment: fulfilment === 'pickup' ? 'pickup' : 'delivery',
           customer: {
             name: form.name,
             email: form.email,
             phone: form.phone,
           },
           deliveryAddress:
-            fulfilment === 'delivery'
+            fulfilment !== 'pickup'
               ? {
                   line1: form.line1,
                   line2: form.line2 || undefined,
@@ -378,7 +418,25 @@ export function Checkout() {
         {/* Fulfilment */}
         <section>
           <h2 className="font-display text-2xl text-ink-900 mb-4">1. Delivery or pickup</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              disabled={!!sameDayDisabledReason}
+              onClick={() => !sameDayDisabledReason && setFulfilment('sameDay')}
+              className={`p-5 border text-left transition-all ${
+                sameDayDisabledReason
+                  ? 'border-ink-900/10 bg-cream-100/50 text-ink-400 cursor-not-allowed'
+                  : fulfilment === 'sameDay'
+                  ? 'border-ink-900 bg-ink-900 text-cream-50'
+                  : 'border-ink-900/15 bg-cream-100 hover:border-ink-900/40'
+              }`}
+            >
+              <Zap className="h-6 w-6 mb-3" />
+              <p className="font-display text-lg">Same-day delivery</p>
+              <p className="text-xs opacity-70 mt-1">
+                {sameDayDisabledReason ?? 'Today · 9am–3pm'}
+              </p>
+            </button>
             <button
               type="button"
               onClick={() => setFulfilment('delivery')}
@@ -459,8 +517,8 @@ export function Checkout() {
           </div>
         </section>
 
-        {/* Address (delivery only) */}
-        {fulfilment === 'delivery' && (
+        {/* Address (delivery / same-day only) */}
+        {fulfilment !== 'pickup' && (
           <section>
             <h2 className="font-display text-2xl text-ink-900 mb-4">3. Delivery address</h2>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -523,16 +581,16 @@ export function Checkout() {
         {/* Slot */}
         <section>
           <h2 className="font-display text-2xl text-ink-900 mb-4">
-            {fulfilment === 'delivery' ? '4. Delivery slot' : '3. Pickup slot'}
+            {fulfilment === 'pickup' ? '3. Pickup slot' : fulfilment === 'sameDay' ? '4. Same-day slot' : '4. Delivery slot'}
           </h2>
-          {maxNoticeDays > 0 && (
+          {maxNoticeDays > 0 && fulfilment !== 'sameDay' && (
             <p className="text-xs text-butcher-500 mb-3">
               Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()} — earlier slots are unavailable.
             </p>
           )}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
             {slots.map((s) => {
-              const full = isSlotFull(s);
+              const full = fulfilment === 'sameDay' ? isSameDaySlotFull(s) : isSlotFull(s);
               const tooSoon = !full && isSlotTooSoon(s);
               const disabled = full || tooSoon;
               return (
@@ -582,7 +640,7 @@ export function Checkout() {
           size="lg"
           className="w-full"
           onClick={handleProceed}
-          disabled={creating || (fulfilment === 'delivery' && !withinRadius)}
+          disabled={creating || (fulfilment !== 'pickup' && !withinRadius)}
         >
           {creating ? 'Preparing payment…' : 'Continue to payment'}
         </Button>
@@ -685,7 +743,7 @@ export function Checkout() {
           )}
           <div className="flex justify-between">
             <dt className="text-ink-700">
-              {fulfilment === 'delivery' ? 'Delivery' : 'Pickup'}
+              {fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}
             </dt>
             <dd className="tabular text-ink-900">
               {postcodeFeePending

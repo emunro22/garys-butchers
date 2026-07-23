@@ -29,6 +29,13 @@ export const DEFAULT_SETTINGS = {
       afternoon: 8,
     },
   },
+  sameDay: {
+    capacity: {
+      nineEleven: 4,
+      elevenOne: 4,
+      oneThree: 4,
+    },
+  },
 };
 
 export type AppSettings = typeof DEFAULT_SETTINGS;
@@ -43,6 +50,9 @@ export async function getShopSettings(): Promise<AppSettings> {
       deliverySlots: {
         capacity: { ...DEFAULT_SETTINGS.deliverySlots.capacity },
       },
+      sameDay: {
+        capacity: { ...DEFAULT_SETTINGS.sameDay.capacity },
+      },
     };
     for (const row of rows) {
       if (row.key === 'shop') {
@@ -56,6 +66,11 @@ export async function getShopSettings(): Promise<AppSettings> {
         result.deliverySlots = {
           capacity: { ...DEFAULT_SETTINGS.deliverySlots.capacity, ...value?.capacity },
         };
+      } else if (row.key === 'sameDay') {
+        const value = row.value as AppSettings['sameDay'];
+        result.sameDay = {
+          capacity: { ...DEFAULT_SETTINGS.sameDay.capacity, ...value?.capacity },
+        };
       }
     }
     return result;
@@ -66,6 +81,9 @@ export async function getShopSettings(): Promise<AppSettings> {
       banner: { ...DEFAULT_SETTINGS.banner },
       deliverySlots: {
         capacity: { ...DEFAULT_SETTINGS.deliverySlots.capacity },
+      },
+      sameDay: {
+        capacity: { ...DEFAULT_SETTINGS.sameDay.capacity },
       },
     };
   }
