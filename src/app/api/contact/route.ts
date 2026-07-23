@@ -20,8 +20,13 @@ export async function POST(req: NextRequest) {
       );
     }
     await sendContactMessage(parsed.data);
-    // Best-effort — the enquiry itself is already safely sent to the shop above.
-    sendContactConfirmation(parsed.data).catch((err) => console.error('contact confirmation error', err));
+    // Must be awaited, not fired-and-forgotten — serverless functions can freeze
+    // the moment a response is returned, killing any unawaited pending work.
+    try {
+      await sendContactConfirmation(parsed.data);
+    } catch (err) {
+      console.error('contact confirmation error', err);
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('contact error', err);
