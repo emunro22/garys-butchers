@@ -4,29 +4,29 @@ import { orders } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { bucketKey, findBlock, getDateKey } from '@/lib/slots';
 
-export async function getDeliveryBucketCounts() {
-  const { deliverySlots } = await getShopSettings();
+export async function getPickupBucketCounts() {
+  const { pickupSlots } = await getShopSettings();
   const now = new Date();
   const horizon = new Date(now);
   horizon.setDate(horizon.getDate() + 8);
 
   const rows = await db
-    .select({ deliverySlot: orders.deliverySlot })
+    .select({ pickupSlot: orders.pickupSlot })
     .from(orders)
     .where(
       and(
-        eq(orders.fulfilment, 'delivery'),
-        gte(orders.deliverySlot, now),
-        lt(orders.deliverySlot, horizon),
+        eq(orders.fulfilment, 'pickup'),
+        gte(orders.pickupSlot, now),
+        lt(orders.pickupSlot, horizon),
         notInArray(orders.status, ['cancelled', 'refunded'])
       )
     );
 
   const counts: Record<string, number> = {};
   for (const row of rows) {
-    if (!row.deliverySlot) continue;
-    const slotDate = new Date(row.deliverySlot);
-    const block = findBlock(deliverySlots.blocks, slotDate);
+    if (!row.pickupSlot) continue;
+    const slotDate = new Date(row.pickupSlot);
+    const block = findBlock(pickupSlots.blocks, slotDate);
     if (!block) continue;
     const key = bucketKey(getDateKey(slotDate), block.id);
     counts[key] = (counts[key] ?? 0) + 1;

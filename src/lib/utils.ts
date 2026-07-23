@@ -103,8 +103,8 @@ export function calculateDeliveryByDistance(
   distanceMiles: number | null,
   settings: { freeThresholdPence: number; feePence: number; radiusMiles: number }
 ): { feePence: number; withinRadius: boolean } {
-  // Unknown distance (geocoding failed) → can't verify, fall back to standard fee logic
-  if (distanceMiles !== null && distanceMiles > settings.radiusMiles) {
+  // Unknown distance (geocoding failed, e.g. bad postcode) → can't verify it's in range, so don't allow it.
+  if (distanceMiles === null || distanceMiles > settings.radiusMiles) {
     return { feePence: 0, withinRadius: false };
   }
   const feePence = subtotalInPence >= settings.freeThresholdPence ? 0 : settings.feePence;

@@ -1,10 +1,12 @@
 import { and, eq, gte, lt, notInArray } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
-import { getSameDayBlockKey, type SameDayBlockKey } from '@/lib/same-day-slots';
+import { getShopSettings } from '@/lib/settings';
+import { findBlock } from '@/lib/slots';
 
 /** Booked counts per same-day block, for today only. */
-export async function getSameDayBucketCounts(): Promise<Partial<Record<SameDayBlockKey, number>>> {
+export async function getSameDayBucketCounts(): Promise<Record<string, number>> {
+  const { sameDay } = await getShopSettings();
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(dayStart);
@@ -22,12 +24,12 @@ export async function getSameDayBucketCounts(): Promise<Partial<Record<SameDayBl
       )
     );
 
-  const counts: Partial<Record<SameDayBlockKey, number>> = {};
+  const counts: Record<string, number> = {};
   for (const row of rows) {
     if (!row.deliverySlot) continue;
-    const blockKey = getSameDayBlockKey(new Date(row.deliverySlot));
-    if (!blockKey) continue;
-    counts[blockKey] = (counts[blockKey] ?? 0) + 1;
+    const block = findBlock(sameDay.blocks, new Date(row.deliverySlot));
+    if (!block) continue;
+    counts[block.id] = (counts[block.id] ?? 0) + 1;
   }
   return counts;
 }

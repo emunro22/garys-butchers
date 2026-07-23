@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { isToday } from '@/lib/same-day-slots';
+import { isToday } from '@/lib/slots';
 
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 

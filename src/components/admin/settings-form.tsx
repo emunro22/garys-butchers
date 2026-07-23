@@ -4,19 +4,139 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
+import type { SlotBlock, SlotGroupSettings } from '@/lib/slots';
 
 type ShopSettings = { name: string; address: string; phone: string };
 type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
-type DeliverySlotsSettings = { capacity: { morning: number; midday: number; afternoon: number } };
-type SameDaySettings = { capacity: { nineEleven: number; elevenOne: number; oneThree: number } };
 type AllSettings = {
   shop: ShopSettings;
   delivery: DeliverySettings;
   banner: BannerSettings;
-  deliverySlots: DeliverySlotsSettings;
-  sameDay: SameDaySettings;
+  deliverySlots: SlotGroupSettings;
+  sameDay: SlotGroupSettings;
+  pickupSlots: SlotGroupSettings;
 };
+
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function minutesToTime(m: number) {
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+function timeToMinutes(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function newBlockId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `b${Date.now()}${Math.random()}`;
+}
+
+function SlotBlocksEditor({
+  group,
+  onChange,
+}: {
+  group: SlotGroupSettings;
+  onChange: (next: SlotGroupSettings) => void;
+}) {
+  function updateBlock(id: string, patch: Partial<SlotBlock>) {
+    onChange({ ...group, blocks: group.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
+  }
+
+  function addBlock() {
+    const last = [...group.blocks].sort((a, b) => a.startMinutes - b.startMinutes).at(-1);
+    const start = last ? last.endMinutes : 540;
+    onChange({
+      ...group,
+      blocks: [...group.blocks, { id: newBlockId(), startMinutes: start, endMinutes: start + 60, capacity: 5 }],
+    });
+  }
+
+  function removeBlock(id: string) {
+    onChange({ ...group, blocks: group.blocks.filter((b) => b.id !== id) });
+  }
+
+  function toggleDay(day: number) {
+    const closedDays = group.closedDays.includes(day)
+      ? group.closedDays.filter((d) => d !== day)
+      : [...group.closedDays, day].sort();
+    onChange({ ...group, closedDays });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        {[...group.blocks]
+          .sort((a, b) => a.startMinutes - b.startMinutes)
+          .map((block) => (
+            <div key={block.id} className="flex items-center gap-2 flex-wrap">
+              <Input
+                type="time"
+                value={minutesToTime(block.startMinutes)}
+                onChange={(e) => updateBlock(block.id, { startMinutes: timeToMinutes(e.target.value) })}
+                className="w-32"
+              />
+              <span className="text-ink-500 text-xs shrink-0">to</span>
+              <Input
+                type="time"
+                value={minutesToTime(block.endMinutes)}
+                onChange={(e) => updateBlock(block.id, { endMinutes: timeToMinutes(e.target.value) })}
+                className="w-32"
+              />
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={block.capacity}
+                onChange={(e) => updateBlock(block.id, { capacity: Number(e.target.value) })}
+                className="w-20"
+                aria-label="Capacity"
+              />
+              <span className="text-xs text-ink-500 shrink-0">capacity</span>
+              <button
+                type="button"
+                onClick={() => removeBlock(block.id)}
+                aria-label="Remove slot"
+                className="shrink-0 flex items-center justify-center w-9 h-9 text-ink-500 hover:text-butcher-500 hover:bg-butcher-500/10 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        <button
+          type="button"
+          onClick={addBlock}
+          className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-ink-700 hover:text-ink-900 mt-1"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add time slot
+        </button>
+      </div>
+      <div>
+        <p className="text-xs text-ink-500 mb-1.5">Closed days (no slots offered)</p>
+        <div className="flex flex-wrap gap-2">
+          {DAY_LABELS.map((label, day) => (
+            <label
+              key={day}
+              className="flex items-center gap-1.5 text-xs text-ink-700 border border-ink-900/15 px-2 py-1.5 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={group.closedDays.includes(day)}
+                onChange={() => toggleDay(day)}
+                className="h-3.5 w-3.5"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function SettingsForm({ initial }: { initial: AllSettings }) {
   const [shop, setShop] = useState<ShopSettings>(initial.shop);
@@ -30,20 +150,9 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     showCountdown: initial.banner?.showCountdown ?? true,
     cutoffHour: initial.banner?.cutoffHour ?? 18,
   });
-  const [deliverySlots, setDeliverySlots] = useState<DeliverySlotsSettings>({
-    capacity: {
-      morning: initial.deliverySlots?.capacity?.morning ?? 8,
-      midday: initial.deliverySlots?.capacity?.midday ?? 8,
-      afternoon: initial.deliverySlots?.capacity?.afternoon ?? 8,
-    },
-  });
-  const [sameDay, setSameDay] = useState<SameDaySettings>({
-    capacity: {
-      nineEleven: initial.sameDay?.capacity?.nineEleven ?? 4,
-      elevenOne: initial.sameDay?.capacity?.elevenOne ?? 4,
-      oneThree: initial.sameDay?.capacity?.oneThree ?? 4,
-    },
-  });
+  const [deliverySlots, setDeliverySlots] = useState<SlotGroupSettings>(initial.deliverySlots);
+  const [sameDay, setSameDay] = useState<SlotGroupSettings>(initial.sameDay);
+  const [pickupSlots, setPickupSlots] = useState<SlotGroupSettings>(initial.pickupSlots);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +192,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           banner: { ...banner, messages: cleanedMessages },
           deliverySlots,
           sameDay,
+          pickupSlots,
         }),
       });
       const data = await res.json();
@@ -213,127 +323,42 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
         </div>
       </section>
 
-      {/* Delivery slot capacity */}
+      {/* Delivery slots */}
       <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
         <div>
-          <p className="eyebrow text-ink-500 mb-1">Delivery slot capacity</p>
+          <p className="eyebrow text-ink-500 mb-1">Delivery time slots</p>
           <p className="text-xs text-ink-500">
-            Maximum number of home deliveries allowed per 3-hour block, every day. Once a block
-            is full, customers can no longer select it at checkout.
+            The time windows customers can pick for regular (next-day and later) home delivery, and
+            how many deliveries each window can take. Once a slot is full, customers can no longer select it.
           </p>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="capMorning">9am – 12pm</Label>
-            <Input
-              id="capMorning"
-              type="number"
-              min="0"
-              step="1"
-              value={deliverySlots.capacity.morning}
-              onChange={(e) =>
-                setDeliverySlots({
-                  capacity: { ...deliverySlots.capacity, morning: Number(e.target.value) },
-                })
-              }
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="capMidday">12 – 3pm</Label>
-            <Input
-              id="capMidday"
-              type="number"
-              min="0"
-              step="1"
-              value={deliverySlots.capacity.midday}
-              onChange={(e) =>
-                setDeliverySlots({
-                  capacity: { ...deliverySlots.capacity, midday: Number(e.target.value) },
-                })
-              }
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="capAfternoon">3 – 6pm</Label>
-            <Input
-              id="capAfternoon"
-              type="number"
-              min="0"
-              step="1"
-              value={deliverySlots.capacity.afternoon}
-              onChange={(e) =>
-                setDeliverySlots({
-                  capacity: { ...deliverySlots.capacity, afternoon: Number(e.target.value) },
-                })
-              }
-              required
-            />
-          </div>
-        </div>
+        <SlotBlocksEditor group={deliverySlots} onChange={setDeliverySlots} />
       </section>
 
-      {/* Same-day delivery capacity */}
+      {/* Same-day delivery slots */}
       <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
         <div>
-          <p className="eyebrow text-ink-500 mb-1">Same-day delivery capacity</p>
+          <p className="eyebrow text-ink-500 mb-1">Same-day delivery slots</p>
           <p className="text-xs text-ink-500">
-            Maximum number of same-day deliveries per 2-hour block, today only. Only products
-            marked &quot;Available same day&quot; are eligible — a basket with any item requiring
-            advance notice can&apos;t use same-day delivery. Set a block to 0 to turn it off.
+            Time windows for same-day delivery, today only. Only products marked &quot;Available same
+            day&quot; are eligible — a basket with any item requiring advance notice can&apos;t use
+            same-day delivery. Set a slot&apos;s capacity to 0 to turn it off, or remove it entirely —
+            e.g. delete anything after 5pm so same-day deliveries stop being offered past then.
           </p>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="capNineEleven">9 – 11am</Label>
-            <Input
-              id="capNineEleven"
-              type="number"
-              min="0"
-              step="1"
-              value={sameDay.capacity.nineEleven}
-              onChange={(e) =>
-                setSameDay({
-                  capacity: { ...sameDay.capacity, nineEleven: Number(e.target.value) },
-                })
-              }
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="capElevenOne">11am – 1pm</Label>
-            <Input
-              id="capElevenOne"
-              type="number"
-              min="0"
-              step="1"
-              value={sameDay.capacity.elevenOne}
-              onChange={(e) =>
-                setSameDay({
-                  capacity: { ...sameDay.capacity, elevenOne: Number(e.target.value) },
-                })
-              }
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="capOneThree">1 – 3pm</Label>
-            <Input
-              id="capOneThree"
-              type="number"
-              min="0"
-              step="1"
-              value={sameDay.capacity.oneThree}
-              onChange={(e) =>
-                setSameDay({
-                  capacity: { ...sameDay.capacity, oneThree: Number(e.target.value) },
-                })
-              }
-              required
-            />
-          </div>
+        <SlotBlocksEditor group={sameDay} onChange={setSameDay} />
+      </section>
+
+      {/* Pickup slots */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Pickup (click &amp; collect) time slots</p>
+          <p className="text-xs text-ink-500">
+            The time windows customers can pick for in-store pickup, and how many collections each
+            window can take.
+          </p>
         </div>
+        <SlotBlocksEditor group={pickupSlots} onChange={setPickupSlots} />
       </section>
 
       {/* Announcement banner */}

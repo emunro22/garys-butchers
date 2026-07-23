@@ -7,10 +7,10 @@ import { stripe } from '@/lib/stripe';
 import { calculateDelivery, getDistanceMiles, calculateDeliveryByDistance } from '@/lib/utils';
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
-import { bucketKey, getDeliveryBlockKey, getDeliveryDateKey } from '@/lib/delivery-slots';
+import { bucketKey, findBlock, getDateKey, isToday } from '@/lib/slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
-import { SAME_DAY_BLOCKS, getSameDayBlockKey, isToday } from '@/lib/same-day-slots';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
+import { getPickupBucketCounts } from '@/lib/pickup-availability';
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
     );
 
     const slotDate = new Date(data.slot);
+    const shopSettings = await getShopSettings();
 
     // Some products require extra notice beyond the earliest available slot (always "tomorrow").
     const maxNoticeDays = Math.max(
@@ -116,11 +117,13 @@ export async function POST(req: NextRequest) {
 
     // A "delivery" order dated today is only ever a same-day order — the regular
     // delivery slot list never offers today (it starts tomorrow), so this is unambiguous.
-    const sameDayBlockKey =
-      data.fulfilment === 'delivery' && isToday(slotDate) ? getSameDayBlockKey(slotDate) : null;
-    const isSameDaySlot = sameDayBlockKey !== null;
+    const sameDayBlock =
+      data.fulfilment === 'delivery' && isToday(slotDate)
+        ? findBlock(shopSettings.sameDay.blocks, slotDate)
+        : null;
+    const isSameDaySlot = sameDayBlock !== null;
 
-    if (isSameDaySlot) {
+    if (sameDayBlock) {
       if (maxNoticeDays > 0) {
         return NextResponse.json(
           { error: "Sorry, an item in your basket isn't available for same-day delivery — please choose a later date." },
@@ -128,16 +131,16 @@ export async function POST(req: NextRequest) {
         );
       }
       const now = new Date();
-      const block = SAME_DAY_BLOCKS.find((b) => b.key === sameDayBlockKey)!;
-      if (!isToday(slotDate, now) || now.getHours() >= block.endHour || now.getDay() === 0) {
+      const endsAt = sameDayBlock.endMinutes > sameDayBlock.startMinutes ? sameDayBlock.endMinutes : sameDayBlock.startMinutes;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (!isToday(slotDate, now) || nowMinutes >= endsAt || shopSettings.sameDay.closedDays.includes(now.getDay())) {
         return NextResponse.json(
           { error: 'That same-day slot has passed — please choose another time.' },
           { status: 400 }
         );
       }
-      const { sameDay } = await getShopSettings();
       const counts = await getSameDayBucketCounts();
-      if ((counts[sameDayBlockKey] ?? 0) >= sameDay.capacity[sameDayBlockKey]) {
+      if ((counts[sameDayBlock.id] ?? 0) >= sameDayBlock.capacity) {
         return NextResponse.json(
           { error: 'That same-day slot is fully booked — please choose another.' },
           { status: 400 }
@@ -147,7 +150,7 @@ export async function POST(req: NextRequest) {
       const minAllowed = new Date();
       minAllowed.setHours(0, 0, 0, 0);
       minAllowed.setDate(minAllowed.getDate() + 1 + maxNoticeDays);
-      if (getDeliveryDateKey(slotDate) < getDeliveryDateKey(minAllowed)) {
+      if (getDateKey(slotDate) < getDateKey(minAllowed)) {
         return NextResponse.json(
           {
             error: `Sorry, an item in your basket needs ${maxNoticeDays} day${maxNoticeDays === 1 ? '' : 's'} notice — please choose a later date.`,
@@ -160,7 +163,7 @@ export async function POST(req: NextRequest) {
     let discount = 0;
     let deliveryFee: number;
     if (data.fulfilment === 'delivery' && data.deliveryAddress?.postcode) {
-      const { delivery } = await getShopSettings();
+      const { delivery } = shopSettings;
       const settings = {
         freeThresholdPence: delivery.freeThresholdPence,
         feePence: delivery.feePence,
@@ -169,12 +172,11 @@ export async function POST(req: NextRequest) {
       const distanceMiles = await getDistanceMiles(data.deliveryAddress.postcode);
       const result = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
       if (!result.withinRadius) {
-        return NextResponse.json(
-          {
-            error: `Sorry, that address is outside our ${settings.radiusMiles} mile delivery area. Please choose pickup instead.`,
-          },
-          { status: 400 }
-        );
+        const error =
+          distanceMiles === null
+            ? "Sorry, we couldn't verify that postcode. Please check it and try again, or choose pickup instead."
+            : `Sorry, that address is outside our ${settings.radiusMiles} mile delivery area. Please choose pickup instead.`;
+        return NextResponse.json({ error }, { status: 400 });
       }
       deliveryFee = result.feePence;
     } else {
@@ -211,17 +213,32 @@ export async function POST(req: NextRequest) {
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
     if (data.fulfilment === 'delivery' && !isSameDaySlot) {
-      const blockKey = getDeliveryBlockKey(slotDate);
-      if (!blockKey) {
+      const { deliverySlots } = shopSettings;
+      const block = deliverySlots.closedDays.includes(slotDate.getDay()) ? null : findBlock(deliverySlots.blocks, slotDate);
+      if (!block) {
         return NextResponse.json({ error: 'That delivery slot is no longer valid' }, { status: 400 });
       }
-      const { deliverySlots } = await getShopSettings();
       const counts = await getDeliveryBucketCounts();
-      const key = bucketKey(getDeliveryDateKey(slotDate), blockKey);
-      const capacity = deliverySlots.capacity[blockKey];
-      if ((counts[key] ?? 0) >= capacity) {
+      const key = bucketKey(getDateKey(slotDate), block.id);
+      if ((counts[key] ?? 0) >= block.capacity) {
         return NextResponse.json(
           { error: 'That delivery slot is fully booked — please choose another.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (data.fulfilment === 'pickup') {
+      const { pickupSlots } = shopSettings;
+      const block = pickupSlots.closedDays.includes(slotDate.getDay()) ? null : findBlock(pickupSlots.blocks, slotDate);
+      if (!block) {
+        return NextResponse.json({ error: 'That pickup slot is no longer valid' }, { status: 400 });
+      }
+      const counts = await getPickupBucketCounts();
+      const key = bucketKey(getDateKey(slotDate), block.id);
+      if ((counts[key] ?? 0) >= block.capacity) {
+        return NextResponse.json(
+          { error: 'That pickup slot is fully booked — please choose another.' },
           { status: 400 }
         );
       }

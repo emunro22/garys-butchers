@@ -12,8 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Zap, Tag, Check } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
-import { generateDeliverySlots, getDeliveryDateKey, bucketKey, type DeliveryBlockKey } from '@/lib/delivery-slots';
-import { generateSameDaySlots } from '@/lib/same-day-slots';
+import { generateSlots, generateTodaySlots, getDateKey, bucketKey, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
 
 // ---- Stripe loader ----
@@ -94,11 +93,13 @@ export function Checkout() {
   const [postcodeFeePence, setPostcodeFeePence] = useState<number | null>(null);
   const [postcodeFeePending, setPostcodeFeePending] = useState(false);
   const [withinRadius, setWithinRadius] = useState(true);
+  const [postcodeUnverifiable, setPostcodeUnverifiable] = useState(false);
 
   useEffect(() => {
     if (fulfilment === 'pickup' || form.postcode.replace(/\s/g, '').length < 5) {
       setPostcodeFeePence(null);
       setWithinRadius(true);
+      setPostcodeUnverifiable(false);
       return;
     }
     setPostcodeFeePending(true);
@@ -111,6 +112,7 @@ export function Checkout() {
           const data = await res.json();
           setPostcodeFeePence(data.feePence);
           setWithinRadius(data.withinRadius ?? true);
+          setPostcodeUnverifiable(data.withinRadius === false && data.distanceMiles === null);
         }
       } finally {
         setPostcodeFeePending(false);
@@ -142,57 +144,20 @@ export function Checkout() {
     return { discount, deliveryFee: dFee, total };
   }, [subtotal, deliveryFee, promo]);
 
-  // Pickup: next 7 collection slots (skip Sunday) — hourly Mon-Fri, fixed Saturday slots.
-  const pickupSlots = useMemo(() => {
-    const out: { value: string; label: string; blockKey?: undefined; dateKey: string }[] = [];
-    const now = new Date();
-    let d = new Date(now);
-    d.setHours(0, 0, 0, 0);
-    while (out.length < 7) {
-      d.setDate(d.getDate() + 1);
-      if (d.getDay() === 0) continue; // closed Sunday
-      const dateStr = d.toLocaleDateString('en-GB', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short',
-      });
-      const dateKey = getDeliveryDateKey(d);
-      if (d.getDay() === 6) {
-        // Sat 7:30–2, unchanged
-        ['08:00', '09:30', '11:00', '12:30'].forEach((t) => {
-          const iso = new Date(d);
-          const [h, m] = t.split(':').map(Number);
-          iso.setHours(h, m, 0, 0);
-          out.push({ value: iso.toISOString(), label: `${dateStr} · ${t}`, dateKey });
-        });
-      } else {
-        // Mon–Fri 9–6, hourly slots
-        const hourRanges = [
-          [9, 10], [10, 11], [11, 12], [12, 13],
-          [13, 14], [14, 15], [15, 16], [16, 17], [17, 18],
-        ];
-        const fmt = (h: number) => (h > 12 ? h - 12 : h);
-        const suffix = (h: number) => (h >= 12 ? 'pm' : 'am');
-        hourRanges.forEach(([startHour, endHour]) => {
-          const iso = new Date(d);
-          iso.setHours(startHour, 0, 0, 0);
-          out.push({
-            value: iso.toISOString(),
-            label: `${dateStr} · ${fmt(startHour)}-${fmt(endHour)}${suffix(endHour)}`,
-            dateKey,
-          });
-        });
-      }
-    }
-    return out;
-  }, []);
+  // Slot block definitions (times, capacity, closed days) are admin-configurable —
+  // fetched per fulfilment type below, alongside live booked/capacity counts.
+  const [deliveryGroup, setDeliveryGroup] = useState<SlotGroupSettings | null>(null);
+  const [sameDayGroup, setSameDayGroup] = useState<SlotGroupSettings | null>(null);
+  const [pickupGroup, setPickupGroup] = useState<SlotGroupSettings | null>(null);
 
-  // Delivery: next 7 eligible days (skip Sunday), 3-hour blocks (9-12 / 12-3 / 3-6).
-  const deliverySlots = useMemo(() => generateDeliverySlots(7), []);
+  // Pickup: next 7 eligible days, admin-configured blocks.
+  const pickupSlots = useMemo(() => (pickupGroup ? generateSlots(pickupGroup, 7) : []), [pickupGroup]);
 
-  // Same-day: today only, 2-hour blocks (9-11 / 11-1 / 1-3) — empty on Sundays
-  // or once every block has ended for the day.
-  const sameDaySlotsList = useMemo(() => generateSameDaySlots(), []);
+  // Delivery: next 7 eligible days, admin-configured blocks.
+  const deliverySlots = useMemo(() => (deliveryGroup ? generateSlots(deliveryGroup, 7) : []), [deliveryGroup]);
+
+  // Same-day: today only, still-open admin-configured blocks.
+  const sameDaySlotsList = useMemo(() => (sameDayGroup ? generateTodaySlots(sameDayGroup) : []), [sameDayGroup]);
 
   const slots = fulfilment === 'delivery' ? deliverySlots : fulfilment === 'sameDay' ? sameDaySlotsList : pickupSlots;
 
@@ -214,7 +179,7 @@ export function Checkout() {
     if (maxNoticeDays === 0 || !earliestSlotDateKey) return earliestSlotDateKey;
     const d = new Date(`${earliestSlotDateKey}T00:00:00`);
     d.setDate(d.getDate() + maxNoticeDays);
-    return getDeliveryDateKey(d);
+    return getDateKey(d);
   }, [maxNoticeDays, earliestSlotDateKey]);
 
   function isSlotTooSoon(s: { dateKey?: string }) {
@@ -247,13 +212,16 @@ export function Checkout() {
     if (fulfilment !== 'delivery') return;
     fetch('/api/delivery-availability')
       .then((r) => r.json())
-      .then((data) => setAvailability(data.availability ?? {}))
+      .then((data) => {
+        setAvailability(data.availability ?? {});
+        setDeliveryGroup(data.group ?? null);
+      })
       .catch(() => {});
   }, [fulfilment]);
 
-  function isSlotFull(s: { blockKey?: string; dateKey?: string }) {
-    if (!s.blockKey || !s.dateKey) return false;
-    const info = availability[bucketKey(s.dateKey, s.blockKey as DeliveryBlockKey)];
+  function isSlotFull(s: { blockId?: string; dateKey?: string }) {
+    if (!s.blockId || !s.dateKey) return false;
+    const info = availability[bucketKey(s.dateKey, s.blockId)];
     if (!info) return false;
     return info.count >= info.capacity;
   }
@@ -265,13 +233,37 @@ export function Checkout() {
     if (fulfilment !== 'sameDay') return;
     fetch('/api/same-day-availability')
       .then((r) => r.json())
-      .then((data) => setSameDayAvailability(data.availability ?? {}))
+      .then((data) => {
+        setSameDayAvailability(data.availability ?? {});
+        setSameDayGroup(data.group ?? null);
+      })
       .catch(() => {});
   }, [fulfilment]);
 
-  function isSameDaySlotFull(s: { blockKey?: string }) {
-    if (!s.blockKey) return false;
-    const info = sameDayAvailability[s.blockKey];
+  function isSameDaySlotFull(s: { blockId?: string }) {
+    if (!s.blockId) return false;
+    const info = sameDayAvailability[s.blockId];
+    if (!info) return false;
+    return info.count >= info.capacity;
+  }
+
+  // Pickup slot availability (only relevant for pickup)
+  const [pickupAvailability, setPickupAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
+
+  useEffect(() => {
+    if (fulfilment !== 'pickup') return;
+    fetch('/api/pickup-availability')
+      .then((r) => r.json())
+      .then((data) => {
+        setPickupAvailability(data.availability ?? {});
+        setPickupGroup(data.group ?? null);
+      })
+      .catch(() => {});
+  }, [fulfilment]);
+
+  function isPickupSlotFull(s: { blockId?: string; dateKey?: string }) {
+    if (!s.blockId || !s.dateKey) return false;
+    const info = pickupAvailability[bucketKey(s.dateKey, s.blockId)];
     if (!info) return false;
     return info.count >= info.capacity;
   }
@@ -562,7 +554,11 @@ export function Checkout() {
               {!postcodeFeePending && !withinRadius && (
                 <div className="sm:col-span-2">
                   <p className="text-sm text-butcher-500 border border-butcher-500/30 bg-butcher-500/5 px-4 py-3">
-                    Sorry — that&apos;s outside our 30 mile delivery area. Please choose{' '}
+                    {postcodeUnverifiable ? (
+                      <>Sorry — we couldn&apos;t verify that postcode. Please double-check it, or choose{' '}</>
+                    ) : (
+                      <>Sorry — that&apos;s outside our 30 mile delivery area. Please choose{' '}</>
+                    )}
                     <button
                       type="button"
                       onClick={() => setFulfilment('pickup')}
@@ -590,7 +586,12 @@ export function Checkout() {
           )}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
             {slots.map((s) => {
-              const full = fulfilment === 'sameDay' ? isSameDaySlotFull(s) : isSlotFull(s);
+              const full =
+                fulfilment === 'sameDay'
+                  ? isSameDaySlotFull(s)
+                  : fulfilment === 'pickup'
+                  ? isPickupSlotFull(s)
+                  : isSlotFull(s);
               const tooSoon = !full && isSlotTooSoon(s);
               const disabled = full || tooSoon;
               return (
@@ -748,6 +749,8 @@ export function Checkout() {
             <dd className="tabular text-ink-900">
               {postcodeFeePending
                 ? 'Calculating…'
+                : fulfilment !== 'pickup' && !withinRadius
+                ? 'Unavailable'
                 : totals.deliveryFee === 0
                 ? 'Free'
                 : formatPrice(totals.deliveryFee)}

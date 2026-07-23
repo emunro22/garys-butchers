@@ -3,18 +3,14 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
 import { getSession } from '@/lib/auth';
-import { DEFAULT_SETTINGS } from '@/lib/settings';
+import { getShopSettings } from '@/lib/settings';
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const rows = await db.select().from(settings);
-    const result: Record<string, unknown> = { ...DEFAULT_SETTINGS };
-    for (const row of rows) {
-      result[row.key] = row.value;
-    }
+    const result = await getShopSettings();
     return NextResponse.json({ settings: result });
   } catch (err) {
     console.error('settings GET error', err);
@@ -40,28 +36,29 @@ const BannerSchema = z.object({
   cutoffHour: z.number().int().min(0).max(23),
 });
 
-const DeliverySlotsSchema = z.object({
-  capacity: z.object({
-    morning: z.number().int().min(0),
-    midday: z.number().int().min(0),
-    afternoon: z.number().int().min(0),
-  }),
-});
+const SlotBlockSchema = z
+  .object({
+    id: z.string().min(1).max(80),
+    startMinutes: z.number().int().min(0).max(1439),
+    endMinutes: z.number().int().min(0).max(1439),
+    capacity: z.number().int().min(0),
+  })
+  .refine((b) => b.endMinutes >= b.startMinutes, {
+    message: 'End time must be at or after start time',
+  });
 
-const SameDaySchema = z.object({
-  capacity: z.object({
-    nineEleven: z.number().int().min(0),
-    elevenOne: z.number().int().min(0),
-    oneThree: z.number().int().min(0),
-  }),
+const SlotGroupSchema = z.object({
+  blocks: z.array(SlotBlockSchema).max(48),
+  closedDays: z.array(z.number().int().min(0).max(6)),
 });
 
 const PatchSchema = z.object({
   shop: ShopSchema.optional(),
   delivery: DeliverySchema.optional(),
   banner: BannerSchema.optional(),
-  deliverySlots: DeliverySlotsSchema.optional(),
-  sameDay: SameDaySchema.optional(),
+  deliverySlots: SlotGroupSchema.optional(),
+  sameDay: SlotGroupSchema.optional(),
+  pickupSlots: SlotGroupSchema.optional(),
 });
 
 export async function PATCH(req: NextRequest) {
@@ -126,6 +123,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.sameDay, updatedAt: new Date() },
+        });
+    }
+
+    if (data.pickupSlots) {
+      await db
+        .insert(settings)
+        .values({ key: 'pickupSlots', value: data.pickupSlots, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.pickupSlots, updatedAt: new Date() },
         });
     }
 
