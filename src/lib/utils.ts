@@ -44,6 +44,7 @@ export function slugify(str: string) {
 
 export const FREE_DELIVERY_THRESHOLD_PENCE = 2500;
 export const STANDARD_DELIVERY_FEE_PENCE = 350;
+export const MINIMUM_DELIVERY_ORDER_PENCE = 2500;
 
 export function calculateDelivery(subtotalInPence: number, fulfilment: 'pickup' | 'delivery') {
   if (fulfilment === 'pickup') return 0;

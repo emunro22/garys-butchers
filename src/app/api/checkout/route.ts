@@ -4,7 +4,13 @@ import { db } from '@/lib/db';
 import { orders, products, promotions } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
-import { calculateDelivery, getDistanceMiles, calculateDeliveryByDistance } from '@/lib/utils';
+import {
+  calculateDelivery,
+  getDistanceMiles,
+  calculateDeliveryByDistance,
+  formatPrice,
+  MINIMUM_DELIVERY_ORDER_PENCE,
+} from '@/lib/utils';
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
 import { bucketKey, findBlock, getDateKey, isToday } from '@/lib/slots';
@@ -105,6 +111,17 @@ export async function POST(req: NextRequest) {
       (sum, i) => sum + i.priceInPence * i.quantity,
       0
     );
+
+    if (data.fulfilment === 'delivery' && subtotal < MINIMUM_DELIVERY_ORDER_PENCE) {
+      return NextResponse.json(
+        {
+          error: `Sorry, there's a ${formatPrice(
+            MINIMUM_DELIVERY_ORDER_PENCE
+          )} minimum order for delivery — please add more items, or choose pickup instead.`,
+        },
+        { status: 400 }
+      );
+    }
 
     const slotDate = new Date(data.slot);
     const shopSettings = await getShopSettings();

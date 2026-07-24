@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { loadStripe, type Stripe as StripeJS } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
-import { formatPrice, calculateDelivery } from '@/lib/utils';
+import { formatPrice, calculateDelivery, MINIMUM_DELIVERY_ORDER_PENCE } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Zap, Tag, Check } from 'lucide-react';
@@ -89,6 +89,7 @@ export function Checkout() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const subtotal = cartSubtotal(items);
+  const belowDeliveryMinimum = fulfilment !== 'pickup' && subtotal < MINIMUM_DELIVERY_ORDER_PENCE;
 
   const [postcodeFeePence, setPostcodeFeePence] = useState<number | null>(null);
   const [postcodeFeePending, setPostcodeFeePending] = useState(false);
@@ -309,6 +310,9 @@ export function Checkout() {
       return `That slot doesn't meet the ${noticeLabel(maxNoticeDays).toLowerCase()} for an item in your basket.`;
     }
     if (fulfilment !== 'pickup') {
+      if (belowDeliveryMinimum) {
+        return `Sorry, there's a ${formatPrice(MINIMUM_DELIVERY_ORDER_PENCE)} minimum order for delivery — please add more items, or choose pickup instead.`;
+      }
       if (!form.line1) return 'Please enter your delivery address.';
       if (!form.postcode) return 'Please enter your postcode.';
       if (!withinRadius) return "Sorry, that address is outside our 30 mile delivery area — please choose pickup instead.";
@@ -441,7 +445,7 @@ export function Checkout() {
               <Truck className="h-6 w-6 mb-3" />
               <p className="font-display text-lg">Home delivery</p>
               <p className="text-xs opacity-70 mt-1">
-                Free over £25 (near zone) · from £2.50
+                £25 minimum · free over £25 (near zone)
               </p>
             </button>
             <button
@@ -459,6 +463,21 @@ export function Checkout() {
             </button>
           </div>
         </section>
+
+        {belowDeliveryMinimum && (
+          <p className="text-sm text-butcher-500 border border-butcher-500/30 bg-butcher-500/5 px-4 py-3">
+            There&apos;s a {formatPrice(MINIMUM_DELIVERY_ORDER_PENCE)} minimum order for delivery — you&apos;re{' '}
+            {formatPrice(MINIMUM_DELIVERY_ORDER_PENCE - subtotal)} away, or{' '}
+            <button
+              type="button"
+              onClick={() => setFulfilment('pickup')}
+              className="underline font-medium"
+            >
+              choose click &amp; collect
+            </button>{' '}
+            instead.
+          </p>
+        )}
 
         {/* Contact details */}
         <section>
@@ -641,7 +660,7 @@ export function Checkout() {
           size="lg"
           className="w-full"
           onClick={handleProceed}
-          disabled={creating || (fulfilment !== 'pickup' && !withinRadius)}
+          disabled={creating || belowDeliveryMinimum || (fulfilment !== 'pickup' && !withinRadius)}
         >
           {creating ? 'Preparing payment…' : 'Continue to payment'}
         </Button>
