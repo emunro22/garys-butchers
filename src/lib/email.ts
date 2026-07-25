@@ -63,6 +63,8 @@ const fmt = (p: number) => `£${(p / 100).toFixed(2)}`;
 
 function formatSlot(iso: string | null | undefined) {
   if (!iso) return 'TBC';
+  // Pin to the shop's timezone — these emails render on a server running in
+  // UTC, so without this a 9am London slot would print as 8am.
   return new Date(iso).toLocaleString('en-GB', {
     weekday: 'long',
     day: 'numeric',
@@ -70,6 +72,7 @@ function formatSlot(iso: string | null | undefined) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Europe/London',
   });
 }
 
@@ -273,6 +276,7 @@ function renderAdminHtml(o: OrderEmailPayload) {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Europe/London',
     }),
     bodyHtml,
   });
@@ -436,7 +440,7 @@ export async function sendNewCustomerNotification(customer: {
         ${customer.phone ? `<tr><td style="padding:8px 0;color:#6b5d4f;border-bottom:1px solid #f0ebe3">Phone</td><td style="padding:8px 0;font-weight:600;border-bottom:1px solid #f0ebe3"><a href="tel:${customer.phone}" style="color:#1a1815">${customer.phone}</a></td></tr>` : ''}
         <tr>
           <td style="padding:8px 0;color:#6b5d4f">Registered</td>
-          <td style="padding:8px 0">${new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+          <td style="padding:8px 0">${new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}</td>
         </tr>
       </table>
     </div>

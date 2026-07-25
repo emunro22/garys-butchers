@@ -29,7 +29,7 @@ export async function buildSignupsReport(days: number) {
       u.email,
       u.phone ?? '',
       u.emailVerified ? 'Yes' : 'No',
-      new Date(u.createdAt).toLocaleString('en-GB'),
+      new Date(u.createdAt).toLocaleString('en-GB', { timeZone: 'Europe/London' }),
     ]),
   ];
 
