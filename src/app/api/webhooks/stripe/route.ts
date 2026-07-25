@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
-import { orders, promotions } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
-import { sendOrderConfirmation, sendShopNotification } from '@/lib/email';
+import { orders } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { markOrderPaid } from '@/lib/order-payment';
 
 // Stripe needs the raw body to verify signatures
 export const runtime = 'nodejs';
@@ -46,48 +46,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      // Idempotency: only act if we haven't already marked it paid
-      if (order.status === 'pending') {
-        await db
-          .update(orders)
-          .set({ status: 'paid', updatedAt: new Date() })
-          .where(eq(orders.id, orderId));
-
-        // Increment promo redemption count if applicable
-        if (order.promotionCode) {
-          await db
-            .update(promotions)
-            .set({ redemptionCount: sql`${promotions.redemptionCount} + 1` })
-            .where(eq(promotions.code, order.promotionCode));
-        }
-
-        // Fire emails (don't block webhook ack on email failures)
-        try {
-          const emailPayload = {
-            orderNumber: order.orderNumber,
-            customerName: order.customerName,
-            customerEmail: order.customerEmail,
-            customerPhone: order.customerPhone,
-            fulfilment: order.fulfilment,
-            items: order.items,
-            subtotalInPence: order.subtotalInPence,
-            deliveryInPence: order.deliveryInPence,
-            discountInPence: order.discountInPence,
-            totalInPence: order.totalInPence,
-            pickupSlot: order.pickupSlot ? order.pickupSlot.toISOString() : null,
-            deliverySlot: order.deliverySlot ? order.deliverySlot.toISOString() : null,
-            deliveryAddress: order.deliveryAddress,
-            notes: order.notes,
-            promotionCode: order.promotionCode,
-          };
-          await Promise.all([
-            sendOrderConfirmation(emailPayload),
-            sendShopNotification(emailPayload),
-          ]);
-        } catch (emailErr) {
-          console.error('order email failed', emailErr);
-        }
-      }
+      await markOrderPaid(order);
     } else if (event.type === 'payment_intent.payment_failed') {
       const intent = event.data.object as Stripe.PaymentIntent;
       const orderId = intent.metadata?.orderId;

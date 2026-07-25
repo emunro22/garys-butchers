@@ -1,8 +1,9 @@
-import { and, eq, gte, lt, notInArray } from 'drizzle-orm';
+import { and, eq, gte, lt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { findBlock } from '@/lib/slots';
+import { activeOrderFilter } from '@/lib/order-status';
 
 /** Booked counts per same-day block, for today only. */
 export async function getSameDayBucketCounts(): Promise<Record<string, number>> {
@@ -20,7 +21,7 @@ export async function getSameDayBucketCounts(): Promise<Record<string, number>> 
         eq(orders.fulfilment, 'delivery'),
         gte(orders.deliverySlot, dayStart),
         lt(orders.deliverySlot, dayEnd),
-        notInArray(orders.status, ['cancelled', 'refunded'])
+        activeOrderFilter()
       )
     );
 

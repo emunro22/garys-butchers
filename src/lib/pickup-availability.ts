@@ -1,8 +1,9 @@
-import { and, eq, gte, lt, notInArray } from 'drizzle-orm';
+import { and, eq, gte, lt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { bucketKey, findBlock, getDateKey } from '@/lib/slots';
+import { activeOrderFilter } from '@/lib/order-status';
 
 export async function getPickupBucketCounts() {
   const { pickupSlots } = await getShopSettings();
@@ -18,7 +19,7 @@ export async function getPickupBucketCounts() {
         eq(orders.fulfilment, 'pickup'),
         gte(orders.pickupSlot, now),
         lt(orders.pickupSlot, horizon),
-        notInArray(orders.status, ['cancelled', 'refunded'])
+        activeOrderFilter()
       )
     );
 
