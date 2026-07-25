@@ -13,7 +13,7 @@ import {
 } from '@/lib/utils';
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
-import { bucketKey, findBlock, getDateKey, isToday } from '@/lib/slots';
+import { bucketKey, findBlock, getDateKey, getWeekday, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
@@ -149,8 +149,8 @@ export async function POST(req: NextRequest) {
       }
       const now = new Date();
       const endsAt = sameDayBlock.endMinutes > sameDayBlock.startMinutes ? sameDayBlock.endMinutes : sameDayBlock.startMinutes;
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      if (!isToday(slotDate, now) || nowMinutes >= endsAt || shopSettings.sameDay.closedDays.includes(now.getDay())) {
+      const nowMinutes = minutesOfDay(now);
+      if (!isToday(slotDate, now) || nowMinutes >= endsAt || shopSettings.sameDay.closedDays.includes(getWeekday(now))) {
         return NextResponse.json(
           { error: 'That same-day slot has passed — please choose another time.' },
           { status: 400 }
@@ -164,9 +164,8 @@ export async function POST(req: NextRequest) {
         );
       }
     } else if (maxNoticeDays > 0) {
-      const minAllowed = new Date();
-      minAllowed.setHours(0, 0, 0, 0);
-      minAllowed.setDate(minAllowed.getDate() + 1 + maxNoticeDays);
+      const [y, m, d] = getDateKey(new Date()).split('-').map(Number);
+      const minAllowed = londonDateTime(y, m, d + 1 + maxNoticeDays, 0);
       if (getDateKey(slotDate) < getDateKey(minAllowed)) {
         return NextResponse.json(
           {
@@ -233,7 +232,7 @@ export async function POST(req: NextRequest) {
 
     if (data.fulfilment === 'delivery' && !isSameDaySlot) {
       const { deliverySlots } = shopSettings;
-      const block = deliverySlots.closedDays.includes(slotDate.getDay()) ? null : findBlock(deliverySlots.blocks, slotDate);
+      const block = deliverySlots.closedDays.includes(getWeekday(slotDate)) ? null : findBlock(deliverySlots.blocks, slotDate);
       if (!block) {
         return NextResponse.json({ error: 'That delivery slot is no longer valid' }, { status: 400 });
       }
@@ -249,7 +248,7 @@ export async function POST(req: NextRequest) {
 
     if (data.fulfilment === 'pickup') {
       const { pickupSlots } = shopSettings;
-      const block = pickupSlots.closedDays.includes(slotDate.getDay()) ? null : findBlock(pickupSlots.blocks, slotDate);
+      const block = pickupSlots.closedDays.includes(getWeekday(slotDate)) ? null : findBlock(pickupSlots.blocks, slotDate);
       if (!block) {
         return NextResponse.json({ error: 'That pickup slot is no longer valid' }, { status: 400 });
       }

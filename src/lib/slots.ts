@@ -3,6 +3,40 @@
 // plus a set of closed weekdays. Centralised here so the block math (labels,
 // bucket keys, which block a timestamp falls into, slot generation) only
 // ever lives in one place.
+//
+// All "what day/hour is it" logic below is pinned to the shop's own timezone
+// (Europe/London) rather than the runtime's local clock. The storefront runs
+// in a browser in the UK, but API routes run on servers set to UTC — without
+// this, "9am" as booked by a customer and "9am" as re-checked by the server
+// disagree by an hour whenever the UK is on BST.
+
+const SHOP_TZ = 'Europe/London';
+
+function londonParts(date: Date) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SHOP_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour'), minute: get('minute') };
+}
+
+/** The precise UTC instant for a given wall-clock time in the shop's
+ *  timezone — correctly handles the BST/GMT offset for that date. */
+export function londonDateTime(year: number, month: number, day: number, minutesSinceMidnight = 0): Date {
+  const hour = Math.floor(minutesSinceMidnight / 60);
+  const minute = minutesSinceMidnight % 60;
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  const seen = londonParts(guess);
+  const wantedAsUTC = Date.UTC(year, month - 1, day, hour, minute);
+  const seenAsUTC = Date.UTC(seen.year, seen.month - 1, seen.day, seen.hour, seen.minute);
+  return new Date(guess.getTime() + (wantedAsUTC - seenAsUTC));
+}
 
 export type SlotBlock = {
   id: string;
@@ -38,21 +72,27 @@ export function blockLabel(block: SlotBlock): string {
   return formatClock(block.startMinutes);
 }
 
-/** 'yyyy-mm-dd' in local time — avoids UTC-shift issues from toISOString(). */
+/** 'yyyy-mm-dd' as seen in the shop's timezone. */
 export function getDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  const { year, month, day } = londonParts(date);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-/** True if `date` falls on the same calendar day as `now`. */
+/** 0 (Sunday) – 6 (Saturday), as seen in the shop's timezone. */
+export function getWeekday(date: Date): number {
+  const { year, month, day } = londonParts(date);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+/** True if `date` falls on the same calendar day as `now`, in the shop's timezone. */
 export function isToday(date: Date, now: Date = new Date()): boolean {
   return getDateKey(date) === getDateKey(now);
 }
 
+/** Minutes since local midnight, as seen in the shop's timezone. */
 export function minutesOfDay(date: Date): number {
-  return date.getHours() * 60 + date.getMinutes();
+  const { hour, minute } = londonParts(date);
+  return hour * 60 + minute;
 }
 
 /** Which block (if any) a timestamp falls into — start inclusive, end exclusive, or an exact match for an instant block. */
@@ -77,18 +117,27 @@ function sortedBlocks(blocks: SlotBlock[]) {
 export function generateSlots(group: SlotGroupSettings, days: number): GeneratedSlot[] {
   const blocks = sortedBlocks(group.blocks);
   const out: GeneratedSlot[] = [];
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
+  let { year, month, day } = londonParts(new Date());
   let daysAdded = 0;
   while (daysAdded < days) {
-    d.setDate(d.getDate() + 1);
-    if (group.closedDays.includes(d.getDay())) continue;
+    const next = new Date(Date.UTC(year, month - 1, day + 1));
+    year = next.getUTCFullYear();
+    month = next.getUTCMonth() + 1;
+    day = next.getUTCDate();
+
+    const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+    if (group.closedDays.includes(weekday)) continue;
     daysAdded++;
-    const dateStr = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
-    const dateKey = getDateKey(d);
+
+    const dateStr = new Date(Date.UTC(year, month - 1, day)).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'UTC',
+    });
+    const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     for (const block of blocks) {
-      const iso = new Date(d);
-      iso.setHours(Math.floor(block.startMinutes / 60), block.startMinutes % 60, 0, 0);
+      const iso = londonDateTime(year, month, day, block.startMinutes);
       out.push({
         value: iso.toISOString(),
         label: `${dateStr} · ${blockLabel(block)}`,
@@ -106,15 +155,16 @@ export function generateSlots(group: SlotGroupSettings, days: number): Generated
  * closed day or every block has already ended.
  */
 export function generateTodaySlots(group: SlotGroupSettings, now: Date = new Date()): GeneratedSlot[] {
-  if (group.closedDays.includes(now.getDay())) return [];
+  const weekday = getWeekday(now);
+  if (group.closedDays.includes(weekday)) return [];
+  const { year, month, day } = londonParts(now);
   const dateKey = getDateKey(now);
   const nowMinutes = minutesOfDay(now);
   const out: GeneratedSlot[] = [];
   for (const block of sortedBlocks(group.blocks)) {
     const endsAt = block.endMinutes > block.startMinutes ? block.endMinutes : block.startMinutes;
     if (nowMinutes >= endsAt) continue;
-    const iso = new Date(now);
-    iso.setHours(Math.floor(block.startMinutes / 60), block.startMinutes % 60, 0, 0);
+    const iso = londonDateTime(year, month, day, block.startMinutes);
     out.push({
       value: iso.toISOString(),
       label: `Today · ${blockLabel(block)}`,

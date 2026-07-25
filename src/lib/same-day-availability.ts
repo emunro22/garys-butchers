@@ -2,16 +2,15 @@ import { and, eq, gte, lt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
-import { findBlock } from '@/lib/slots';
+import { findBlock, getDateKey, londonDateTime } from '@/lib/slots';
 import { activeOrderFilter } from '@/lib/order-status';
 
 /** Booked counts per same-day block, for today only. */
 export async function getSameDayBucketCounts(): Promise<Record<string, number>> {
   const { sameDay } = await getShopSettings();
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(dayStart);
-  dayEnd.setDate(dayEnd.getDate() + 1);
+  const [y, m, d] = getDateKey(new Date()).split('-').map(Number);
+  const dayStart = londonDateTime(y, m, d, 0);
+  const dayEnd = londonDateTime(y, m, d + 1, 0);
 
   const rows = await db
     .select({ deliverySlot: orders.deliverySlot })
