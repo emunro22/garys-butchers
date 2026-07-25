@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS = {
   },
   deliverySlots: {
     blocks: [
+      { id: 'morning', startMinutes: 540, endMinutes: 720, capacity: 8 },
       { id: 'midday', startMinutes: 720, endMinutes: 900, capacity: 8 },
       { id: 'afternoon', startMinutes: 900, endMinutes: 1080, capacity: 8 },
     ] as SlotBlock[],
