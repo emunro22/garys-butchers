@@ -9,13 +9,15 @@ export const DEFAULT_SETTINGS = {
     phone: '0141 959 0478',
   },
   delivery: {
-    freeThresholdPence: 2500,
-    feePence: 350,
+    freeUnderMiles: 5,
+    midTierMiles: 10,
+    midTierFeePence: 395,
+    farFeePence: 500,
     radiusMiles: 30,
   },
   banner: {
     messages: [
-      '🥩  Free home delivery on orders over £25',
+      '🥩  Free home delivery within 5 miles',
       '⭐  Rated 5/5 by our customers in Erskine',
       '🐟  Fresh fish delivered daily — Tuesday to Saturday',
       '🎁  Use code WELCOME10 for 10% off your first order',

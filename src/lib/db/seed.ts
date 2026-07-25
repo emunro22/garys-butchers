@@ -75,7 +75,7 @@ const seedCategories = [
   {
     name: 'Meat Packs',
     slug: 'meat-packs',
-    description: 'Curated value packs that feed the family for less. Free home delivery on orders over £25.',
+    description: 'Curated value packs that feed the family for less. Free home delivery within 5 miles.',
     sortOrder: 0,
   },
 ];

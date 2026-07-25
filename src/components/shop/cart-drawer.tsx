@@ -5,14 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X, Minus, Plus, Truck } from 'lucide-react';
 import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
-import { formatPrice, FREE_DELIVERY_THRESHOLD_PENCE } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 export function CartDrawer() {
   const { items, isOpen, close, updateQuantity, removeItem } = useCart();
   const subtotal = cartSubtotal(items);
-  const remainingForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD_PENCE - subtotal);
-  const freeDeliveryProgress = Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD_PENCE) * 100);
 
   return (
     <AnimatePresence>
@@ -39,31 +37,15 @@ export function CartDrawer() {
               </button>
             </header>
 
-            {/* Free delivery progress */}
+            {/* Free delivery notice */}
             {items.length > 0 && (
               <div className="px-6 py-4 border-b border-ink-900/10 bg-cream-100">
-                <div className="flex items-center gap-2 text-xs mb-2">
+                <div className="flex items-center gap-2 text-xs">
                   <Truck className="h-3.5 w-3.5 text-gold-500" />
-                  {remainingForFreeDelivery > 0 ? (
-                    <span>
-                      Add{' '}
-                      <strong className="text-ink-900">
-                        {formatPrice(remainingForFreeDelivery)}
-                      </strong>{' '}
-                      for free home delivery
-                    </span>
-                  ) : (
-                    <span className="text-ink-900 font-medium">
-                      You&apos;ve unlocked free home delivery 🎉
-                    </span>
-                  )}
-                </div>
-                <div className="h-1 bg-ink-900/10 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${freeDeliveryProgress}%` }}
-                    className="h-full bg-gold-400"
-                  />
+                  <span>
+                    <strong className="text-ink-900">Free delivery</strong> within 5 miles of the
+                    shop — your exact fee is shown once you enter your postcode at checkout.
+                  </span>
                 </div>
               </div>
             )}

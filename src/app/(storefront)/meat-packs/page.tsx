@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Meat packs — Gary’s Butchers & Fishmongers',
   description:
-    'Curated value packs that feed the family for less. Free home delivery on orders over £25.',
+    'Curated value packs that feed the family for less. Free home delivery within 5 miles.',
 };
 
 export const revalidate = 60;
@@ -44,7 +44,7 @@ export default async function MeatPacksPage() {
           </h1>
           <p className="mt-6 max-w-xl text-cream-200/80 leading-relaxed">
             From quick weekday breakfasts to a full week&apos;s shop — eleven hand-built packs,
-            cut fresh and bagged the day you collect. Free home delivery over £25.
+            cut fresh and bagged the day you collect. Free home delivery within 5 miles.
           </p>
         </div>
       </section>

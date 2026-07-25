@@ -8,7 +8,7 @@ const stats = [
   { value: '2015', label: 'Family run since' },
   { value: '5★', label: 'Customer rated' },
   { value: '11', label: 'Curated meat packs' },
-  { value: '£25', label: 'Free delivery from' },
+  { value: '5mi', label: 'Free delivery radius' },
 ];
 
 export function AboutStrip() {

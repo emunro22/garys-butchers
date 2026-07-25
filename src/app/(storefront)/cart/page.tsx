@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Minus, Plus, X } from 'lucide-react';
 import { useCart, cartSubtotal } from '@/lib/cart';
-import { formatPrice, FREE_DELIVERY_THRESHOLD_PENCE } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 export default function CartPage() {
@@ -12,8 +12,6 @@ export default function CartPage() {
   const updateQuantity = useCart((s) => s.updateQuantity);
   const removeItem = useCart((s) => s.removeItem);
   const subtotal = cartSubtotal(items);
-  const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD_PENCE - subtotal);
-  const progress = Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD_PENCE) * 100);
 
   if (items.length === 0) {
     return (
@@ -129,27 +127,12 @@ export default function CartPage() {
           <aside className="bg-cream-100 border border-ink-900/10 p-6 md:p-8 h-fit lg:sticky lg:top-28">
             <h2 className="font-display text-2xl text-ink-900">Summary</h2>
 
-            {/* Free delivery progress */}
+            {/* Free delivery notice */}
             <div className="mt-6">
-              {remaining > 0 ? (
-                <p className="text-sm text-ink-700">
-                  You&apos;re{' '}
-                  <span className="font-semibold text-ink-900">
-                    {formatPrice(remaining)}
-                  </span>{' '}
-                  away from <span className="font-semibold">free home delivery</span>.
-                </p>
-              ) : (
-                <p className="text-sm text-gold-700 font-medium">
-                  ✓ You&apos;ve qualified for free home delivery.
-                </p>
-              )}
-              <div className="mt-3 h-1.5 bg-ink-900/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gold-500 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <p className="text-sm text-ink-700">
+                <span className="font-semibold text-ink-900">Free delivery</span> within 5 miles
+                of the shop — your exact fee is shown once you enter your postcode at checkout.
+              </p>
             </div>
 
             <dl className="mt-6 space-y-2 text-sm border-t border-ink-900/10 pt-6">

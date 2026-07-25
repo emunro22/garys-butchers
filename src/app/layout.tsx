@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s · Gary's Butchers & Fishmongers",
   },
   description:
-    'Independent butcher and fishmonger in Erskine. Hand-cut Scottish beef, free-range chicken, fresh fish daily, and our famous meat packs. Pickup or free home delivery on orders over £25.',
+    'Independent butcher and fishmonger in Erskine. Hand-cut Scottish beef, free-range chicken, fresh fish daily, and our famous meat packs. Pickup or free home delivery within 5 miles.',
   keywords: [
     'butcher Erskine',
     'butcher near me',

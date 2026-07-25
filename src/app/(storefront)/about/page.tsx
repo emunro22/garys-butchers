@@ -48,7 +48,7 @@ export default function AboutPage() {
               <p>
                 Whether you&apos;re after a single steak, the Sunday roast, or a full week&apos;s
                 shop, the same answer applies: it&apos;ll be cut for you, by hand, the day
-                you collect it. Free home delivery on orders over £25 in the local area.
+                you collect it. Free home delivery within 5 miles of the shop.
               </p>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function AboutPage() {
             ['2015', 'Opened the shop'],
             ['5★', 'Google rating'],
             ['11', 'Family meat packs'],
-            ['£25', 'Free delivery threshold'],
+            ['5mi', 'Free delivery radius'],
           ].map(([val, label]) => (
             <div key={label}>
               <p className="font-display text-4xl md:text-5xl text-gold-400">{val}</p>

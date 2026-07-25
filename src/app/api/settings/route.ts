@@ -25,8 +25,10 @@ const ShopSchema = z.object({
 });
 
 const DeliverySchema = z.object({
-  freeThresholdPence: z.number().int().min(0),
-  feePence: z.number().int().min(0),
+  freeUnderMiles: z.number().min(0),
+  midTierMiles: z.number().min(0),
+  midTierFeePence: z.number().int().min(0),
+  farFeePence: z.number().int().min(0),
   radiusMiles: z.number().min(0).max(100).optional(),
 });
 

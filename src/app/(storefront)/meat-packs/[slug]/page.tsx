@@ -164,7 +164,7 @@ export default async function MeatPackPage({
             </div>
 
             <p className="mt-6 text-xs text-cream-200/50">
-              Free home delivery available on orders over £25 in the local area. Click &amp;
+              Free home delivery within 5 miles of the shop. Click &amp;
               collect from our Erskine shop, no charge.
             </p>
 

@@ -34,7 +34,7 @@ const NAV = [
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://garys-butchers.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://garysbutchersandfishmongers.co.uk';
 
 export function AdminShell({
   children,

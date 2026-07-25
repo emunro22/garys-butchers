@@ -4,20 +4,15 @@ import { isToday } from '@/lib/slots';
 const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmongers.co.uk';
-// NOTE: garysbutchersandfishmongers.co.uk is currently a parked domain (not
-// connected to this app). This still affects any link built from SITE_URL
-// (e.g. the "view in admin dashboard" link) if NEXT_PUBLIC_SITE_URL is set to
-// it in the Vercel env — but the logo itself no longer depends on this being
-// right, see the fallback chain below.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garys-butchers.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garysbutchersandfishmongers.co.uk';
 
 // Most mail clients (Gmail, Outlook, etc.) hide remote <img> sources behind a
 // "display images" click-through by default, which made the logo look
 // "missing" even though the URL was correct. Embedding it as an inline
 // (cid:) attachment instead renders immediately, with no click-through.
 const LOGO_CID = 'garys-logo';
-// Tried in order — if NEXT_PUBLIC_SITE_URL is set to the (currently dead)
-// custom domain, the known-good deployment URL is tried next automatically.
+// Tried in order — if NEXT_PUBLIC_SITE_URL is unset or misconfigured, the
+// known-good Vercel deployment URL is tried next automatically.
 const LOGO_URL_CANDIDATES = Array.from(
   new Set([`${SITE_URL}/logo-email.png`, 'https://garys-butchers.vercel.app/logo-email.png'])
 );

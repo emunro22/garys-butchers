@@ -7,7 +7,13 @@ import { Input, Label } from '@/components/ui/input';
 import type { SlotBlock, SlotGroupSettings } from '@/lib/slots';
 
 type ShopSettings = { name: string; address: string; phone: string };
-type DeliverySettings = { freeThresholdPence: number; feePence: number; radiusMiles: number };
+type DeliverySettings = {
+  freeUnderMiles: number;
+  midTierMiles: number;
+  midTierFeePence: number;
+  farFeePence: number;
+  radiusMiles: number;
+};
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
 type AllSettings = {
   shop: ShopSettings;
@@ -141,8 +147,10 @@ function SlotBlocksEditor({
 export function SettingsForm({ initial }: { initial: AllSettings }) {
   const [shop, setShop] = useState<ShopSettings>(initial.shop);
   const [delivery, setDelivery] = useState<DeliverySettings>({
-    freeThresholdPence: initial.delivery.freeThresholdPence,
-    feePence: initial.delivery.feePence,
+    freeUnderMiles: initial.delivery.freeUnderMiles,
+    midTierMiles: initial.delivery.midTierMiles,
+    midTierFeePence: initial.delivery.midTierFeePence,
+    farFeePence: initial.delivery.farFeePence,
     radiusMiles: initial.delivery.radiusMiles ?? 30,
   });
   const [banner, setBanner] = useState<BannerSettings>({
@@ -248,45 +256,81 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
       {/* Delivery */}
       <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
         <div>
-          <p className="eyebrow text-ink-500 mb-1">Delivery</p>
-          <p className="text-xs text-ink-500">Controls the delivery fee shown to customers at checkout.</p>
+          <p className="eyebrow text-ink-500 mb-1">Delivery pricing</p>
+          <p className="text-xs text-ink-500">
+            The delivery fee is based on how far the customer is from the shop (calculated
+            automatically from their postcode at checkout), not their order value.
+          </p>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="threshold">Free delivery threshold (£)</Label>
+            <Label htmlFor="freeUnderMiles">Free delivery under (miles)</Label>
             <Input
-              id="threshold"
+              id="freeUnderMiles"
               type="number"
-              step="0.01"
+              step="0.5"
               min="0"
-              value={(delivery.freeThresholdPence / 100).toFixed(2)}
+              value={delivery.freeUnderMiles}
               onChange={(e) =>
-                setDelivery({ ...delivery, freeThresholdPence: priceToPence(e.target.value) })
+                setDelivery({ ...delivery, freeUnderMiles: Number(e.target.value) })
               }
               required
             />
-            <p className="text-xs text-ink-500 mt-1">Orders at or above this value get free delivery.</p>
+            <p className="text-xs text-ink-500 mt-1">Addresses closer than this get free delivery.</p>
           </div>
           <div>
-            <Label htmlFor="fee">Standard delivery fee (£)</Label>
+            <Label htmlFor="midTierMiles">Mid-tier fee applies up to (miles)</Label>
             <Input
-              id="fee"
+              id="midTierMiles"
               type="number"
-              step="0.01"
+              step="0.5"
               min="0"
-              value={(delivery.feePence / 100).toFixed(2)}
+              value={delivery.midTierMiles}
               onChange={(e) =>
-                setDelivery({ ...delivery, feePence: priceToPence(e.target.value) })
+                setDelivery({ ...delivery, midTierMiles: Number(e.target.value) })
               }
               required
             />
-            <p className="text-xs text-ink-500 mt-1">Charged on orders below the threshold.</p>
+          </div>
+          <div>
+            <Label htmlFor="midTierFee">Mid-tier delivery fee (£)</Label>
+            <Input
+              id="midTierFee"
+              type="number"
+              step="0.01"
+              min="0"
+              value={(delivery.midTierFeePence / 100).toFixed(2)}
+              onChange={(e) =>
+                setDelivery({ ...delivery, midTierFeePence: priceToPence(e.target.value) })
+              }
+              required
+            />
+            <p className="text-xs text-ink-500 mt-1">
+              Charged between the free radius and the mid-tier distance.
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="farFee">Far delivery fee (£)</Label>
+            <Input
+              id="farFee"
+              type="number"
+              step="0.01"
+              min="0"
+              value={(delivery.farFeePence / 100).toFixed(2)}
+              onChange={(e) =>
+                setDelivery({ ...delivery, farFeePence: priceToPence(e.target.value) })
+              }
+              required
+            />
+            <p className="text-xs text-ink-500 mt-1">
+              Charged beyond the mid-tier distance, up to the delivery radius below.
+            </p>
           </div>
         </div>
         <div className="text-sm text-ink-700 bg-cream-50 border border-ink-900/10 px-3 py-2">
-          Current: orders under <strong>£{(delivery.freeThresholdPence / 100).toFixed(2)}</strong> are
-          charged <strong>£{(delivery.feePence / 100).toFixed(2)}</strong> for delivery.
-          Orders of £{(delivery.freeThresholdPence / 100).toFixed(2)} or more get free delivery.
+          Under <strong>{delivery.freeUnderMiles} mile{delivery.freeUnderMiles === 1 ? '' : 's'}</strong>: free.{' '}
+          <strong>{delivery.freeUnderMiles}–{delivery.midTierMiles} miles</strong>: £{(delivery.midTierFeePence / 100).toFixed(2)}.{' '}
+          <strong>{delivery.midTierMiles}+ miles</strong>: £{(delivery.farFeePence / 100).toFixed(2)}.
         </div>
       </section>
 
@@ -295,9 +339,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
         <div>
           <p className="eyebrow text-ink-500 mb-1">Delivery radius</p>
           <p className="text-xs text-ink-500">
-            Orders within the radius use the standard fee above (or get free delivery over the threshold).
             Addresses beyond the radius cannot be delivered to — customers are told to choose pickup instead.
-            Distance is calculated automatically from the customer&apos;s postcode at checkout.
           </p>
         </div>
         <div>
@@ -315,11 +357,6 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
             required
           />
           <p className="text-xs text-ink-500 mt-1">Orders beyond this distance can&apos;t be delivered.</p>
-        </div>
-        <div className="text-sm text-ink-700 bg-cream-50 border border-ink-900/10 px-3 py-2">
-          Within <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong>:{' '}
-          free over £{(delivery.freeThresholdPence / 100).toFixed(0)}, otherwise £{(delivery.feePence / 100).toFixed(2)}.
-          Beyond <strong>{delivery.radiusMiles} mile{delivery.radiusMiles === 1 ? '' : 's'}</strong>: delivery not available.
         </div>
       </section>
 
@@ -376,7 +413,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
               <Input
                 value={message}
                 onChange={(e) => updateMessage(i, e.target.value)}
-                placeholder="e.g. Free home delivery on orders over £25"
+                placeholder="e.g. Free home delivery within 5 miles"
                 maxLength={200}
               />
               <button

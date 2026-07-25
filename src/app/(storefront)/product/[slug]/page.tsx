@@ -177,7 +177,7 @@ export default async function ProductPage({
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-gold-500 mt-0.5">●</span>
-                Free home delivery on orders over £25 in our local area.
+                Free home delivery within 5 miles of the shop.
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-gold-500 mt-0.5">●</span>

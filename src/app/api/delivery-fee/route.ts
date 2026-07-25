@@ -5,7 +5,6 @@ import { getDistanceMiles, calculateDeliveryByDistance } from '@/lib/utils';
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const postcode = searchParams.get('postcode') ?? '';
-  const subtotal = parseInt(searchParams.get('subtotal') ?? '0', 10);
 
   if (!postcode) {
     return NextResponse.json({ error: 'postcode required' }, { status: 400 });
@@ -13,13 +12,15 @@ export async function GET(req: NextRequest) {
 
   const { delivery } = await getShopSettings();
   const settings = {
-    freeThresholdPence: delivery.freeThresholdPence,
-    feePence: delivery.feePence,
+    freeUnderMiles: delivery.freeUnderMiles,
+    midTierMiles: delivery.midTierMiles,
+    midTierFeePence: delivery.midTierFeePence,
+    farFeePence: delivery.farFeePence,
     radiusMiles: delivery.radiusMiles,
   };
 
   const distanceMiles = await getDistanceMiles(postcode);
-  const result = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
+  const result = calculateDeliveryByDistance(distanceMiles, settings);
 
   return NextResponse.json({
     feePence: result.feePence,

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const faqs = [
   {
     q: 'Do you deliver?',
-    a: 'Yes — free home delivery on orders over £25 within our near zone (up to 10 miles from the shop). Below £25 in the near zone, delivery is £3.50. For addresses beyond 10 miles, a £5 delivery charge applies. Orders placed before 10am are delivered same day where possible.',
+    a: 'Yes — free home delivery within 5 miles of the shop. Between 5 and 10 miles, delivery is £3.95. Beyond 10 miles (up to 30 miles), a £5 delivery charge applies. Orders placed before 10am are delivered same day where possible.',
   },
   {
     q: 'Can I click & collect?',

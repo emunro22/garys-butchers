@@ -42,13 +42,14 @@ export function slugify(str: string) {
     .replace(/(^-|-$)/g, '');
 }
 
-export const FREE_DELIVERY_THRESHOLD_PENCE = 2500;
-export const STANDARD_DELIVERY_FEE_PENCE = 350;
+export const STANDARD_DELIVERY_FEE_PENCE = 395;
 export const MINIMUM_DELIVERY_ORDER_PENCE = 2500;
 
-export function calculateDelivery(subtotalInPence: number, fulfilment: 'pickup' | 'delivery') {
+// Rough pre-postcode estimate shown before the customer enters an address —
+// the real, distance-based fee (see calculateDeliveryByDistance) replaces this
+// once the postcode is known.
+export function calculateDelivery(_subtotalInPence: number, fulfilment: 'pickup' | 'delivery') {
   if (fulfilment === 'pickup') return 0;
-  if (subtotalInPence >= FREE_DELIVERY_THRESHOLD_PENCE) return 0;
   return STANDARD_DELIVERY_FEE_PENCE;
 }
 
@@ -100,14 +101,26 @@ export async function getDistanceMiles(customerPostcode: string): Promise<number
 }
 
 export function calculateDeliveryByDistance(
-  subtotalInPence: number,
   distanceMiles: number | null,
-  settings: { freeThresholdPence: number; feePence: number; radiusMiles: number }
+  settings: {
+    freeUnderMiles: number;
+    midTierMiles: number;
+    midTierFeePence: number;
+    farFeePence: number;
+    radiusMiles: number;
+  }
 ): { feePence: number; withinRadius: boolean } {
   // Unknown distance (geocoding failed, e.g. bad postcode) → can't verify it's in range, so don't allow it.
   if (distanceMiles === null || distanceMiles > settings.radiusMiles) {
     return { feePence: 0, withinRadius: false };
   }
-  const feePence = subtotalInPence >= settings.freeThresholdPence ? 0 : settings.feePence;
+  let feePence: number;
+  if (distanceMiles < settings.freeUnderMiles) {
+    feePence = 0;
+  } else if (distanceMiles < settings.midTierMiles) {
+    feePence = settings.midTierFeePence;
+  } else {
+    feePence = settings.farFeePence;
+  }
   return { feePence, withinRadius: true };
 }

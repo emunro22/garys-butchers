@@ -103,7 +103,7 @@ export function Hero() {
                 transition={{ duration: 6, repeat: Infinity }}
                 className="absolute -top-4 -right-4 lg:-top-6 lg:-right-6 h-24 w-24 lg:h-32 lg:w-32 rounded-full bg-gold-400 text-ink-900 flex flex-col items-center justify-center text-center shadow-xl"
               >
-                <span className="font-display text-2xl lg:text-3xl leading-none">£25+</span>
+                <span className="font-display text-2xl lg:text-3xl leading-none">5mi</span>
                 <span className="eyebrow text-[9px] mt-1">Free<br />delivery</span>
               </motion.div>
             </div>

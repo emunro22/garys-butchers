@@ -182,12 +182,14 @@ export async function POST(req: NextRequest) {
     if (data.fulfilment === 'delivery' && data.deliveryAddress?.postcode) {
       const { delivery } = shopSettings;
       const settings = {
-        freeThresholdPence: delivery.freeThresholdPence,
-        feePence: delivery.feePence,
+        freeUnderMiles: delivery.freeUnderMiles,
+        midTierMiles: delivery.midTierMiles,
+        midTierFeePence: delivery.midTierFeePence,
+        farFeePence: delivery.farFeePence,
         radiusMiles: delivery.radiusMiles,
       };
       const distanceMiles = await getDistanceMiles(data.deliveryAddress.postcode);
-      const result = calculateDeliveryByDistance(subtotal, distanceMiles, settings);
+      const result = calculateDeliveryByDistance(distanceMiles, settings);
       if (!result.withinRadius) {
         const error =
           distanceMiles === null
