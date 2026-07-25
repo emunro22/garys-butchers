@@ -17,6 +17,11 @@ import { bucketKey, findBlock, getDateKey, getWeekday, isToday, londonDateTime, 
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
+import { markOrderPaid } from '@/lib/order-payment';
+
+// Stripe won't create a PaymentIntent below this amount for GBP — a promo
+// code that fully (or near-fully) covers the order needs to skip Stripe.
+const STRIPE_MINIMUM_CHARGE_PENCE = 30;
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -285,6 +290,18 @@ export async function POST(req: NextRequest) {
         status: 'pending',
       })
       .returning();
+
+    // A promo code can cover the whole order (or leave a residue below
+    // Stripe's minimum chargeable amount) — nothing to charge, so skip Stripe.
+    if (total < STRIPE_MINIMUM_CHARGE_PENCE) {
+      await markOrderPaid(order);
+      return NextResponse.json({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        clientSecret: null,
+        total,
+      });
+    }
 
     // Create a Stripe PaymentIntent
     const intent = await stripe.paymentIntents.create({

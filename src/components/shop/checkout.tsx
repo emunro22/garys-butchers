@@ -356,6 +356,11 @@ export function Checkout() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Could not start checkout');
+      if (!data.clientSecret) {
+        // Fully covered by a promo code — nothing to pay, order is already confirmed.
+        router.push(`/checkout/success?order=${data.orderId}`);
+        return;
+      }
       setClientSecret(data.clientSecret);
       setOrderId(data.orderId);
     } catch (e) {
