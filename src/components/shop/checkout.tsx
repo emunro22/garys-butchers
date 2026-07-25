@@ -354,17 +354,25 @@ export function Checkout() {
           promotionCode: promo?.code,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Could not start checkout');
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        setCreateError(
+          data?.error ?? 'Sorry, something went wrong starting checkout. Please try again.'
+        );
+        return;
+      }
       if (!data.clientSecret) {
         // Fully covered by a promo code — nothing to pay, order is already confirmed.
+        clear();
         router.push(`/checkout/success?order=${data.orderId}`);
         return;
       }
       setClientSecret(data.clientSecret);
       setOrderId(data.orderId);
     } catch (e) {
-      setCreateError(e instanceof Error ? e.message : 'Could not start checkout');
+      // Network failure or unexpected client-side error — never show raw detail.
+      console.error('checkout submit error', e);
+      setCreateError('Sorry, something went wrong starting checkout. Please check your connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -829,7 +837,17 @@ function PaymentForm({
       redirect: 'if_required',
     });
     if (stripeError) {
-      setError(stripeError.message ?? 'Payment failed');
+      console.error('stripe confirmPayment error', stripeError);
+      // card_error / validation_error are Stripe's own customer-facing messages
+      // (declined card, incomplete details) — safe and useful to show as-is.
+      // Anything else (api_error, invalid_request_error, etc.) is a config or
+      // integration problem the customer shouldn't see the internals of.
+      const safeToShow = stripeError.type === 'card_error' || stripeError.type === 'validation_error';
+      setError(
+        safeToShow
+          ? stripeError.message ?? 'Payment failed — please try again.'
+          : "Sorry, we couldn't process that payment. Please try again, or contact us if it keeps happening."
+      );
       setSubmitting(false);
       return;
     }

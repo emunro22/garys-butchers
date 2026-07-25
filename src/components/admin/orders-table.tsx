@@ -6,8 +6,10 @@ import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import type { Order } from '@/lib/db/schema';
 
+// 'pending' (payment not yet confirmed) is deliberately excluded — those
+// orders aren't real yet and are hidden from admin entirely; they either
+// become 'paid' or get auto-cancelled by the expiry cron.
 const STATUSES = [
-  'pending',
   'paid',
   'preparing',
   'ready',
@@ -18,7 +20,6 @@ const STATUSES = [
 type Status = (typeof STATUSES)[number];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-cream-200 text-ink-700',
   paid: 'bg-gold-400/20 text-gold-700',
   preparing: 'bg-blue-100 text-blue-700',
   ready: 'bg-green-100 text-green-700',

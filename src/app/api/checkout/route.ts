@@ -23,6 +23,15 @@ import { markOrderPaid } from '@/lib/order-payment';
 // code that fully (or near-fully) covers the order needs to skip Stripe.
 const STRIPE_MINIMUM_CHARGE_PENCE = 30;
 
+// Thrown deliberately with a message that's safe to show the customer
+// verbatim. Anything else caught below (Stripe errors, DB errors, etc.)
+// gets a generic fallback instead, so no raw/internal error text ever
+// reaches the checkout page.
+class CheckoutError extends Error {}
+
+const GENERIC_CHECKOUT_ERROR =
+  "Sorry, something went wrong placing your order. Please try again, or contact us if it keeps happening.";
+
 const ItemSchema = z.object({
   productId: z.string().uuid(),
   slug: z.string(),
@@ -89,7 +98,7 @@ export async function POST(req: NextRequest) {
     const lineItems = data.items.map((i) => {
       const dbP = priceMap.get(i.productId);
       if (!dbP || !dbP.isActive) {
-        throw new Error(`Item "${i.name}" is no longer available.`);
+        throw new CheckoutError(`Item "${i.name}" is no longer available.`);
       }
 
       // Resolve price: if a variantLabel is given, use the matching variant price
@@ -98,7 +107,7 @@ export async function POST(req: NextRequest) {
         const variants = dbP.variants as Array<{ label: string; priceInPence: number }> | null;
         const variant = variants?.find((v) => v.label === i.variantLabel);
         if (!variant) {
-          throw new Error(`Size "${i.variantLabel}" is no longer available for "${dbP.name}".`);
+          throw new CheckoutError(`Size "${i.variantLabel}" is no longer available for "${dbP.name}".`);
         }
         priceInPence = variant.priceInPence;
       }
@@ -332,7 +341,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error('checkout error', err);
-    const message = err instanceof Error ? err.message : 'Could not start checkout';
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (err instanceof CheckoutError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    return NextResponse.json({ error: GENERIC_CHECKOUT_ERROR }, { status: 500 });
   }
 }
