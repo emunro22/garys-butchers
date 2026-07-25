@@ -35,9 +35,8 @@ export const DEFAULT_SETTINGS = {
   } satisfies SlotGroupSettings,
   sameDay: {
     blocks: [
-      { id: 'nineEleven', startMinutes: 540, endMinutes: 660, capacity: 4 },
-      { id: 'elevenOne', startMinutes: 660, endMinutes: 780, capacity: 4 },
-      { id: 'oneThree', startMinutes: 780, endMinutes: 900, capacity: 4 },
+      { id: 'fiveSeven', startMinutes: 1020, endMinutes: 1140, capacity: 4 },
+      { id: 'sevenNine', startMinutes: 1140, endMinutes: 1260, capacity: 4 },
     ] as SlotBlock[],
     closedDays: [0] as number[],
   } satisfies SlotGroupSettings,
