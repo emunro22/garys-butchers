@@ -7,7 +7,7 @@ const blocks = [
   {
     icon: ShoppingBag,
     title: 'Click & collect',
-    body: "Order online and collect from the shop on Bridgewater. Usually ready within 24 hours, and there's no surcharge.",
+    body: "Order online and collect from the shop at Park Glade Shops, Erskine. Usually ready within 24 hours, and there's no surcharge.",
   },
   {
     icon: Truck,

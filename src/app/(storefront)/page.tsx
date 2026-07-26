@@ -39,7 +39,7 @@ async function getHomepageData() {
         .orderBy(asc(categories.sortOrder)),
       getCategoryImageMap(),
     ]);
-    const cats = catsRes.map((c) => ({ ...c, imageUrl: categoryImages[c.id] ?? null }));
+    const cats = catsRes.map((c) => ({ ...c, imageUrl: c.imageUrl ?? categoryImages[c.id] ?? null }));
     return { packs: packsRes, packCount: packCountRes[0]?.value ?? 0, reviews: reviewsRes, cats };
   } catch {
     return { packs: [], packCount: 0, reviews: [], cats: [] };

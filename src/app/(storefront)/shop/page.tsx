@@ -28,7 +28,7 @@ export default async function ShopPage() {
         .orderBy(asc(categories.sortOrder)),
       getCategoryImageMap(),
     ]);
-    cats = catsRes.map((c) => ({ ...c, imageUrl: categoryImages[c.id] ?? null }));
+    cats = catsRes.map((c) => ({ ...c, imageUrl: c.imageUrl ?? categoryImages[c.id] ?? null }));
     bestsellers = await db
       .select()
       .from(products)
