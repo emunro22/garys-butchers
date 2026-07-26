@@ -28,8 +28,15 @@ export default async function CheckoutSuccessPage({
     }
   }
 
+  // Payment is confirmed by this point (Stripe already redirected/returned
+  // success) — the order number is normally assigned synchronously before
+  // this page loads, but for redirect-based payment methods that bypass our
+  // client JS, it depends on the Stripe webhook, which can very briefly lag.
+  const stillConfirming = order?.status === 'pending';
+
   return (
     <div className="bg-cream-50 min-h-[70vh]">
+      {stillConfirming && <meta httpEquiv="refresh" content="3" />}
       <section className="mx-auto max-w-3xl px-4 md:px-8 py-20 md:py-28 text-center">
         <CheckCircle2 className="h-16 w-16 mx-auto text-gold-500" strokeWidth={1.5} />
         <p className="eyebrow text-ink-500 mt-6 mb-3">Order confirmed</p>
@@ -41,7 +48,13 @@ export default async function CheckoutSuccessPage({
           in the next minute or two.
         </p>
 
-        {order && (
+        {order && stillConfirming && (
+          <p className="mt-10 text-sm text-ink-500">
+            Just finalising your order details — this will update automatically in a moment.
+          </p>
+        )}
+
+        {order && !stillConfirming && (
           <div className="mt-10 bg-cream-100 border border-ink-900/10 p-6 md:p-8 text-left max-w-md mx-auto">
             <div className="flex items-baseline justify-between border-b border-ink-900/10 pb-3 mb-3">
               <p className="eyebrow text-ink-500">Order number</p>

@@ -303,16 +303,18 @@ export async function POST(req: NextRequest) {
     // A promo code can cover the whole order (or leave a residue below
     // Stripe's minimum chargeable amount) — nothing to charge, so skip Stripe.
     if (total < STRIPE_MINIMUM_CHARGE_PENCE) {
-      await markOrderPaid(order);
+      const paidOrder = await markOrderPaid(order.id);
       return NextResponse.json({
         orderId: order.id,
-        orderNumber: order.orderNumber,
+        orderNumber: paidOrder?.orderNumber ?? null,
         clientSecret: null,
         total,
       });
     }
 
-    // Create a Stripe PaymentIntent
+    // Create a Stripe PaymentIntent. No order number exists yet at this point
+    // — it's only assigned once payment actually succeeds (markOrderPaid) —
+    // so orderId (not orderNumber) is the reference for this PaymentIntent.
     const intent = await stripe.paymentIntents.create({
       amount: total,
       currency: 'gbp',
@@ -320,11 +322,10 @@ export async function POST(req: NextRequest) {
       receipt_email: data.customer.email,
       metadata: {
         orderId: order.id,
-        orderNumber: String(order.orderNumber),
         ...(appliedPromoCode ? { promoCode: appliedPromoCode } : {}),
         fulfilment: data.fulfilment,
       },
-      description: `Gary's Butchers order #${order.orderNumber}`,
+      description: `Gary's Butchers order ${order.id}`,
     });
 
     // Persist the PI id on the order
@@ -335,7 +336,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       orderId: order.id,
-      orderNumber: order.orderNumber,
       clientSecret: intent.client_secret,
       total,
     });

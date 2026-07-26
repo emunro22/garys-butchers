@@ -46,7 +46,7 @@ type OrderItem = {
 
 type Order = {
   id: string;
-  orderNumber: number;
+  orderNumber: number | null;
   status: string;
   totalInPence: number;
   items: OrderItem[];
@@ -250,7 +250,7 @@ export function CustomerProfile({
                 {orders.map((order) => (
                   <tr key={order.id} className="hover:bg-cream-50">
                     <td className="px-5 py-3 font-medium text-ink-900">
-                      #{String(order.orderNumber).padStart(5, '0')}
+                      {order.orderNumber ? `#${String(order.orderNumber).padStart(5, '0')}` : '—'}
                     </td>
                     <td className="px-5 py-3 text-ink-700">{formatDateTime(order.createdAt)}</td>
                     <td className="px-5 py-3 text-ink-700">

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { orders, products, promotions } from '@/lib/db/schema';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, notInArray, sql } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
 import { Package, ClipboardList, TicketPercent, Banknote } from 'lucide-react';
 
@@ -28,9 +28,13 @@ async function loadStats() {
       .select({ count: sql<number>`count(*)::int` })
       .from(promotions)
       .where(eq(promotions.isActive, true));
+    // Only orders that actually went through — a checkout that never
+    // completed payment (pending) or was abandoned (cancelled) isn't a
+    // real order and shouldn't show up next to genuine sales.
     const recent = await db
       .select()
       .from(orders)
+      .where(notInArray(orders.status, ['pending', 'cancelled']))
       .orderBy(desc(orders.createdAt))
       .limit(8);
     return {

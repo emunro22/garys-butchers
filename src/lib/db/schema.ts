@@ -10,7 +10,6 @@ import {
   pgEnum,
   index,
   uniqueIndex,
-  serial,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -150,7 +149,9 @@ export const orders = pgTable(
   'orders',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    orderNumber: serial('order_number').notNull(),
+    // Only assigned once payment succeeds (see markOrderPaid) — a failed or
+    // abandoned checkout should never consume a customer-visible order number.
+    orderNumber: integer('order_number'),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
     customerName: varchar('customer_name', { length: 160 }).notNull(),
     customerEmail: varchar('customer_email', { length: 200 }).notNull(),

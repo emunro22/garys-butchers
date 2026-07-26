@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { users, orders } from '@/lib/db/schema';
-import { eq, desc, or } from 'drizzle-orm';
+import { and, eq, desc, ne, or } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { CustomerProfile } from '@/components/admin/customer-profile';
 
@@ -22,13 +22,17 @@ export default async function AdminCustomerDetailPage({
     .limit(1);
 
   if (user) {
+    // 'pending' orders never completed payment — not real order history.
     const customerOrders = await db
       .select()
       .from(orders)
       .where(
-        or(
-          eq(orders.userId, user.id),
-          eq(orders.customerEmail, user.email)
+        and(
+          or(
+            eq(orders.userId, user.id),
+            eq(orders.customerEmail, user.email)
+          ),
+          ne(orders.status, 'pending')
         )
       )
       .orderBy(desc(orders.createdAt));
@@ -76,7 +80,7 @@ export default async function AdminCustomerDetailPage({
   const customerOrders = await db
     .select()
     .from(orders)
-    .where(eq(orders.customerEmail, email))
+    .where(and(eq(orders.customerEmail, email), ne(orders.status, 'pending')))
     .orderBy(desc(orders.createdAt));
 
   if (customerOrders.length === 0) notFound();

@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         if (intent.status === 'succeeded') {
           // Payment actually went through but the webhook never landed — reconcile
           // rather than cancel, so the slot stays correctly booked.
-          await markOrderPaid(order);
+          await markOrderPaid(order.id);
           reconciledPaid++;
           continue;
         }

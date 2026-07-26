@@ -35,18 +35,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      const [order] = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .limit(1);
-
-      if (!order) {
-        console.warn(`Order ${orderId} not found`);
-        return NextResponse.json({ received: true });
-      }
-
-      await markOrderPaid(order);
+      await markOrderPaid(orderId);
     } else if (event.type === 'payment_intent.payment_failed') {
       const intent = event.data.object as Stripe.PaymentIntent;
       const orderId = intent.metadata?.orderId;

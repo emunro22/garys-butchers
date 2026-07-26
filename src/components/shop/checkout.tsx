@@ -852,6 +852,18 @@ function PaymentForm({
       return;
     }
     if (paymentIntent?.status === 'succeeded') {
+      // Mark the order paid synchronously (assigns its order number) instead
+      // of relying solely on the async Stripe webhook, which can otherwise
+      // still be in flight when the customer lands on the success page.
+      try {
+        await fetch('/api/checkout/confirm', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        });
+      } catch {
+        // The webhook will still confirm it if this call fails.
+      }
       onSuccess();
     } else {
       setSubmitting(false);

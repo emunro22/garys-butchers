@@ -48,8 +48,9 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
     });
   }
 
-  async function deleteOrder(id: string, orderNumber: number) {
-    if (!confirm(`Delete order #${String(orderNumber).padStart(5, '0')}? This cannot be undone.`)) return;
+  async function deleteOrder(id: string, orderNumber: number | null) {
+    const label = orderNumber ? `#${String(orderNumber).padStart(5, '0')}` : 'this';
+    if (!confirm(`Delete order ${label}? This cannot be undone.`)) return;
     setDeleting(id);
     try {
       const res = await fetch('/api/orders', {
@@ -160,7 +161,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                       </button>
                     </td>
                     <td className="px-5 py-3 tabular font-medium align-top">
-                      #{String(o.orderNumber).padStart(5, '0')}
+                      {o.orderNumber ? `#${String(o.orderNumber).padStart(5, '0')}` : '—'}
                       <div className="text-[11px] text-ink-500 mt-0.5">
                         {new Date(o.createdAt).toLocaleString('en-GB', {
                           day: 'numeric',

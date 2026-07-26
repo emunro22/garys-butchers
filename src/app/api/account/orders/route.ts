@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCustomerSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
-import { eq, desc, or } from 'drizzle-orm';
+import { and, eq, desc, ne, or } from 'drizzle-orm';
 
 export async function GET() {
   const session = await getCustomerSession();
@@ -10,13 +10,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
+  // 'pending' orders haven't had payment confirmed yet — not a real order
+  // from the customer's point of view either.
   const userOrders = await db
     .select()
     .from(orders)
     .where(
-      or(
-        eq(orders.userId, session.userId),
-        eq(orders.customerEmail, session.email)
+      and(
+        or(
+          eq(orders.userId, session.userId),
+          eq(orders.customerEmail, session.email)
+        ),
+        ne(orders.status, 'pending')
       )
     )
     .orderBy(desc(orders.createdAt));

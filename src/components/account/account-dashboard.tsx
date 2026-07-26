@@ -41,7 +41,7 @@ type OrderItem = {
 
 type Order = {
   id: string;
-  orderNumber: number;
+  orderNumber: number | null;
   status: string;
   totalInPence: number;
   items: OrderItem[];
@@ -228,7 +228,9 @@ export function AccountDashboard({
                           <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                             <div>
                               <p className="font-medium text-ink-900">
-                                Order #{String(order.orderNumber).padStart(5, '0')}
+                                {order.orderNumber
+                                  ? `Order #${String(order.orderNumber).padStart(5, '0')}`
+                                  : 'Order not completed'}
                               </p>
                               <p className="text-xs text-ink-500 mt-0.5">
                                 {formatDate(order.createdAt)} &middot;{' '}
