@@ -349,6 +349,56 @@ export async function sendShopNotification(payload: OrderEmailPayload) {
   });
 }
 
+export async function sendCheckoutRetryEmail(opts: {
+  customerName: string;
+  customerEmail: string;
+  items: Array<{ name: string; quantity: number; priceInPence: number }>;
+  totalInPence: number;
+}) {
+  const itemsHtml = opts.items
+    .map(
+      (i) => `
+    <tr>
+      <td style="padding:10px 0;color:#1a1815;border-bottom:1px solid #f0ebe3">${i.quantity} × ${i.name}</td>
+      <td style="padding:10px 0;text-align:right;color:#1a1815;border-bottom:1px solid #f0ebe3">${fmt(i.priceInPence * i.quantity)}</td>
+    </tr>`
+    )
+    .join('');
+
+  const bodyHtml = `
+    <p style="margin:0 0 20px;font-size:14px;color:#4a443a;line-height:1.7">
+      We noticed your recent order didn't go through — <strong>no payment was taken</strong>,
+      so nothing has been charged to your card. Sorry for the hassle!
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      ${itemsHtml}
+      <tr>
+        <td style="padding:12px 0 0;font-weight:600;color:#1a1815">Total</td>
+        <td style="padding:12px 0 0;text-align:right;font-weight:600;color:#1a1815">${fmt(opts.totalInPence)}</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin-top:28px">
+      <a href="${SITE_URL}/shop" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600">
+        Place your order again
+      </a>
+    </div>
+    <p style="margin-top:24px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #f0ebe3;padding-top:18px">
+      Prefer to order over the phone instead? Give us a ring on 0141 959 0478.
+    </p>`;
+
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: opts.customerEmail,
+    subject: "Your order didn't go through — nothing was charged",
+    html: renderEmailLayout({
+      eyebrow: 'Order not completed',
+      title: `Sorry${opts.customerName ? `, ${opts.customerName.split(' ')[0]}` : ''} — let's try that again.`,
+      bodyHtml,
+    }),
+    attachments: await getLogoAttachment(),
+  });
+}
+
 export async function sendContactMessage(opts: {
   name: string;
   email: string;
