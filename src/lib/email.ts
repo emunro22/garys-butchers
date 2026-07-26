@@ -352,11 +352,11 @@ export async function sendShopNotification(payload: OrderEmailPayload) {
 export async function sendCheckoutRetryEmail(opts: {
   customerName: string;
   customerEmail: string;
-  items: Array<{ name: string; quantity: number; priceInPence: number }>;
+  items?: Array<{ name: string; quantity: number; priceInPence: number }>;
   totalInPence: number;
 }) {
   const itemsHtml = opts.items
-    .map(
+    ?.map(
       (i) => `
     <tr>
       <td style="padding:10px 0;color:#1a1815;border-bottom:1px solid #f0ebe3">${i.quantity} × ${i.name}</td>
@@ -371,9 +371,9 @@ export async function sendCheckoutRetryEmail(opts: {
       so nothing has been charged to your card. Sorry for the hassle!
     </p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
-      ${itemsHtml}
+      ${itemsHtml ?? ''}
       <tr>
-        <td style="padding:12px 0 0;font-weight:600;color:#1a1815">Total</td>
+        <td style="padding:12px 0 0;font-weight:600;color:#1a1815">${itemsHtml ? 'Total' : 'Attempted total'}</td>
         <td style="padding:12px 0 0;text-align:right;font-weight:600;color:#1a1815">${fmt(opts.totalInPence)}</td>
       </tr>
     </table>
