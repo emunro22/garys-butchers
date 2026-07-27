@@ -48,7 +48,7 @@ export default function TermsPage() {
 
           <h2 className="font-display text-2xl text-ink-900 mt-10 mb-4">Delivery &amp; collection</h2>
           <ul className="space-y-2 text-ink-700">
-            <li>Free delivery is available within 5 miles of the shop. Between 5 and 10 miles, a delivery fee of £3.95 applies. Beyond 10 miles (up to our 30 mile delivery radius), a £5 delivery charge applies, regardless of order value.</li>
+            <li>Free delivery is available within 5 miles of the shop, and on all orders over £100 regardless of distance. Otherwise, between 5 and 10 miles, a delivery fee of £3.95 applies. Beyond 10 miles (up to our 30 mile delivery radius), a £5 delivery charge applies.</li>
             <li>Orders placed before 10am are delivered the same day where possible. Next-day delivery applies otherwise.</li>
             <li>Click &amp; Collect is free. You will receive a ready notification by email or phone when your order is prepared.</li>
             <li>We are not responsible for failed deliveries caused by incorrect address information provided at checkout.</li>

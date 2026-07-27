@@ -107,7 +107,7 @@ export function Checkout() {
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/delivery-fee?postcode=${encodeURIComponent(form.postcode)}`
+          `/api/delivery-fee?postcode=${encodeURIComponent(form.postcode)}&subtotal=${subtotal}`
         );
         if (res.ok) {
           const data = await res.json();
@@ -458,7 +458,7 @@ export function Checkout() {
               <Truck className="h-6 w-6 mb-3" />
               <p className="font-display text-lg">Home delivery</p>
               <p className="text-xs opacity-70 mt-1">
-                £25 minimum order · free delivery within 5 miles
+                £25 minimum order · free delivery within 5 miles or on orders over £100
               </p>
             </button>
             <button

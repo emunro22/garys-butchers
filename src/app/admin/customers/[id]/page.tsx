@@ -14,12 +14,20 @@ export default async function AdminCustomerDetailPage({
 }) {
   const { id } = await params;
 
+  // Guest customer ids are base64url-encoded emails, not UUIDs — querying the
+  // uuid `users.id` column with one throws a Postgres "invalid input syntax
+  // for type uuid" error, so only look up registered users when `id` is
+  // actually shaped like a UUID.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   // Try to find as a registered user first
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
+  const [user] = isUuid
+    ? await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1)
+    : [];
 
   if (user) {
     // 'pending' orders never completed payment — not real order history.

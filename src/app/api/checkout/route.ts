@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
         radiusMiles: delivery.radiusMiles,
       };
       const distanceMiles = await getDistanceMiles(data.deliveryAddress.postcode);
-      const result = calculateDeliveryByDistance(distanceMiles, settings);
+      const result = calculateDeliveryByDistance(distanceMiles, settings, subtotal);
       if (!result.withinRadius) {
         const error =
           distanceMiles === null

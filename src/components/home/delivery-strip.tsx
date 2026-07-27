@@ -12,7 +12,7 @@ const blocks = [
   {
     icon: Truck,
     title: 'Free home delivery',
-    body: 'Free delivery within 5 miles of the shop. £3.95 for 5–10 miles, £5 beyond that (up to 30 miles).',
+    body: 'Free delivery within 5 miles of the shop, or on orders over £100. £3.95 for 5–10 miles, £5 beyond that (up to 30 miles).',
   },
   {
     icon: Clock,
