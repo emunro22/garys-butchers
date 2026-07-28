@@ -219,8 +219,11 @@ export function Checkout() {
   const earliestSlotDateKey = slots[0]?.dateKey;
   const minAllowedDateKey = useMemo(() => {
     if (maxNoticeDays === 0 || !earliestSlotDateKey) return earliestSlotDateKey;
+    // earliestSlotDateKey is already "today + 1" (generateSlots' baseline), and
+    // noticeDays is an absolute day count from today (1 = next day, 2 = two
+    // days out, ...), so only the notice beyond that baseline gets added here.
     const d = new Date(`${earliestSlotDateKey}T00:00:00`);
-    d.setDate(d.getDate() + maxNoticeDays);
+    d.setDate(d.getDate() + maxNoticeDays - 1);
     return getDateKey(d);
   }, [maxNoticeDays, earliestSlotDateKey]);
 
