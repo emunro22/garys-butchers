@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Zap, Tag, Check } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
-import { generateSlots, generateTodaySlots, getDateKey, bucketKey, type SlotGroupSettings } from '@/lib/slots';
+import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
 
 // ---- Stripe loader ----
@@ -171,9 +171,17 @@ export function Checkout() {
   const sameDayDisabledReason =
     !sameDayEligible
       ? 'An item in your basket needs advance notice'
+      : sameDayGroup === null
+      ? 'Checking today’s availability…'
       : sameDaySlotsList.length === 0
       ? 'Same-day delivery has finished for today'
       : null;
+  const sameDaySubtitle = sameDayGroup
+    ? `Today · ${[...sameDayGroup.blocks]
+        .sort((a, b) => a.startMinutes - b.startMinutes)
+        .map(blockLabel)
+        .join(', ')}`
+    : 'Today';
 
   const earliestSlotDateKey = slots[0]?.dateKey;
   const minAllowedDateKey = useMemo(() => {
@@ -227,11 +235,14 @@ export function Checkout() {
     return info.count >= info.capacity;
   }
 
-  // Same-day slot availability (only relevant when in same-day mode)
+  // Same-day slot availability — fetched unconditionally on mount, not gated on
+  // fulfilment === 'sameDay'. The "Same-day delivery" button's disabled state
+  // depends on this data (whether any block is still open today), so gating
+  // the fetch behind already being in same-day mode meant the button could
+  // never be clicked once disabled: no data in, no way to enable it.
   const [sameDayAvailability, setSameDayAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
 
   useEffect(() => {
-    if (fulfilment !== 'sameDay') return;
     fetch('/api/same-day-availability')
       .then((r) => r.json())
       .then((data) => {
@@ -239,7 +250,7 @@ export function Checkout() {
         setSameDayGroup(data.group ?? null);
       })
       .catch(() => {});
-  }, [fulfilment]);
+  }, []);
 
   function isSameDaySlotFull(s: { blockId?: string }) {
     if (!s.blockId) return false;
@@ -443,7 +454,7 @@ export function Checkout() {
               <Zap className="h-6 w-6 mb-3" />
               <p className="font-display text-lg">Same-day delivery</p>
               <p className="text-xs opacity-70 mt-1">
-                {sameDayDisabledReason ?? 'Today · 9am–3pm'}
+                {sameDayDisabledReason ?? sameDaySubtitle}
               </p>
             </button>
             <button
