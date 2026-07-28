@@ -512,6 +512,40 @@ export async function sendNewCustomerNotification(customer: {
   });
 }
 
+// ─── Manual admin → customer message (from the orders screen) ─────────────
+
+export async function sendCustomerMessage(opts: {
+  orderNumber: number | null;
+  customerName: string;
+  customerEmail: string;
+  subject: string;
+  message: string;
+}) {
+  const bodyHtml = `
+    ${
+      opts.orderNumber
+        ? `<p style="margin:0 0 16px;font-size:14px;color:#4a443a">Regarding order <strong>#${String(opts.orderNumber).padStart(5, '0')}</strong></p>`
+        : ''
+    }
+    <p style="margin:0;font-size:14px;color:#1a1815;white-space:pre-wrap;line-height:1.7">${opts.message.replace(/</g, '&lt;')}</p>
+    <p style="margin-top:24px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #f0ebe3;padding-top:18px">
+      Just reply to this email, or give us a ring on 0141 959 0478.
+    </p>`;
+
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: opts.customerEmail,
+    replyTo: process.env.ADMIN_EMAIL || FROM,
+    subject: opts.subject,
+    html: renderEmailLayout({
+      eyebrow: "A message from Gary's Butchers",
+      title: `Hi ${opts.customerName.split(' ')[0]},`,
+      bodyHtml,
+    }),
+    attachments: await getLogoAttachment(),
+  });
+}
+
 // ─── Admin reports ───────────────────────────────────────────────────────────
 
 const REPORT_RECIPIENTS = [

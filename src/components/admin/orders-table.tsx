@@ -2,8 +2,10 @@
 
 import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Mail, X } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input, Textarea, Label } from '@/components/ui/input';
 import type { Order } from '@/lib/db/schema';
 
 // 'pending' (payment not yet confirmed) is deliberately excluded — those
@@ -35,6 +37,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [emailTarget, setEmailTarget] = useState<Order | null>(null);
 
   const filtered =
     filter === 'all' ? orders : orders.filter((o) => o.status === filter);
@@ -212,15 +215,25 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                       </select>
                     </td>
                     <td className="px-3 py-3 align-top">
-                      <button
-                        onClick={() => deleteOrder(o.id, o.orderNumber)}
-                        disabled={deleting === o.id}
-                        className="p-1.5 text-ink-400 hover:text-butcher-600 hover:bg-butcher-50 disabled:opacity-40"
-                        aria-label="Delete order"
-                        title="Delete order"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEmailTarget(o)}
+                          className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-ink-900/5"
+                          aria-label="Email customer"
+                          title="Email customer"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteOrder(o.id, o.orderNumber)}
+                          disabled={deleting === o.id}
+                          className="p-1.5 text-ink-400 hover:text-butcher-600 hover:bg-butcher-50 disabled:opacity-40"
+                          aria-label="Delete order"
+                          title="Delete order"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {isOpen && (
@@ -314,6 +327,107 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
             })}
           </tbody>
         </table>
+      </div>
+
+      {emailTarget && (
+        <EmailOrderModal order={emailTarget} onClose={() => setEmailTarget(null)} />
+      )}
+    </div>
+  );
+}
+
+function EmailOrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const orderLabel = order.orderNumber ? `#${String(order.orderNumber).padStart(5, '0')}` : 'this order';
+  const [subject, setSubject] = useState(`About your order ${orderLabel}`);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  async function send() {
+    if (!message.trim()) {
+      setError('Write a message before sending.');
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/orders/email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, subject, message }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? 'Could not send email');
+      }
+      setSent(true);
+      setTimeout(onClose, 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send email');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink-900/60" onClick={onClose} aria-hidden />
+      <div className="relative bg-cream-50 border border-ink-900/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <header className="p-5 border-b border-ink-900/10 flex items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow text-ink-500 mb-1">Email customer</p>
+            <h3 className="font-display text-xl text-ink-900">{order.customerName}</h3>
+            <p className="text-xs text-ink-500">{order.customerEmail} · Order {orderLabel}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 -m-1.5 text-ink-400 hover:text-ink-900"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <Label htmlFor="email-subject">Subject</Label>
+            <Input
+              id="email-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={200}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email-message">Message</Label>
+            <Textarea
+              id="email-message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={8}
+              maxLength={5000}
+              placeholder="Hi, we noticed your order was cancelled — can you let us know why? We'd love to make it right..."
+              autoFocus
+            />
+            <p className="text-xs text-ink-400 mt-1 text-right">{message.length}/5000</p>
+          </div>
+          <p className="text-xs text-ink-500">
+            Sent from Gary&apos;s Butchers in the same style as your order confirmation emails —
+            the customer can reply directly to it.
+          </p>
+          {error && <p className="text-sm text-butcher-500">{error}</p>}
+          {sent && <p className="text-sm text-green-700">Sent!</p>}
+        </div>
+
+        <div className="p-5 border-t border-ink-900/10 flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose} disabled={sending}>
+            Cancel
+          </Button>
+          <Button onClick={send} disabled={sending || sent}>
+            {sending ? 'Sending…' : sent ? 'Sent' : 'Send email'}
+          </Button>
+        </div>
       </div>
     </div>
   );
