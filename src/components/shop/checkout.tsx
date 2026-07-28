@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Zap, Tag, Check } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
-import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, type SlotGroupSettings } from '@/lib/slots';
+import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, formatClock, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
 
 // ---- Stripe loader ----
@@ -157,8 +157,38 @@ export function Checkout() {
   // Delivery: next 7 eligible days, admin-configured blocks.
   const deliverySlots = useMemo(() => (deliveryGroup ? generateSlots(deliveryGroup, 7) : []), [deliveryGroup]);
 
-  // Same-day: today only, still-open admin-configured blocks.
+  // Same-day: today only, still-open admin-configured blocks. There's a single
+  // window (no picking between multiple slots) — the whole point of same-day
+  // is "order now, it arrives in this window", not a scheduling choice.
   const sameDaySlotsList = useMemo(() => (sameDayGroup ? generateTodaySlots(sameDayGroup) : []), [sameDayGroup]);
+  const sameDaySlot = sameDaySlotsList[0] ?? null;
+
+  // Same-day slot availability — fetched unconditionally on mount, not gated on
+  // fulfilment === 'sameDay'. The "Same-day delivery" button's disabled state
+  // depends on this data (whether the window is still open / already full
+  // today), so gating the fetch behind already being in same-day mode meant
+  // the button could never be clicked once disabled: no data in, no way to
+  // enable it.
+  const [sameDayAvailability, setSameDayAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
+
+  useEffect(() => {
+    fetch('/api/same-day-availability')
+      .then((r) => r.json())
+      .then((data) => {
+        setSameDayAvailability(data.availability ?? {});
+        setSameDayGroup(data.group ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
+  function isSameDaySlotFull(s: { blockId?: string } | null) {
+    if (!s?.blockId) return false;
+    const info = sameDayAvailability[s.blockId];
+    if (!info) return false;
+    return info.count >= info.capacity;
+  }
+
+  const sameDaySlotFull = isSameDaySlotFull(sameDaySlot);
 
   const slots = fulfilment === 'delivery' ? deliverySlots : fulfilment === 'sameDay' ? sameDaySlotsList : pickupSlots;
 
@@ -175,13 +205,16 @@ export function Checkout() {
       ? 'Checking today’s availability…'
       : sameDaySlotsList.length === 0
       ? 'Same-day delivery has finished for today'
+      : sameDaySlotFull
+      ? 'Same-day delivery is fully booked for today'
       : null;
-  const sameDaySubtitle = sameDayGroup
-    ? `Today · ${[...sameDayGroup.blocks]
-        .sort((a, b) => a.startMinutes - b.startMinutes)
-        .map(blockLabel)
-        .join(', ')}`
-    : 'Today';
+  // A single window, e.g. "5pm and 8pm" — same-day is "order now, it arrives
+  // in this window today", not a slot the customer picks between.
+  const sameDayBlock = sameDayGroup?.blocks[0] ?? null;
+  const sameDayWindowText = sameDayBlock
+    ? `between ${formatClock(sameDayBlock.startMinutes)} and ${formatClock(sameDayBlock.endMinutes)}`
+    : null;
+  const sameDaySubtitle = sameDayBlock ? `Delivered today, ${blockLabel(sameDayBlock)}` : 'Today';
 
   const earliestSlotDateKey = slots[0]?.dateKey;
   const minAllowedDateKey = useMemo(() => {
@@ -231,30 +264,6 @@ export function Checkout() {
   function isSlotFull(s: { blockId?: string; dateKey?: string }) {
     if (!s.blockId || !s.dateKey) return false;
     const info = availability[bucketKey(s.dateKey, s.blockId)];
-    if (!info) return false;
-    return info.count >= info.capacity;
-  }
-
-  // Same-day slot availability — fetched unconditionally on mount, not gated on
-  // fulfilment === 'sameDay'. The "Same-day delivery" button's disabled state
-  // depends on this data (whether any block is still open today), so gating
-  // the fetch behind already being in same-day mode meant the button could
-  // never be clicked once disabled: no data in, no way to enable it.
-  const [sameDayAvailability, setSameDayAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
-
-  useEffect(() => {
-    fetch('/api/same-day-availability')
-      .then((r) => r.json())
-      .then((data) => {
-        setSameDayAvailability(data.availability ?? {});
-        setSameDayGroup(data.group ?? null);
-      })
-      .catch(() => {});
-  }, []);
-
-  function isSameDaySlotFull(s: { blockId?: string }) {
-    if (!s.blockId) return false;
-    const info = sameDayAvailability[s.blockId];
     if (!info) return false;
     return info.count >= info.capacity;
   }
@@ -442,7 +451,11 @@ export function Checkout() {
             <button
               type="button"
               disabled={!!sameDayDisabledReason}
-              onClick={() => !sameDayDisabledReason && setFulfilment('sameDay')}
+              onClick={() => {
+                if (sameDayDisabledReason) return;
+                setFulfilment('sameDay');
+                if (sameDaySlot) setForm((prev) => ({ ...prev, slot: sameDaySlot.value }));
+              }}
               className={`p-5 border text-left transition-all ${
                 sameDayDisabledReason
                   ? 'border-ink-900/10 bg-cream-100/50 text-ink-400 cursor-not-allowed'
@@ -620,44 +633,49 @@ export function Checkout() {
         {/* Slot */}
         <section>
           <h2 className="font-display text-2xl text-ink-900 mb-4">
-            {fulfilment === 'pickup' ? '3. Pickup slot' : fulfilment === 'sameDay' ? '4. Same-day slot' : '4. Delivery slot'}
+            {fulfilment === 'pickup' ? '3. Pickup slot' : fulfilment === 'sameDay' ? '4. Same-day delivery' : '4. Delivery slot'}
           </h2>
           {maxNoticeDays > 0 && fulfilment !== 'sameDay' && (
             <p className="text-xs text-butcher-500 mb-3">
               Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()} — earlier slots are unavailable.
             </p>
           )}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
-            {slots.map((s) => {
-              const full =
-                fulfilment === 'sameDay'
-                  ? isSameDaySlotFull(s)
-                  : fulfilment === 'pickup'
-                  ? isPickupSlotFull(s)
-                  : isSlotFull(s);
-              const tooSoon = !full && isSlotTooSoon(s);
-              const disabled = full || tooSoon;
-              return (
-                <button
-                  key={s.value}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => setForm({ ...form, slot: s.value })}
-                  className={`px-3 py-3 text-xs uppercase tracking-[0.18em] border transition-colors ${
-                    disabled
-                      ? 'bg-cream-100 border-ink-900/10 text-ink-400 cursor-not-allowed'
-                      : form.slot === s.value
-                      ? 'bg-ink-900 text-cream-50 border-ink-900'
-                      : 'bg-cream-100 border-ink-900/15 hover:border-ink-900'
-                  }`}
-                >
-                  {s.label}
-                  {full && <span className="block mt-1 text-[10px] normal-case tracking-normal">Fully booked</span>}
-                  {tooSoon && <span className="block mt-1 text-[10px] normal-case tracking-normal">Notice required</span>}
-                </button>
-              );
-            })}
-          </div>
+          {fulfilment === 'sameDay' ? (
+            <p className="flex items-start gap-3 text-sm border border-ink-900/15 bg-cream-100 px-4 py-3 text-ink-700">
+              <Zap className="h-4 w-4 mt-0.5 shrink-0 text-gold-500" />
+              <span>
+                All same-day delivery orders are delivered today
+                {sameDayWindowText ? `, ${sameDayWindowText}` : ''} — no need to pick a time.
+              </span>
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
+              {slots.map((s) => {
+                const full = fulfilment === 'pickup' ? isPickupSlotFull(s) : isSlotFull(s);
+                const tooSoon = !full && isSlotTooSoon(s);
+                const disabled = full || tooSoon;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setForm({ ...form, slot: s.value })}
+                    className={`px-3 py-3 text-xs uppercase tracking-[0.18em] border transition-colors ${
+                      disabled
+                        ? 'bg-cream-100 border-ink-900/10 text-ink-400 cursor-not-allowed'
+                        : form.slot === s.value
+                        ? 'bg-ink-900 text-cream-50 border-ink-900'
+                        : 'bg-cream-100 border-ink-900/15 hover:border-ink-900'
+                    }`}
+                  >
+                    {s.label}
+                    {full && <span className="block mt-1 text-[10px] normal-case tracking-normal">Fully booked</span>}
+                    {tooSoon && <span className="block mt-1 text-[10px] normal-case tracking-normal">Notice required</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Notes */}

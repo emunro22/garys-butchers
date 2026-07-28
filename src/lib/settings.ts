@@ -34,10 +34,10 @@ export const DEFAULT_SETTINGS = {
     closedDays: [0] as number[],
   } satisfies SlotGroupSettings,
   sameDay: {
-    blocks: [
-      { id: 'fiveSeven', startMinutes: 1020, endMinutes: 1140, capacity: 4 },
-      { id: 'sevenNine', startMinutes: 1140, endMinutes: 1260, capacity: 4 },
-    ] as SlotBlock[],
+    // A single window, not a slot the customer picks between — same-day
+    // delivery is "order now, it arrives this evening," so every same-day
+    // order shares one block and one combined capacity.
+    blocks: [{ id: 'fiveEight', startMinutes: 1020, endMinutes: 1200, capacity: 20 }] as SlotBlock[],
     closedDays: [0] as number[],
   } satisfies SlotGroupSettings,
   pickupSlots: {
