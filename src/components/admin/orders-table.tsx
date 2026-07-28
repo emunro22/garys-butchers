@@ -216,14 +216,16 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                     </td>
                     <td className="px-3 py-3 align-top">
                       <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setEmailTarget(o)}
-                          className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-ink-900/5"
-                          aria-label="Email customer"
-                          title="Email customer"
-                        >
-                          <Mail className="h-4 w-4" />
-                        </button>
+                        {o.status === 'cancelled' && (
+                          <button
+                            onClick={() => setEmailTarget(o)}
+                            className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-ink-900/5"
+                            aria-label="Email customer about cancellation"
+                            title="Email customer about cancellation"
+                          >
+                            <Mail className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => deleteOrder(o.id, o.orderNumber)}
                           disabled={deleting === o.id}
@@ -338,7 +340,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
 
 function EmailOrderModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const orderLabel = order.orderNumber ? `#${String(order.orderNumber).padStart(5, '0')}` : 'this order';
-  const [subject, setSubject] = useState(`About your order ${orderLabel}`);
+  const [subject, setSubject] = useState(`About your cancelled order ${orderLabel}`);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -376,7 +378,7 @@ function EmailOrderModal({ order, onClose }: { order: Order; onClose: () => void
       <div className="relative bg-cream-50 border border-ink-900/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <header className="p-5 border-b border-ink-900/10 flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow text-ink-500 mb-1">Email customer</p>
+            <p className="eyebrow text-ink-500 mb-1">Email about cancellation</p>
             <h3 className="font-display text-xl text-ink-900">{order.customerName}</h3>
             <p className="text-xs text-ink-500">{order.customerEmail} · Order {orderLabel}</p>
           </div>
