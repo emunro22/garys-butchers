@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/shop/cart-drawer';
 import { CustomerSessionProvider } from '@/components/account/session-provider';
+import { AnalyticsTracker } from '@/components/layout/analytics-tracker';
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
@@ -23,6 +24,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
 
   return (
     <CustomerSessionProvider>
+      <AnalyticsTracker />
       <AnnouncementBar />
       <Header categories={cats} />
       <main className="min-h-[60vh]">{children}</main>

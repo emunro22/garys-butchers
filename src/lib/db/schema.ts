@@ -225,6 +225,25 @@ export const subscribers = pgTable(
   })
 );
 
+export const analyticsEventTypeEnum = pgEnum('analytics_event_type', ['pageview', 'click']);
+
+export const analyticsEvents = pgTable(
+  'analytics_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    type: analyticsEventTypeEnum('type').notNull(),
+    path: varchar('path', { length: 300 }).notNull(),
+    label: varchar('label', { length: 200 }),
+    sessionId: varchar('session_id', { length: 40 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    typeIdx: index('analytics_events_type_idx').on(t.type),
+    createdAtIdx: index('analytics_events_created_at_idx').on(t.createdAt),
+    pathIdx: index('analytics_events_path_idx').on(t.path),
+  })
+);
+
 export const dealCategoryEnum = pgEnum('deal_category', [
   'christmas',
   'easter',
@@ -293,3 +312,5 @@ export type Subscriber = typeof subscribers.$inferSelect;
 export type NewSubscriber = typeof subscribers.$inferInsert;
 export type Deal = typeof deals.$inferSelect;
 export type NewDeal = typeof deals.$inferInsert;
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type NewAnalyticsEvent = typeof analyticsEvents.$inferInsert;

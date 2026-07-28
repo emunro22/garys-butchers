@@ -4,6 +4,7 @@ import { orders, products, promotions } from '@/lib/db/schema';
 import { desc, eq, notInArray, sql } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
 import { Package, ClipboardList, TicketPercent, Banknote } from 'lucide-react';
+import { StatCard } from '@/components/admin/stat-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,44 +145,6 @@ export default async function AdminDashboardPage() {
           </table>
         </div>
       </section>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  tone = 'plain',
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  tone?: 'plain' | 'gold';
-}) {
-  return (
-    <div
-      className={`p-5 border border-ink-900/10 ${
-        tone === 'gold' ? 'bg-ink-900 text-cream-50' : 'bg-cream-100'
-      }`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <p
-          className={`eyebrow ${tone === 'gold' ? 'text-gold-400' : 'text-ink-500'}`}
-        >
-          {label}
-        </p>
-        <span className={tone === 'gold' ? 'text-gold-400' : 'text-ink-400'}>
-          {icon}
-        </span>
-      </div>
-      <p
-        className={`font-display text-3xl ${
-          tone === 'gold' ? 'text-cream-50' : 'text-ink-900'
-        } tabular`}
-      >
-        {value}
-      </p>
     </div>
   );
 }
