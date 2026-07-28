@@ -3,78 +3,120 @@ import { users, orders, products, categories, analyticsEvents } from '@/lib/db/s
 import { and, eq, gte, sql, desc } from 'drizzle-orm';
 import { activeOrderFilter } from '@/lib/order-status';
 
-function daysAgo(days: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  d.setHours(0, 0, 0, 0);
-  return d;
+// ---------- Time ranges ----------
+// A trailing window from "now", CloudWatch-style — the whole dashboard is
+// scoped to whichever of these is selected, with the trend chart's bucket
+// size adapting so it never renders more than ~30 points.
+
+export const TIME_RANGES = [
+  { key: '1h', label: '1 hour', hours: 1, bucketMinutes: 5 },
+  { key: '3h', label: '3 hours', hours: 3, bucketMinutes: 15 },
+  { key: '12h', label: '12 hours', hours: 12, bucketMinutes: 60 },
+  { key: '1d', label: '1 day', hours: 24, bucketMinutes: 60 },
+  { key: '1w', label: '1 week', hours: 24 * 7, bucketMinutes: 60 * 24 },
+  { key: '1m', label: '1 month', hours: 24 * 30, bucketMinutes: 60 * 24 },
+] as const;
+
+export type RangeKey = (typeof TIME_RANGES)[number]['key'];
+
+export interface ResolvedRange {
+  key: RangeKey;
+  label: string;
+  since: Date;
+  bucketMinutes: number;
 }
 
-/** Builds a continuous daily series over the last `days` days, filling gaps with 0
- *  so the chart never silently skips a day with no activity. */
-function fillDailySeries(
-  rows: Array<{ day: string; count: number }>,
-  days: number
+const DEFAULT_RANGE: RangeKey = '1w';
+
+export function resolveRange(key: string | undefined): ResolvedRange {
+  const found = TIME_RANGES.find((r) => r.key === key) ?? TIME_RANGES.find((r) => r.key === DEFAULT_RANGE)!;
+  return {
+    key: found.key,
+    label: found.label,
+    since: new Date(Date.now() - found.hours * 60 * 60 * 1000),
+    bucketMinutes: found.bucketMinutes,
+  };
+}
+
+/** Builds a continuous bucketed series from `since` to now, filling gaps with 0
+ *  so the chart never silently skips a bucket with no activity. */
+function fillBucketedSeries(
+  rows: Array<{ bucket: string; count: number }>,
+  since: Date,
+  bucketMinutes: number
 ): Array<{ date: string; count: number }> {
-  const byDay = new Map(rows.map((r) => [r.day.slice(0, 10), r.count]));
+  const bucketMs = bucketMinutes * 60 * 1000;
+  const byBucket = new Map(rows.map((r) => [new Date(r.bucket).getTime(), r.count]));
+  const start = Math.floor(since.getTime() / bucketMs) * bucketMs;
+  const end = Math.floor(Date.now() / bucketMs) * bucketMs;
   const series: Array<{ date: string; count: number }> = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = daysAgo(i);
-    const key = d.toISOString().slice(0, 10);
-    series.push({ date: key, count: byDay.get(key) ?? 0 });
+  for (let t = start; t <= end; t += bucketMs) {
+    series.push({ date: new Date(t).toISOString(), count: byBucket.get(t) ?? 0 });
   }
   return series;
 }
 
-export async function getOverviewStats() {
-  const since30 = daysAgo(30);
+/** Postgres expression that floors created_at down to the nearest bucketMinutes interval, as UTC ISO text. */
+function bucketExpr(column: typeof users.createdAt | typeof orders.createdAt | typeof analyticsEvents.createdAt, bucketMinutes: number) {
+  const bucketSeconds = bucketMinutes * 60;
+  return sql<string>`to_char(to_timestamp(floor(extract(epoch from ${column}) / ${bucketSeconds}) * ${bucketSeconds}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+}
 
-  const [[customerCount], [newCustomers], [orderCount], [ordersLast30], [revenueRow], [pageviewCount], [clickCount], [visitorRow]] =
-    await Promise.all([
-      db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.role, 'customer')),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(users)
-        .where(and(eq(users.role, 'customer'), gte(users.createdAt, since30))),
-      db.select({ count: sql<number>`count(*)::int` }).from(orders).where(activeOrderFilter()),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(orders)
-        .where(and(activeOrderFilter(), gte(orders.createdAt, since30))),
-      db
-        .select({ total: sql<number>`coalesce(sum(${orders.totalInPence}), 0)::int` })
-        .from(orders)
-        .where(activeOrderFilter()),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(analyticsEvents)
-        .where(eq(analyticsEvents.type, 'pageview')),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(analyticsEvents)
-        .where(eq(analyticsEvents.type, 'click')),
-      db
-        .select({ count: sql<number>`count(distinct ${analyticsEvents.sessionId})::int` })
-        .from(analyticsEvents),
-    ]);
+export async function getOverviewStats(range: ResolvedRange) {
+  const { since } = range;
+
+  const [
+    [totalCustomersEver],
+    [newCustomers],
+    [orderCount],
+    [revenueRow],
+    [pageviewCount],
+    [clickCount],
+    [visitorRow],
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.role, 'customer')),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(and(eq(users.role, 'customer'), gte(users.createdAt, since))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(orders)
+      .where(and(activeOrderFilter(), gte(orders.createdAt, since))),
+    db
+      .select({ total: sql<number>`coalesce(sum(${orders.totalInPence}), 0)::int` })
+      .from(orders)
+      .where(and(activeOrderFilter(), gte(orders.createdAt, since))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(analyticsEvents)
+      .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(analyticsEvents)
+      .where(and(eq(analyticsEvents.type, 'click'), gte(analyticsEvents.createdAt, since))),
+    db
+      .select({ count: sql<number>`count(distinct ${analyticsEvents.sessionId})::int` })
+      .from(analyticsEvents)
+      .where(gte(analyticsEvents.createdAt, since)),
+  ]);
 
   const totalOrders = orderCount?.count ?? 0;
   const revenue = revenueRow?.total ?? 0;
 
-  // Repeat customers = distinct customer emails with more than one real order.
+  // Repeat customers = distinct customer emails with more than one real order in this window.
   const repeatRows = await db
     .select({ email: orders.customerEmail, count: sql<number>`count(*)::int` })
     .from(orders)
-    .where(activeOrderFilter())
+    .where(and(activeOrderFilter(), gte(orders.createdAt, since)))
     .groupBy(orders.customerEmail);
   const buyers = repeatRows.length;
   const repeatBuyers = repeatRows.filter((r) => r.count > 1).length;
 
   return {
-    totalCustomers: customerCount?.count ?? 0,
-    newCustomersLast30Days: newCustomers?.count ?? 0,
+    totalCustomersEver: totalCustomersEver?.count ?? 0,
+    newCustomers: newCustomers?.count ?? 0,
     totalOrders,
-    ordersLast30Days: ordersLast30?.count ?? 0,
     totalRevenueInPence: revenue,
     avgOrderValueInPence: totalOrders > 0 ? Math.round(revenue / totalOrders) : 0,
     totalPageviews: pageviewCount?.count ?? 0,
@@ -86,35 +128,33 @@ export async function getOverviewStats() {
   };
 }
 
-export async function getSignupTrend(days = 30) {
-  const since = daysAgo(days - 1);
+export async function getSignupTrend(range: ResolvedRange) {
+  const { since, bucketMinutes } = range;
   const rows = await db
-    .select({
-      day: sql<string>`to_char(date_trunc('day', ${users.createdAt}), 'YYYY-MM-DD')`,
-      count: sql<number>`count(*)::int`,
-    })
+    .select({ bucket: bucketExpr(users.createdAt, bucketMinutes), count: sql<number>`count(*)::int` })
     .from(users)
     .where(and(eq(users.role, 'customer'), gte(users.createdAt, since)))
     .groupBy(sql`1`);
-  return fillDailySeries(rows, days);
+  return fillBucketedSeries(rows, since, bucketMinutes);
 }
 
-export async function getOrderTrend(days = 30) {
-  const since = daysAgo(days - 1);
+export async function getOrderTrend(range: ResolvedRange) {
+  const { since, bucketMinutes } = range;
   const rows = await db
-    .select({
-      day: sql<string>`to_char(date_trunc('day', ${orders.createdAt}), 'YYYY-MM-DD')`,
-      count: sql<number>`count(*)::int`,
-    })
+    .select({ bucket: bucketExpr(orders.createdAt, bucketMinutes), count: sql<number>`count(*)::int` })
     .from(orders)
     .where(and(activeOrderFilter(), gte(orders.createdAt, since)))
     .groupBy(sql`1`);
-  return fillDailySeries(rows, days);
+  return fillBucketedSeries(rows, since, bucketMinutes);
 }
 
-export async function getHottestItemsByCategory() {
+export async function getHottestItemsByCategory(range: ResolvedRange) {
+  const { since } = range;
   const [activeOrders, productRows, categoryRows] = await Promise.all([
-    db.select({ items: orders.items }).from(orders).where(activeOrderFilter()),
+    db
+      .select({ items: orders.items })
+      .from(orders)
+      .where(and(activeOrderFilter(), gte(orders.createdAt, since))),
     db
       .select({ id: products.id, name: products.name, categoryId: products.categoryId })
       .from(products),
@@ -122,9 +162,11 @@ export async function getHottestItemsByCategory() {
   ]);
 
   const productById = new Map(productRows.map((p) => [p.id, p]));
-  const categoryNameById = new Map(categoryRows.map((c) => [c.id, c.name]));
 
-  const soldByProduct = new Map<string, { name: string; categoryId: string | null; quantity: number; revenueInPence: number }>();
+  const soldByProduct = new Map<
+    string,
+    { name: string; categoryId: string | null; quantity: number; revenueInPence: number }
+  >();
   for (const order of activeOrders) {
     for (const item of order.items) {
       const product = productById.get(item.productId);
@@ -161,6 +203,7 @@ export async function getHottestItemsByCategory() {
     .filter((v): v is { categoryName: string; productName: string; quantity: number; revenueInPence: number } => v !== null)
     .sort((a, b) => b.quantity - a.quantity);
 
+  const categoryNameById = new Map(categoryRows.map((c) => [c.id, c.name]));
   const bestsellers = [...soldByProduct.values()]
     .map((s) => ({
       productName: s.name,
@@ -174,19 +217,20 @@ export async function getHottestItemsByCategory() {
   return { hottestByCategory, bestsellers };
 }
 
-export async function getEngagementStats() {
+export async function getEngagementStats(range: ResolvedRange) {
+  const { since } = range;
   const [topPages, topClicks] = await Promise.all([
     db
       .select({ path: analyticsEvents.path, count: sql<number>`count(*)::int` })
       .from(analyticsEvents)
-      .where(eq(analyticsEvents.type, 'pageview'))
+      .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since)))
       .groupBy(analyticsEvents.path)
       .orderBy(desc(sql`count(*)`))
       .limit(8),
     db
       .select({ label: analyticsEvents.label, count: sql<number>`count(*)::int` })
       .from(analyticsEvents)
-      .where(eq(analyticsEvents.type, 'click'))
+      .where(and(eq(analyticsEvents.type, 'click'), gte(analyticsEvents.createdAt, since)))
       .groupBy(analyticsEvents.label)
       .orderBy(desc(sql`count(*)`))
       .limit(8),
@@ -200,7 +244,8 @@ export async function getEngagementStats() {
   };
 }
 
-export async function getLocationStats() {
+export async function getLocationStats(range: ResolvedRange) {
+  const { since } = range;
   const [byCity, byFulfilment] = await Promise.all([
     db
       .select({
@@ -209,13 +254,13 @@ export async function getLocationStats() {
         revenueInPence: sql<number>`coalesce(sum(${orders.totalInPence}), 0)::int`,
       })
       .from(orders)
-      .where(and(activeOrderFilter(), eq(orders.fulfilment, 'delivery')))
+      .where(and(activeOrderFilter(), eq(orders.fulfilment, 'delivery'), gte(orders.createdAt, since)))
       .groupBy(sql`1`)
       .orderBy(desc(sql`count(*)`)),
     db
       .select({ fulfilment: orders.fulfilment, count: sql<number>`count(*)::int` })
       .from(orders)
-      .where(activeOrderFilter())
+      .where(and(activeOrderFilter(), gte(orders.createdAt, since)))
       .groupBy(orders.fulfilment),
   ]);
 

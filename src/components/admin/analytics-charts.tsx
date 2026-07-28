@@ -34,12 +34,19 @@ export function BarList({
   );
 }
 
+const dateLabel = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const timeLabel = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' });
+
 export function TrendChart({
   data,
   valueFormatter = (v: number) => String(v),
+  labelFormatter = dateLabel,
 }: {
   data: Array<{ date: string; count: number }>;
   valueFormatter?: (value: number) => string;
+  labelFormatter?: (iso: string) => string;
 }) {
   const max = Math.max(...data.map((d) => d.count), 1);
   const total = data.reduce((sum, d) => sum + d.count, 0);
@@ -56,24 +63,16 @@ export function TrendChart({
             key={d.date}
             className="flex-1 min-w-[2px] bg-gold-400 rounded-t-sm hover:bg-gold-500 transition-colors"
             style={{ height: `${d.count > 0 ? Math.max((d.count / max) * 100, 4) : 1}%` }}
-            title={`${new Date(d.date).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-            })}: ${valueFormatter(d.count)}`}
+            title={`${labelFormatter(d.date)}: ${valueFormatter(d.count)}`}
           />
         ))}
       </div>
       <div className="flex justify-between mt-2 text-[11px] text-ink-500 uppercase tracking-[0.1em]">
-        <span>
-          {new Date(data[0].date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-        </span>
-        <span>
-          {new Date(data[data.length - 1].date).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-          })}
-        </span>
+        <span>{labelFormatter(data[0].date)}</span>
+        <span>{labelFormatter(data[data.length - 1].date)}</span>
       </div>
     </div>
   );
 }
+
+export { dateLabel, timeLabel };
