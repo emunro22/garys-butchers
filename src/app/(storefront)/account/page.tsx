@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCustomerSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { orders, products, users } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { eq, desc, or, notInArray, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { AccountDashboard } from '@/components/account/account-dashboard';
@@ -26,6 +27,8 @@ export default async function AccountPage() {
     .limit(1);
 
   if (!user) redirect('/account/login');
+
+  await ensureOrdersSchema();
 
   const userOrders = await db
     .select()

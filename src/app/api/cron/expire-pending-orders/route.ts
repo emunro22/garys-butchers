@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, lt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
 import { PENDING_ORDER_TTL_MINUTES } from '@/lib/order-status';
 import { markOrderPaid } from '@/lib/order-payment';
@@ -13,6 +14,8 @@ export async function GET(req: NextRequest) {
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  await ensureOrdersSchema();
 
   const staleCutoff = new Date(Date.now() - PENDING_ORDER_TTL_MINUTES * 60 * 1000);
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sql } from '@vercel/postgres';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
 
 const UpdateRoleSchema = z
@@ -33,9 +33,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    try {
-      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
-    } catch { /* already exists */ }
+    await ensureUsersSchema();
 
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (parsed.data.role !== undefined) updates.role = parsed.data.role;

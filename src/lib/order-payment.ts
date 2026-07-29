@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders, promotions } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { sendOrderConfirmation, sendShopNotification } from '@/lib/email';
 
 type OrderRow = typeof orders.$inferSelect;
@@ -17,6 +18,12 @@ type OrderRow = typeof orders.$inferSelect;
  * the order as it now stands, without repeating any side effects.
  */
 export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
+  // This UPDATE (and its .returning()) touches every column Drizzle knows
+  // about on `orders`, including ones added after the table was first
+  // created — every successful checkout runs through here, so a missing
+  // column here breaks ALL payments, not just premium-delivery ones.
+  await ensureOrdersSchema();
+
   const [won] = await db
     .update(orders)
     .set({

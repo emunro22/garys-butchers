@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { orders, products, promotions } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { desc, eq, notInArray, sql } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
 import { Package, ClipboardList, TicketPercent, Banknote } from 'lucide-react';
@@ -10,6 +11,8 @@ export const dynamic = 'force-dynamic';
 
 async function loadStats() {
   try {
+    await ensureOrdersSchema();
+
     const [productCount] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(products);

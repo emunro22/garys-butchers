@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { users, orders } from '@/lib/db/schema';
+import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { gte, and, notInArray } from 'drizzle-orm';
 import { toCsv } from '@/lib/csv';
 
@@ -15,6 +16,7 @@ function periodLabel(days: number, since: Date): string {
 
 export async function buildSignupsReport(days: number) {
   const since = cutoffDate(days);
+  await ensureUsersSchema();
   const rows = await db.select().from(users).where(gte(users.createdAt, since));
   const sorted = [...rows].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ export default async function CheckoutSuccessPage({
   let order: any = null;
   if (orderId) {
     try {
+      await ensureOrdersSchema();
       [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     } catch {
       // ignore — show generic success

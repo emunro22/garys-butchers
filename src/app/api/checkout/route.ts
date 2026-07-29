@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sql } from '@vercel/postgres';
 import { db } from '@/lib/db';
 import { orders, products, promotions, users } from '@/lib/db/schema';
+import { ensureOrdersSchema, ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
 import {
@@ -80,6 +80,13 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data;
 
+    // Every checkout inserts into `orders` and reads/returns all of its
+    // columns (Drizzle's .returning() covers every schema column, including
+    // ones added after the table was first created) — so this must run
+    // unconditionally, not just for premium orders, or ALL checkouts break.
+    await ensureOrdersSchema();
+    await ensureUsersSchema();
+
     const customerSession = await getCustomerSession();
 
     if (data.fulfilment !== 'premium' && !data.slot) {
@@ -94,10 +101,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (data.fulfilment === 'premium') {
-      try {
-        await sql`ALTER TYPE fulfilment ADD VALUE IF NOT EXISTS 'premium'`;
-      } catch { /* already exists */ }
-
       // Re-check eligibility server-side — never trust the client, since a
       // customer could otherwise submit fulfilment: 'premium' directly.
       const eligible =

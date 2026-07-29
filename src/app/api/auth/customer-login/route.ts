@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
 import { comparePassword, signCustomerSession, setCustomerSessionCookie, signSession, setSessionCookie } from '@/lib/auth';
 
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
 
     const { email, password } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
+
+    await ensureUsersSchema();
 
     const [user] = await db
       .select()

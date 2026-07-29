@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq, and } from 'drizzle-orm';
 import { signCustomerSession, setCustomerSessionCookie } from '@/lib/auth';
 import { sendNewCustomerNotification } from '@/lib/email';
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       );
     }
+
+    await ensureUsersSchema();
 
     const [user] = await db
       .select()

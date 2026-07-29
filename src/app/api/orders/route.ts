@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sql } from '@vercel/postgres';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { desc, eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 
@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
+    await ensureOrdersSchema();
+
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
     const all = await db.select().from(orders).orderBy(desc(orders.createdAt));
@@ -51,6 +53,7 @@ export async function DELETE(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
+    await ensureOrdersSchema();
     const [deleted] = await db
       .delete(orders)
       .where(eq(orders.id, parsed.data.id))
@@ -73,10 +76,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    try {
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS weight_grams integer`;
-      await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name varchar(60)`;
-    } catch { /* already exists */ }
+    await ensureOrdersSchema();
 
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;

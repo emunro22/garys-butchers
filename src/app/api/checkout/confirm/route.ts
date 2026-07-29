@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
 import { markOrderPaid } from '@/lib/order-payment';
 
@@ -23,6 +24,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
     const { orderId } = parsed.data;
+
+    await ensureOrdersSchema();
 
     const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     if (!order) {

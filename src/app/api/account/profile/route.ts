@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sql } from '@vercel/postgres';
 import { getCustomerSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET() {
@@ -12,9 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  try {
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
-  } catch { /* already exists */ }
+  await ensureUsersSchema();
 
   const [user] = await db
     .select({

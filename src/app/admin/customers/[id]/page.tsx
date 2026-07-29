@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { users, orders } from '@/lib/db/schema';
+import { ensureOrdersSchema, ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { and, eq, desc, ne, or } from 'drizzle-orm';
-import { sql } from '@vercel/postgres';
 import { CustomerProfile } from '@/components/admin/customer-profile';
 
 export const dynamic = 'force-dynamic';
@@ -12,9 +12,8 @@ export default async function AdminCustomerDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  try {
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
-  } catch { /* already exists */ }
+  await ensureUsersSchema();
+  await ensureOrdersSchema();
 
   const { id } = await params;
 

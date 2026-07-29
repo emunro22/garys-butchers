@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { signSession, setSessionCookie, verifyAdminLogin, comparePassword, signCustomerSession, setCustomerSessionCookie } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
 
 const Schema = z.object({
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
 
     // Try database users with admin role
     const normalizedEmail = email.toLowerCase().trim();
+    await ensureUsersSchema();
     const [user] = await db
       .select()
       .from(users)

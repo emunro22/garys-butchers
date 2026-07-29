@@ -1,11 +1,14 @@
 import { db } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
+import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { desc, ne } from 'drizzle-orm';
 import { OrdersTable } from '@/components/admin/orders-table';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOrdersPage() {
+  await ensureOrdersSchema();
+
   // 'pending' orders haven't had payment confirmed yet — they aren't real
   // orders until they're paid, so they never show up here at all. They
   // either become 'paid' via the webhook, or get auto-cancelled by the
