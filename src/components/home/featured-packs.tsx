@@ -67,7 +67,7 @@ export function FeaturedPacks({ packs, packCount }: { packs: Product[]; packCoun
               </div>
 
               <Link
-                href={`/meat-packs/${pack.slug}`}
+                href={`/shop/meat-packs/${pack.slug}`}
                 className="mt-auto inline-flex items-center justify-center gap-2 eyebrow text-cream-50 group-hover:text-gold-400 transition-colors py-3 border-t border-gold-400/20 relative z-10"
               >
                 View pack
@@ -79,7 +79,7 @@ export function FeaturedPacks({ packs, packCount }: { packs: Product[]; packCoun
 
         <div className="text-center mt-14">
           <Link
-            href="/meat-packs"
+            href="/shop/meat-packs"
             className="inline-flex items-center gap-2 eyebrow text-gold-400 hover:text-gold-300 border-b border-gold-400/40 pb-1"
           >
             See all {packCount} meat packs

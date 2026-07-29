@@ -21,7 +21,7 @@ export function ProductCard({
 }) {
   const addItem = useCart((s) => s.addItem);
   const [imgError, setImgError] = useState(false);
-  const href = product.isPack ? `/meat-packs/${product.slug}` : `/product/${product.slug}`;
+  const href = product.isPack ? `/shop/meat-packs/${product.slug}` : `/product/${product.slug}`;
 
   const variants = (product.variants as Variant[] | undefined) ?? [];
   const hasVariants = variants.length > 0;

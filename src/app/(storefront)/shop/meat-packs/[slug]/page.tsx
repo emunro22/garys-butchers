@@ -82,7 +82,7 @@ export default async function MeatPackPage({
 
         <div className="relative mx-auto max-w-7xl px-4 md:px-8 pt-10">
           <nav className="text-xs uppercase tracking-[0.22em] text-cream-200/60">
-            <Link href="/meat-packs" className="hover:text-gold-400">
+            <Link href="/shop/meat-packs" className="hover:text-gold-400">
               Meat packs
             </Link>
             <span className="mx-3">/</span>
@@ -219,7 +219,7 @@ export default async function MeatPackPage({
               {otherPacks.map((p) => (
                 <Link
                   key={p.id}
-                  href={`/meat-packs/${p.slug}`}
+                  href={`/shop/meat-packs/${p.slug}`}
                   className="group bg-cream-100 border border-ink-900/10 hover:border-gold-500 transition-colors p-6"
                 >
                   <p className="eyebrow text-ink-500 mb-2">Pack</p>

@@ -102,7 +102,7 @@ export function SearchBar({
     setOpen(false);
     setValue('');
     onNavigate?.();
-    router.push(s.isPack ? `/meat-packs/${s.slug}` : `/product/${s.slug}`);
+    router.push(s.isPack ? `/shop/meat-packs/${s.slug}` : `/product/${s.slug}`);
   }
 
   return (

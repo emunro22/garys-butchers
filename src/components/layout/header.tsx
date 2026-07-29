@@ -28,7 +28,7 @@ export function Header({ categories }: { categories: { name: string; slug: strin
   const nav = [
     { label: 'Shop all', href: '/shop' },
     ...curated.map((c) => ({ label: c.name, href: `/shop/${c.slug}` })),
-    { label: 'Meat packs', href: '/meat-packs' },
+    { label: 'Meat packs', href: '/shop/meat-packs' },
   ];
 
   const allCategoryLinks = categories
@@ -38,7 +38,7 @@ export function Header({ categories }: { categories: { name: string; slug: strin
   const mobileNav = [
     { label: 'Shop all', href: '/shop' },
     ...allCategoryLinks,
-    { label: 'Meat packs', href: '/meat-packs' },
+    { label: 'Meat packs', href: '/shop/meat-packs' },
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];

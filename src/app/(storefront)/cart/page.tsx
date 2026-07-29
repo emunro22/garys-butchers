@@ -26,7 +26,7 @@ export default function CartPage() {
             <Link href="/shop">
               <Button variant="primary">Shop all</Button>
             </Link>
-            <Link href="/meat-packs">
+            <Link href="/shop/meat-packs">
               <Button variant="outline">Meat packs</Button>
             </Link>
           </div>

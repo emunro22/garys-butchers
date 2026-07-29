@@ -13,7 +13,7 @@ const cols = [
       { label: 'Pork/Ham', href: '/shop/pork-ham' },
       { label: 'Chicken', href: '/shop/chicken' },
       { label: 'Fish', href: '/shop/fish' },
-      { label: 'Meat packs', href: '/meat-packs' },
+      { label: 'Meat packs', href: '/shop/meat-packs' },
     ],
   },
   {

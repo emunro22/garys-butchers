@@ -13,6 +13,12 @@ const nextConfig = {
       bodySizeLimit: '5mb',
     },
   },
+  async redirects() {
+    return [
+      { source: '/meat-packs', destination: '/shop/meat-packs', permanent: true },
+      { source: '/meat-packs/:slug', destination: '/shop/meat-packs/:slug', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

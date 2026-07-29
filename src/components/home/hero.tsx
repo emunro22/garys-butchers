@@ -55,7 +55,7 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
               className="mt-10 flex flex-wrap gap-4"
             >
-              <Link href="/meat-packs">
+              <Link href="/shop/meat-packs">
                 <Button variant="gold" size="lg" className="group">
                   Shop meat packs
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

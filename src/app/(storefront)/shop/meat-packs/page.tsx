@@ -102,7 +102,7 @@ export default async function MeatPacksPage({
                   <p className="font-display text-2xl text-ink-700">No matches for “{query}”.</p>
                   <p className="text-ink-500 mt-2">Try a different word, or clear the search.</p>
                   <Link
-                    href="/meat-packs"
+                    href="/shop/meat-packs"
                     className="inline-block mt-6 text-sm uppercase tracking-[0.2em] text-ink-900 underline underline-offset-4"
                   >
                     Clear search
@@ -119,7 +119,7 @@ export default async function MeatPacksPage({
                 return (
                   <Link
                     key={pack.id}
-                    href={`/meat-packs/${pack.slug}`}
+                    href={`/shop/meat-packs/${pack.slug}`}
                     className="group bg-cream-100 border border-ink-900/10 hover:border-gold-500 transition-colors flex flex-col overflow-hidden"
                   >
                     {/* Image */}

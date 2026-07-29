@@ -109,7 +109,7 @@ export default async function ShopPage() {
                 <h2 className="font-display text-3xl md:text-4xl text-ink-900">Bestsellers</h2>
               </div>
               <Link
-                href="/meat-packs"
+                href="/shop/meat-packs"
                 className="hidden md:inline-flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-ink-700 hover:text-ink-900"
               >
                 Meat packs
