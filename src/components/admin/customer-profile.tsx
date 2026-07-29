@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   Crown,
   Package,
+  Truck,
 } from 'lucide-react';
 
 type CustomerData = {
@@ -25,6 +26,7 @@ type CustomerData = {
   phone: string | null;
   role: string | null;
   emailVerified: boolean | null;
+  premiumDeliveryEligible: boolean;
   defaultAddress: {
     line1: string;
     line2?: string;
@@ -74,6 +76,7 @@ export function CustomerProfile({
 }) {
   const router = useRouter();
   const [changingRole, setChangingRole] = useState(false);
+  const [changingPremium, setChangingPremium] = useState(false);
 
   async function toggleRole() {
     if (!confirm(`Are you sure you want to ${customer.role === 'admin' ? 'remove admin access from' : 'grant admin access to'} ${customer.name}?`)) return;
@@ -90,6 +93,23 @@ export function CustomerProfile({
       if (res.ok) router.refresh();
     } finally {
       setChangingRole(false);
+    }
+  }
+
+  async function togglePremiumDelivery() {
+    setChangingPremium(true);
+    try {
+      const res = await fetch('/api/admin/customers', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userId: customer.id,
+          premiumDeliveryEligible: !customer.premiumDeliveryEligible,
+        }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setChangingPremium(false);
     }
   }
 
@@ -145,19 +165,34 @@ export function CustomerProfile({
             </div>
           </div>
           {customer.type === 'registered' && (
-            <Button
-              variant={customer.role === 'admin' ? 'danger' : 'gold'}
-              size="sm"
-              onClick={toggleRole}
-              disabled={changingRole}
-            >
-              <Crown className="h-4 w-4 mr-1" />
-              {changingRole
-                ? 'Updating…'
-                : customer.role === 'admin'
-                ? 'Remove admin'
-                : 'Make admin'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={customer.premiumDeliveryEligible ? 'danger' : 'outline'}
+                size="sm"
+                onClick={togglePremiumDelivery}
+                disabled={changingPremium}
+              >
+                <Truck className="h-4 w-4 mr-1" />
+                {changingPremium
+                  ? 'Updating…'
+                  : customer.premiumDeliveryEligible
+                  ? 'Remove premium delivery'
+                  : 'Enable premium delivery'}
+              </Button>
+              <Button
+                variant={customer.role === 'admin' ? 'danger' : 'gold'}
+                size="sm"
+                onClick={toggleRole}
+                disabled={changingRole}
+              >
+                <Crown className="h-4 w-4 mr-1" />
+                {changingRole
+                  ? 'Updating…'
+                  : customer.role === 'admin'
+                  ? 'Remove admin'
+                  : 'Make admin'}
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -194,6 +229,11 @@ export function CustomerProfile({
                 {customer.role === 'admin' && (
                   <span className="text-[10px] bg-gold-400 text-ink-900 px-1.5 py-0.5 font-bold uppercase tracking-wider ml-1">
                     Admin
+                  </span>
+                )}
+                {customer.premiumDeliveryEligible && (
+                  <span className="text-[10px] bg-ink-900 text-cream-50 px-1.5 py-0.5 font-bold uppercase tracking-wider ml-1">
+                    Premium delivery
                   </span>
                 )}
               </>

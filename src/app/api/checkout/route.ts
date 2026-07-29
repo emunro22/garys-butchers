@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { sql } from '@vercel/postgres';
 import { db } from '@/lib/db';
-import { orders, products, promotions } from '@/lib/db/schema';
+import { orders, products, promotions, users } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
 import {
@@ -45,7 +46,7 @@ const ItemSchema = z.object({
 
 const CheckoutSchema = z.object({
   items: z.array(ItemSchema).min(1),
-  fulfilment: z.enum(['pickup', 'delivery']),
+  fulfilment: z.enum(['pickup', 'delivery', 'premium']),
   customer: z.object({
     name: z.string().min(1).max(160),
     email: z.string().email().max(200),
@@ -60,7 +61,9 @@ const CheckoutSchema = z.object({
     })
     .nullable()
     .optional(),
-  slot: z.string().datetime(),
+  // Premium/bulk delivery is courier-scheduled, not a self-managed shop
+  // slot, so it's the only fulfilment type that doesn't require one.
+  slot: z.string().datetime().optional(),
   notes: z.string().max(1000).optional(),
   promotionCode: z.string().optional(),
 });
@@ -79,11 +82,43 @@ export async function POST(req: NextRequest) {
 
     const customerSession = await getCustomerSession();
 
-    if (data.fulfilment === 'delivery' && !data.deliveryAddress) {
+    if (data.fulfilment !== 'premium' && !data.slot) {
+      return NextResponse.json({ error: 'Please choose a time slot' }, { status: 400 });
+    }
+
+    if (data.fulfilment !== 'pickup' && !data.deliveryAddress) {
       return NextResponse.json(
         { error: 'Delivery address required for home delivery' },
         { status: 400 }
       );
+    }
+
+    if (data.fulfilment === 'premium') {
+      try {
+        await sql`ALTER TYPE fulfilment ADD VALUE IF NOT EXISTS 'premium'`;
+      } catch { /* already exists */ }
+
+      // Re-check eligibility server-side — never trust the client, since a
+      // customer could otherwise submit fulfilment: 'premium' directly.
+      const eligible =
+        customerSession?.userId &&
+        (
+          await db
+            .select({ premiumDeliveryEligible: users.premiumDeliveryEligible })
+            .from(users)
+            .where(eq(users.id, customerSession.userId))
+            .limit(1)
+        )[0]?.premiumDeliveryEligible;
+
+      if (!eligible) {
+        return NextResponse.json(
+          {
+            error:
+              'Premium/bulk delivery is not available on your account — please sign in with an eligible account, or contact us.',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Pull canonical prices from DB so client-side prices can't be tampered with.
@@ -126,7 +161,7 @@ export async function POST(req: NextRequest) {
       0
     );
 
-    if (data.fulfilment === 'delivery' && subtotal < MINIMUM_DELIVERY_ORDER_PENCE) {
+    if (data.fulfilment !== 'pickup' && subtotal < MINIMUM_DELIVERY_ORDER_PENCE) {
       return NextResponse.json(
         {
           error: `Sorry, there's a ${formatPrice(
@@ -137,7 +172,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const slotDate = new Date(data.slot);
+    // Premium/bulk delivery has no slot to parse — the date is meaningless
+    // for it and must never be used in the notice-day/slot-capacity checks below.
+    const slotDate = data.slot ? new Date(data.slot) : null;
     const shopSettings = await getShopSettings();
 
     // Some products require extra notice beyond the earliest available slot (always "tomorrow").
@@ -148,13 +185,14 @@ export async function POST(req: NextRequest) {
 
     // A "delivery" order dated today is only ever a same-day order — the regular
     // delivery slot list never offers today (it starts tomorrow), so this is unambiguous.
+    // Premium/bulk delivery has no slot at all, so it never matches here.
     const sameDayBlock =
-      data.fulfilment === 'delivery' && isToday(slotDate)
+      data.fulfilment === 'delivery' && slotDate && isToday(slotDate)
         ? findBlock(shopSettings.sameDay.blocks, slotDate)
         : null;
     const isSameDaySlot = sameDayBlock !== null;
 
-    if (sameDayBlock) {
+    if (sameDayBlock && slotDate) {
       if (maxNoticeDays > 0) {
         return NextResponse.json(
           { error: "Sorry, an item in your basket isn't available for same-day delivery — please choose a later date." },
@@ -177,7 +215,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-    } else if (maxNoticeDays > 0) {
+    } else if (maxNoticeDays > 0 && data.fulfilment !== 'premium' && slotDate) {
       const [y, m, d] = getDateKey(new Date()).split('-').map(Number);
       const minAllowed = londonDateTime(y, m, d + 1 + maxNoticeDays, 0);
       if (getDateKey(slotDate) < getDateKey(minAllowed)) {
@@ -192,7 +230,9 @@ export async function POST(req: NextRequest) {
 
     let discount = 0;
     let deliveryFee: number;
-    if (data.fulfilment === 'delivery' && data.deliveryAddress?.postcode) {
+    if (data.fulfilment === 'premium') {
+      deliveryFee = shopSettings.premiumDelivery.minimumFeeInPence;
+    } else if (data.fulfilment === 'delivery' && data.deliveryAddress?.postcode) {
       const { delivery } = shopSettings;
       const settings = {
         freeUnderMiles: delivery.freeUnderMiles,
@@ -244,7 +284,10 @@ export async function POST(req: NextRequest) {
 
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
-    if (data.fulfilment === 'delivery' && !isSameDaySlot) {
+    // data.slot (and therefore slotDate) is guaranteed non-null here — enforced
+    // by the "please choose a time slot" check earlier for every fulfilment
+    // type except 'premium', which never reaches these two branches.
+    if (data.fulfilment === 'delivery' && !isSameDaySlot && slotDate) {
       const { deliverySlots } = shopSettings;
       const block = deliverySlots.closedDays.includes(getWeekday(slotDate)) ? null : findBlock(deliverySlots.blocks, slotDate);
       if (!block) {
@@ -260,7 +303,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (data.fulfilment === 'pickup') {
+    if (data.fulfilment === 'pickup' && slotDate) {
       const { pickupSlots } = shopSettings;
       const block = pickupSlots.closedDays.includes(getWeekday(slotDate)) ? null : findBlock(pickupSlots.blocks, slotDate);
       if (!block) {
@@ -286,7 +329,7 @@ export async function POST(req: NextRequest) {
         customerPhone: data.customer.phone,
         fulfilment: data.fulfilment,
         deliveryAddress:
-          data.fulfilment === 'delivery' ? data.deliveryAddress ?? null : null,
+          data.fulfilment !== 'pickup' ? data.deliveryAddress ?? null : null,
         pickupSlot: data.fulfilment === 'pickup' ? slotDate : null,
         deliverySlot: data.fulfilment === 'delivery' ? slotDate : null,
         notes: data.notes,

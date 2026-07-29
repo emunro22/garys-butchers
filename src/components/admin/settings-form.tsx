@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input, Label } from '@/components/ui/input';
+import { Input, Label, Textarea } from '@/components/ui/input';
 import type { SlotBlock, SlotGroupSettings } from '@/lib/slots';
 
 type ShopSettings = { name: string; address: string; phone: string };
@@ -15,9 +15,17 @@ type DeliverySettings = {
   radiusMiles: number;
 };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
+type PremiumDeliverySettings = {
+  enabled: boolean;
+  minimumFeeInPence: number;
+  ratePerKgInPence: number;
+  carriers: string[];
+  description: string;
+};
 type AllSettings = {
   shop: ShopSettings;
   delivery: DeliverySettings;
+  premiumDelivery: PremiumDeliverySettings;
   banner: BannerSettings;
   deliverySlots: SlotGroupSettings;
   sameDay: SlotGroupSettings;
@@ -158,6 +166,13 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     showCountdown: initial.banner?.showCountdown ?? true,
     cutoffHour: initial.banner?.cutoffHour ?? 18,
   });
+  const [premiumDelivery, setPremiumDelivery] = useState<PremiumDeliverySettings>({
+    enabled: initial.premiumDelivery?.enabled ?? true,
+    minimumFeeInPence: initial.premiumDelivery?.minimumFeeInPence ?? 2000,
+    ratePerKgInPence: initial.premiumDelivery?.ratePerKgInPence ?? 150,
+    carriers: initial.premiumDelivery?.carriers?.length ? initial.premiumDelivery.carriers : [''],
+    description: initial.premiumDelivery?.description ?? '',
+  });
   const [deliverySlots, setDeliverySlots] = useState<SlotGroupSettings>(initial.deliverySlots);
   const [sameDay, setSameDay] = useState<SlotGroupSettings>(initial.sameDay);
   const [pickupSlots, setPickupSlots] = useState<SlotGroupSettings>(initial.pickupSlots);
@@ -179,6 +194,20 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     setBanner({ ...banner, messages: banner.messages.filter((_, i) => i !== index) });
   }
 
+  function updateCarrier(index: number, value: string) {
+    const next = [...premiumDelivery.carriers];
+    next[index] = value;
+    setPremiumDelivery({ ...premiumDelivery, carriers: next });
+  }
+
+  function addCarrier() {
+    setPremiumDelivery({ ...premiumDelivery, carriers: [...premiumDelivery.carriers, ''] });
+  }
+
+  function removeCarrier(index: number) {
+    setPremiumDelivery({ ...premiumDelivery, carriers: premiumDelivery.carriers.filter((_, i) => i !== index) });
+  }
+
   function priceToPence(v: string) {
     const n = parseFloat(v);
     return Number.isNaN(n) ? 0 : Math.round(n * 100);
@@ -191,12 +220,14 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     setError(null);
     try {
       const cleanedMessages = banner.messages.map((m) => m.trim()).filter(Boolean);
+      const cleanedCarriers = premiumDelivery.carriers.map((c) => c.trim()).filter(Boolean);
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           shop,
           delivery,
+          premiumDelivery: { ...premiumDelivery, carriers: cleanedCarriers },
           banner: { ...banner, messages: cleanedMessages },
           deliverySlots,
           sameDay,
@@ -357,6 +388,100 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
             required
           />
           <p className="text-xs text-ink-500 mt-1">Orders beyond this distance can&apos;t be delivered.</p>
+        </div>
+      </section>
+
+      {/* Premium / bulk delivery */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Premium / bulk delivery</p>
+          <p className="text-xs text-ink-500">
+            A courier-fulfilled option for bulk orders and addresses outside our usual area. Only
+            appears at checkout for customers you&apos;ve flagged as eligible on their customer
+            profile. The minimum fee below is what the customer sees and pays at checkout — the
+            rate per kg is only used by the weight calculator on the order, to help you work out
+            what to actually charge or invoice for.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            checked={premiumDelivery.enabled}
+            onChange={(e) => setPremiumDelivery({ ...premiumDelivery, enabled: e.target.checked })}
+            className="h-4 w-4"
+          />
+          Offer premium / bulk delivery
+        </label>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="premiumMinFee">Minimum fee shown to customer (£)</Label>
+            <Input
+              id="premiumMinFee"
+              type="number"
+              step="0.01"
+              min="0"
+              value={(premiumDelivery.minimumFeeInPence / 100).toFixed(2)}
+              onChange={(e) =>
+                setPremiumDelivery({ ...premiumDelivery, minimumFeeInPence: priceToPence(e.target.value) })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="premiumRatePerKg">Rate per kg for the admin calculator (£)</Label>
+            <Input
+              id="premiumRatePerKg"
+              type="number"
+              step="0.01"
+              min="0"
+              value={(premiumDelivery.ratePerKgInPence / 100).toFixed(2)}
+              onChange={(e) =>
+                setPremiumDelivery({ ...premiumDelivery, ratePerKgInPence: priceToPence(e.target.value) })
+              }
+              required
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="premiumDescription">Customer-facing description</Label>
+          <Textarea
+            id="premiumDescription"
+            value={premiumDelivery.description}
+            onChange={(e) => setPremiumDelivery({ ...premiumDelivery, description: e.target.value })}
+            rows={2}
+            maxLength={500}
+          />
+        </div>
+        <div>
+          <p className="text-xs text-ink-500 mb-1.5">Couriers (shown to the customer, and offered as options in the order calculator)</p>
+          <div className="space-y-2">
+            {premiumDelivery.carriers.map((carrier, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  value={carrier}
+                  onChange={(e) => updateCarrier(i, e.target.value)}
+                  placeholder="e.g. DHL"
+                  maxLength={60}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCarrier(i)}
+                  aria-label="Remove courier"
+                  className="shrink-0 flex items-center justify-center w-9 h-9 text-ink-500 hover:text-butcher-500 hover:bg-butcher-500/10 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addCarrier}
+              className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-ink-700 hover:text-ink-900 mt-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add courier
+            </button>
+          </div>
         </div>
       </section>
 

@@ -10,7 +10,7 @@ import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
 import { formatPrice, calculateDelivery, MINIMUM_DELIVERY_ORDER_PENCE } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
-import { Truck, Store, Zap, Tag, Check } from 'lucide-react';
+import { Truck, Store, Zap, Tag, Check, Package } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
 import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, formatClock, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
@@ -25,7 +25,15 @@ function getStripe() {
   return stripePromise;
 }
 
-type Fulfilment = 'pickup' | 'delivery' | 'sameDay';
+type Fulfilment = 'pickup' | 'delivery' | 'sameDay' | 'premium';
+
+type PremiumDeliverySettings = {
+  enabled: boolean;
+  minimumFeeInPence: number;
+  ratePerKgInPence: number;
+  carriers: string[];
+  description: string;
+};
 
 type Promo = {
   id: string;
@@ -55,6 +63,19 @@ export function Checkout() {
   });
   const [prefilled, setPrefilled] = useState(false);
 
+  // Premium/bulk delivery is only offered to registered customers the admin
+  // has explicitly flagged — derived from the profile fetch below, so it's
+  // false by construction for guests (that fetch never runs without a session).
+  const [premiumEligible, setPremiumEligible] = useState(false);
+  const [premiumSettings, setPremiumSettings] = useState<PremiumDeliverySettings | null>(null);
+
+  useEffect(() => {
+    fetch('/api/premium-delivery')
+      .then((r) => r.json())
+      .then((data) => setPremiumSettings(data.premiumDelivery ?? null))
+      .catch(() => {});
+  }, []);
+
   // Auto-fill form from logged-in user's profile
   useEffect(() => {
     if (!user || prefilled) return;
@@ -73,11 +94,20 @@ export function Checkout() {
             city: prev.city || p.defaultAddress?.city || 'Erskine',
             postcode: prev.postcode || p.defaultAddress?.postcode || '',
           }));
+          setPremiumEligible(Boolean(p.premiumDeliveryEligible));
           setPrefilled(true);
         }
       })
       .catch(() => {});
   }, [user, prefilled]);
+
+  // If the customer signs out mid-checkout, immediately drop premium
+  // eligibility rather than leaving the last-known (stale) flag in place.
+  useEffect(() => {
+    if (!user) setPremiumEligible(false);
+  }, [user]);
+
+  const showPremiumOption = premiumEligible && Boolean(premiumSettings?.enabled);
   const [promoCode, setPromoCode] = useState('');
   const [promo, setPromo] = useState<Promo>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -97,7 +127,7 @@ export function Checkout() {
   const [postcodeUnverifiable, setPostcodeUnverifiable] = useState(false);
 
   useEffect(() => {
-    if (fulfilment === 'pickup' || form.postcode.replace(/\s/g, '').length < 5) {
+    if (fulfilment === 'pickup' || fulfilment === 'premium' || form.postcode.replace(/\s/g, '').length < 5) {
       setPostcodeFeePence(null);
       setWithinRadius(true);
       setPostcodeUnverifiable(false);
@@ -125,6 +155,8 @@ export function Checkout() {
   const deliveryFee =
     fulfilment === 'pickup'
       ? 0
+      : fulfilment === 'premium'
+      ? premiumSettings?.minimumFeeInPence ?? 2000
       : postcodeFeePence !== null
       ? postcodeFeePence
       : calculateDelivery('delivery');
@@ -190,7 +222,14 @@ export function Checkout() {
 
   const sameDaySlotFull = isSameDaySlotFull(sameDaySlot);
 
-  const slots = fulfilment === 'delivery' ? deliverySlots : fulfilment === 'sameDay' ? sameDaySlotsList : pickupSlots;
+  const slots =
+    fulfilment === 'delivery'
+      ? deliverySlots
+      : fulfilment === 'sameDay'
+      ? sameDaySlotsList
+      : fulfilment === 'premium'
+      ? []
+      : pickupSlots;
 
   // Earliest allowed date given the most demanding notice period among cart items.
   const maxNoticeDays = useMemo(
@@ -249,6 +288,14 @@ export function Checkout() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sameDayDisabledReason]);
+
+  // Drop out of premium mode automatically if it stops being available
+  // (e.g. the customer signs out mid-checkout).
+  useEffect(() => {
+    if (fulfilment === 'premium' && !showPremiumOption) {
+      setFulfilment('delivery');
+    }
+  }, [fulfilment, showPremiumOption]);
 
   // Delivery slot availability (only relevant for delivery)
   const [availability, setAvailability] = useState<Record<string, { count: number; capacity: number }>>({});
@@ -327,10 +374,12 @@ export function Checkout() {
     if (!form.name) return 'Please enter your name.';
     if (!form.email) return 'Please enter your email.';
     if (!form.phone) return 'Please enter a phone number.';
-    if (!form.slot) return 'Please choose a time slot.';
-    const chosenSlot = slots.find((s) => s.value === form.slot);
-    if (chosenSlot && isSlotTooSoon(chosenSlot)) {
-      return `That slot doesn't meet the ${noticeLabel(maxNoticeDays).toLowerCase()} for an item in your basket.`;
+    if (fulfilment !== 'premium') {
+      if (!form.slot) return 'Please choose a time slot.';
+      const chosenSlot = slots.find((s) => s.value === form.slot);
+      if (chosenSlot && isSlotTooSoon(chosenSlot)) {
+        return `That slot doesn't meet the ${noticeLabel(maxNoticeDays).toLowerCase()} for an item in your basket.`;
+      }
     }
     if (fulfilment !== 'pickup') {
       if (belowDeliveryMinimum) {
@@ -357,7 +406,7 @@ export function Checkout() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           items,
-          fulfilment: fulfilment === 'pickup' ? 'pickup' : 'delivery',
+          fulfilment: fulfilment === 'pickup' ? 'pickup' : fulfilment === 'premium' ? 'premium' : 'delivery',
           customer: {
             name: form.name,
             email: form.email,
@@ -372,7 +421,7 @@ export function Checkout() {
                   postcode: form.postcode,
                 }
               : null,
-          slot: form.slot,
+          slot: form.slot || undefined,
           notes: form.notes || undefined,
           promotionCode: promo?.code,
         }),
@@ -450,7 +499,11 @@ export function Checkout() {
         {/* Fulfilment */}
         <section>
           <h2 className="font-display text-2xl text-ink-900 mb-4">1. Delivery or pickup</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 ${
+              showPremiumOption ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+            } gap-3`}
+          >
             <button
               type="button"
               disabled={!!sameDayDisabledReason}
@@ -501,6 +554,23 @@ export function Checkout() {
               <p className="font-display text-lg">Click &amp; collect</p>
               <p className="text-xs opacity-70 mt-1">From our Erskine shop · free</p>
             </button>
+            {showPremiumOption && (
+              <button
+                type="button"
+                onClick={() => setFulfilment('premium')}
+                className={`p-5 border text-left transition-all ${
+                  fulfilment === 'premium'
+                    ? 'border-ink-900 bg-ink-900 text-cream-50'
+                    : 'border-ink-900/15 bg-cream-100 hover:border-ink-900/40'
+                }`}
+              >
+                <Package className="h-6 w-6 mb-3" />
+                <p className="font-display text-lg">Premium / bulk delivery</p>
+                <p className="text-xs opacity-70 mt-1">
+                  From {formatPrice(premiumSettings?.minimumFeeInPence ?? 2000)}
+                </p>
+              </button>
+            )}
           </div>
         </section>
 
@@ -636,9 +706,15 @@ export function Checkout() {
         {/* Slot */}
         <section>
           <h2 className="font-display text-2xl text-ink-900 mb-4">
-            {fulfilment === 'pickup' ? '3. Pickup slot' : fulfilment === 'sameDay' ? '4. Same-day delivery' : '4. Delivery slot'}
+            {fulfilment === 'pickup'
+              ? '3. Pickup slot'
+              : fulfilment === 'sameDay'
+              ? '4. Same-day delivery'
+              : fulfilment === 'premium'
+              ? '4. Delivery details'
+              : '4. Delivery slot'}
           </h2>
-          {maxNoticeDays > 0 && fulfilment !== 'sameDay' && (
+          {maxNoticeDays > 0 && fulfilment !== 'sameDay' && fulfilment !== 'premium' && (
             <p className="text-xs text-butcher-500 mb-3">
               Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()} — earlier slots are unavailable.
             </p>
@@ -649,6 +725,17 @@ export function Checkout() {
               <span>
                 All same-day delivery orders are delivered today
                 {sameDayWindowText ? `, ${sameDayWindowText}` : ''} — no need to pick a time.
+              </span>
+            </p>
+          ) : fulfilment === 'premium' ? (
+            <p className="flex items-start gap-3 text-sm border border-ink-900/15 bg-cream-100 px-4 py-3 text-ink-700">
+              <Package className="h-4 w-4 mt-0.5 shrink-0 text-gold-500" />
+              <span>
+                {premiumSettings?.description ??
+                  "For bulk orders and deliveries outside our usual area — we'll confirm the exact price and courier once your order is weighed."}
+                {premiumSettings?.carriers?.length ? ` Courier: ${premiumSettings.carriers.join(' / ')}.` : ''}{' '}
+                Minimum {formatPrice(premiumSettings?.minimumFeeInPence ?? 2000)} — no need to pick a delivery time,
+                we&apos;ll be in touch to arrange it.
               </span>
             </p>
           ) : (
@@ -808,7 +895,7 @@ export function Checkout() {
           )}
           <div className="flex justify-between">
             <dt className="text-ink-700">
-              {fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}
+              {fulfilment === 'pickup' ? 'Pickup' : fulfilment === 'premium' ? 'Premium delivery' : 'Delivery'}
             </dt>
             <dd className="tabular text-ink-900">
               {postcodeFeePending

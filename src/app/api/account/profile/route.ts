@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { sql } from '@vercel/postgres';
 import { getCustomerSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
@@ -11,6 +12,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
+  } catch { /* already exists */ }
+
   const [user] = await db
     .select({
       id: users.id,
@@ -19,6 +24,7 @@ export async function GET() {
       phone: users.phone,
       defaultAddress: users.defaultAddress,
       createdAt: users.createdAt,
+      premiumDeliveryEligible: users.premiumDeliveryEligible,
     })
     .from(users)
     .where(eq(users.id, session.userId))

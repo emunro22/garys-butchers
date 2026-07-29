@@ -32,6 +32,14 @@ const DeliverySchema = z.object({
   radiusMiles: z.number().min(0).max(100).optional(),
 });
 
+const PremiumDeliverySchema = z.object({
+  enabled: z.boolean(),
+  minimumFeeInPence: z.number().int().min(0),
+  ratePerKgInPence: z.number().int().min(0),
+  carriers: z.array(z.string().min(1).max(60)).max(12),
+  description: z.string().max(500),
+});
+
 const BannerSchema = z.object({
   messages: z.array(z.string().min(1).max(200)).max(12),
   showCountdown: z.boolean(),
@@ -57,6 +65,7 @@ const SlotGroupSchema = z.object({
 const PatchSchema = z.object({
   shop: ShopSchema.optional(),
   delivery: DeliverySchema.optional(),
+  premiumDelivery: PremiumDeliverySchema.optional(),
   banner: BannerSchema.optional(),
   deliverySlots: SlotGroupSchema.optional(),
   sameDay: SlotGroupSchema.optional(),
@@ -95,6 +104,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.delivery, updatedAt: new Date() },
+        });
+    }
+
+    if (data.premiumDelivery) {
+      await db
+        .insert(settings)
+        .values({ key: 'premiumDelivery', value: data.premiumDelivery, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.premiumDelivery, updatedAt: new Date() },
         });
     }
 

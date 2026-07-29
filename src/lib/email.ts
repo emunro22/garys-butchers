@@ -46,7 +46,7 @@ type OrderEmailPayload = {
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
-  fulfilment: 'pickup' | 'delivery';
+  fulfilment: 'pickup' | 'delivery' | 'premium';
   items: Array<{ name: string; quantity: number; priceInPence: number }>;
   subtotalInPence: number;
   deliveryInPence: number;
@@ -130,6 +130,8 @@ function renderCustomerHtml(o: OrderEmailPayload) {
   const slotLine =
     o.fulfilment === 'pickup'
       ? `<strong>Collection:</strong> ${formatSlot(o.pickupSlot)}`
+      : o.fulfilment === 'premium'
+      ? `<strong>Premium/bulk delivery:</strong> we'll be in touch to arrange the courier and delivery date`
       : `<strong>Home delivery:</strong> ${formatSlot(o.deliverySlot)}`;
 
   const bodyHtml = `
@@ -140,7 +142,7 @@ function renderCustomerHtml(o: OrderEmailPayload) {
     <div style="margin-bottom:20px;padding:16px;background:#0a0a0a;color:#f8f5f0;border-radius:8px;font-size:14px;line-height:1.6">
       ${slotLine}
       ${
-        o.fulfilment === 'delivery' && o.deliveryAddress
+        o.fulfilment !== 'pickup' && o.deliveryAddress
           ? `<br/><span style="color:#c9a961">${o.deliveryAddress.line1}${o.deliveryAddress.line2 ? ', ' + o.deliveryAddress.line2 : ''}, ${o.deliveryAddress.city}, ${o.deliveryAddress.postcode.toUpperCase()}</span>`
           : ''
       }
@@ -187,6 +189,17 @@ function renderAdminHtml(o: OrderEmailPayload) {
 
   const isSameDayOrder = o.fulfilment === 'delivery' && !!o.deliverySlot && isToday(new Date(o.deliverySlot));
 
+  const addressRow = o.deliveryAddress
+    ? `<tr>
+        <td style="padding:6px 0;color:#6b5d4f;vertical-align:top">Address</td>
+        <td style="padding:6px 0">
+          ${o.deliveryAddress.line1}${o.deliveryAddress.line2 ? '<br/>' + o.deliveryAddress.line2 : ''}
+          <br/>${o.deliveryAddress.city}
+          <br/><strong>${o.deliveryAddress.postcode.toUpperCase()}</strong>
+        </td>
+      </tr>`
+    : '';
+
   const fulfilmentBlock =
     o.fulfilment === 'pickup'
       ? `<tr>
@@ -197,6 +210,16 @@ function renderAdminHtml(o: OrderEmailPayload) {
           <td style="padding:6px 0;color:#6b5d4f">Slot</td>
           <td style="padding:6px 0;font-weight:600">${formatSlot(o.pickupSlot)}</td>
         </tr>`
+      : o.fulfilment === 'premium'
+      ? `<tr>
+          <td style="padding:6px 0;color:#6b5d4f;width:130px">Type</td>
+          <td style="padding:6px 0;font-weight:600;color:#8e7138">PREMIUM / BULK DELIVERY</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:#6b5d4f">Next step</td>
+          <td style="padding:6px 0;font-weight:600">Weigh the order and set the courier in the admin panel</td>
+        </tr>
+        ${addressRow}`
       : `<tr>
           <td style="padding:6px 0;color:#6b5d4f;width:130px">Type</td>
           <td style="padding:6px 0;font-weight:600;color:#1a4d8f">HOME DELIVERY${isSameDayOrder ? ' — SAME DAY' : ''}</td>
@@ -205,18 +228,7 @@ function renderAdminHtml(o: OrderEmailPayload) {
           <td style="padding:6px 0;color:#6b5d4f">Slot</td>
           <td style="padding:6px 0;font-weight:600">${formatSlot(o.deliverySlot)}</td>
         </tr>
-        ${
-          o.deliveryAddress
-            ? `<tr>
-                <td style="padding:6px 0;color:#6b5d4f;vertical-align:top">Address</td>
-                <td style="padding:6px 0">
-                  ${o.deliveryAddress.line1}${o.deliveryAddress.line2 ? '<br/>' + o.deliveryAddress.line2 : ''}
-                  <br/>${o.deliveryAddress.city}
-                  <br/><strong>${o.deliveryAddress.postcode.toUpperCase()}</strong>
-                </td>
-              </tr>`
-            : ''
-        }`;
+        ${addressRow}`;
 
   const bodyHtml = `
     <div style="margin-bottom:20px;padding:16px;background:#faf8f5;border:1px solid #f0ebe3;border-radius:8px">

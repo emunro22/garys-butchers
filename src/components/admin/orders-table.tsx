@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Trash2, Mail, X } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
@@ -30,6 +30,14 @@ const STATUS_COLORS: Record<string, string> = {
   refunded: 'bg-ink-900/5 text-ink-500',
 };
 
+const FULFILMENT_LABELS: Record<string, string> = {
+  pickup: 'Pickup',
+  delivery: 'Delivery',
+  premium: 'Premium/Bulk',
+};
+
+type PremiumDeliveryRates = { minimumFeeInPence: number; ratePerKgInPence: number; carriers: string[] };
+
 export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const router = useRouter();
   const [orders, setOrders] = useState(initialOrders);
@@ -38,6 +46,35 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [emailTarget, setEmailTarget] = useState<Order | null>(null);
+  const [premiumRates, setPremiumRates] = useState<PremiumDeliveryRates | null>(null);
+
+  // Rate table for the premium/bulk delivery weight calculator below — admin
+  // session cookie is already present on this page, so the admin-only
+  // /api/settings endpoint is reachable here.
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((data) => setPremiumRates(data.settings?.premiumDelivery ?? null))
+      .catch(() => {});
+  }, []);
+
+  async function saveOrderShipping(id: string, weightGrams: number | null, courierName: string | null) {
+    setUpdating(id);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, weightGrams, courierName }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      const data = await res.json();
+      setOrders((arr) => arr.map((o) => (o.id === id ? data.order : o)));
+    } catch {
+      alert('Could not save weight/courier');
+    } finally {
+      setUpdating(null);
+    }
+  }
 
   const filtered =
     filter === 'all' ? orders : orders.filter((o) => o.status === filter);
@@ -181,7 +218,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                         <div className="text-xs text-ink-500">{o.customerPhone}</div>
                       )}
                     </td>
-                    <td className="px-5 py-3 capitalize align-top">{o.fulfilment}</td>
+                    <td className="px-5 py-3 align-top">{FULFILMENT_LABELS[o.fulfilment] ?? o.fulfilment}</td>
                     <td className="px-5 py-3 align-top text-ink-700">
                       {slot
                         ? new Date(slot).toLocaleString('en-GB', {
@@ -285,7 +322,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                             </dl>
                           </div>
                           <div>
-                            {o.fulfilment === 'delivery' && o.deliveryAddress && (
+                            {(o.fulfilment === 'delivery' || o.fulfilment === 'premium') && o.deliveryAddress && (
                               <>
                                 <p className="eyebrow text-ink-500 mb-2">Delivery to</p>
                                 <p className="text-sm">
@@ -302,6 +339,18 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                                   {(o.deliveryAddress as any).postcode}
                                 </p>
                               </>
+                            )}
+                            {o.fulfilment === 'premium' && (
+                              <div className="mt-4">
+                                <PremiumDeliveryCalculator
+                                  order={o}
+                                  rates={premiumRates}
+                                  saving={updating === o.id}
+                                  onSave={(weightGrams, courierName) =>
+                                    saveOrderShipping(o.id, weightGrams, courierName)
+                                  }
+                                />
+                              </div>
                             )}
                             {o.notes && (
                               <div className="mt-4">
@@ -333,6 +382,87 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
 
       {emailTarget && (
         <EmailOrderModal order={emailTarget} onClose={() => setEmailTarget(null)} />
+      )}
+    </div>
+  );
+}
+
+function PremiumDeliveryCalculator({
+  order,
+  rates,
+  saving,
+  onSave,
+}: {
+  order: Order;
+  rates: PremiumDeliveryRates | null;
+  saving: boolean;
+  onSave: (weightGrams: number | null, courierName: string | null) => void;
+}) {
+  const [weightKg, setWeightKg] = useState(
+    order.weightGrams != null ? String(order.weightGrams / 1000) : ''
+  );
+  const [courier, setCourier] = useState(order.courierName ?? '');
+
+  const parsedKg = parseFloat(weightKg);
+  const suggestedPence =
+    rates && !Number.isNaN(parsedKg) && parsedKg > 0
+      ? Math.max(rates.minimumFeeInPence, Math.round(parsedKg * rates.ratePerKgInPence))
+      : null;
+
+  return (
+    <div className="bg-cream-100 border border-ink-900/10 p-4 max-w-sm">
+      <p className="eyebrow text-ink-500 mb-2">Weight &amp; courier calculator</p>
+      <div className="flex items-end gap-2 mb-2">
+        <div>
+          <Label htmlFor={`weight-${order.id}`}>Weight (kg)</Label>
+          <Input
+            id={`weight-${order.id}`}
+            type="number"
+            min="0"
+            step="0.1"
+            value={weightKg}
+            onChange={(e) => setWeightKg(e.target.value)}
+            className="w-24"
+          />
+        </div>
+        <div className="flex-1">
+          <Label htmlFor={`courier-${order.id}`}>Courier</Label>
+          <select
+            id={`courier-${order.id}`}
+            value={courier}
+            onChange={(e) => setCourier(e.target.value)}
+            className="w-full border border-ink-900/15 bg-cream-50 px-2 py-2 text-sm text-ink-900 focus:outline-none focus:border-ink-900"
+          >
+            <option value="">Choose…</option>
+            {(rates?.carriers ?? []).map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {suggestedPence !== null && (
+        <p className="text-sm text-ink-700 mb-2">
+          Suggested price: <span className="font-medium">{formatPrice(suggestedPence)}</span>
+        </p>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => {
+          const grams = !Number.isNaN(parsedKg) && parsedKg > 0 ? Math.round(parsedKg * 1000) : null;
+          onSave(grams, courier.trim() || null);
+        }}
+        disabled={saving}
+      >
+        {saving ? 'Saving…' : 'Save to order'}
+      </Button>
+      {order.courierName && (
+        <p className="text-xs text-ink-500 mt-2">
+          Currently recorded: shipped via {order.courierName}
+          {order.weightGrams != null ? ` · ${(order.weightGrams / 1000).toFixed(1)}kg` : ''}
+        </p>
       )}
     </div>
   );

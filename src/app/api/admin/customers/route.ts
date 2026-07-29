@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { sql } from '@vercel/postgres';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-const UpdateRoleSchema = z.object({
-  userId: z.string().uuid(),
-  role: z.enum(['customer', 'admin']),
-});
+const UpdateRoleSchema = z
+  .object({
+    userId: z.string().uuid(),
+    role: z.enum(['customer', 'admin']).optional(),
+    premiumDeliveryEligible: z.boolean().optional(),
+  })
+  .refine((v) => v.role !== undefined || v.premiumDeliveryEligible !== undefined, {
+    message: 'Nothing to update',
+  });
 
 const DeleteSchema = z.object({
   userId: z.string().uuid(),
@@ -27,9 +33,19 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
+    } catch { /* already exists */ }
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (parsed.data.role !== undefined) updates.role = parsed.data.role;
+    if (parsed.data.premiumDeliveryEligible !== undefined) {
+      updates.premiumDeliveryEligible = parsed.data.premiumDeliveryEligible;
+    }
+
     await db
       .update(users)
-      .set({ role: parsed.data.role, updatedAt: new Date() })
+      .set(updates)
       .where(eq(users.id, parsed.data.userId));
 
     return NextResponse.json({ ok: true });

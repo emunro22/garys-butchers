@@ -27,7 +27,7 @@ export const orderStatusEnum = pgEnum('order_status', [
   'refunded',
 ]);
 
-export const fulfilmentEnum = pgEnum('fulfilment', ['pickup', 'delivery']);
+export const fulfilmentEnum = pgEnum('fulfilment', ['pickup', 'delivery', 'premium']);
 
 export const promotionTypeEnum = pgEnum('promotion_type', [
   'percent_off',
@@ -46,6 +46,10 @@ export const users = pgTable(
     name: varchar('name', { length: 160 }).notNull(),
     phone: varchar('phone', { length: 40 }),
     role: userRoleEnum('role').default('customer').notNull(),
+    // Admin-only flag: whether this registered customer can select Premium /
+    // Bulk delivery at checkout (see src/app/api/checkout/route.ts). Never
+    // customer-settable.
+    premiumDeliveryEligible: boolean('premium_delivery_eligible').default(false).notNull(),
     emailVerified: boolean('email_verified').default(false).notNull(),
     verificationCode: varchar('verification_code', { length: 6 }),
     verificationCodeExpiresAt: timestamp('verification_code_expires_at', { withTimezone: true }),
@@ -165,6 +169,11 @@ export const orders = pgTable(
     } | null>(),
     pickupSlot: timestamp('pickup_slot', { withTimezone: true }),
     deliverySlot: timestamp('delivery_slot', { withTimezone: true }),
+    // Premium/bulk delivery only — filled in later by admin via the weight
+    // calculator on the order, not at checkout time. Grams (not kg) to avoid
+    // float rounding, matching the priceInPence convention.
+    weightGrams: integer('weight_grams'),
+    courierName: varchar('courier_name', { length: 60 }),
     notes: text('notes'),
     items: jsonb('items')
       .$type<

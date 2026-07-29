@@ -15,6 +15,14 @@ export const DEFAULT_SETTINGS = {
     farFeePence: 500,
     radiusMiles: 30,
   },
+  premiumDelivery: {
+    enabled: true,
+    minimumFeeInPence: 2000,
+    ratePerKgInPence: 150,
+    carriers: ['DHL', 'UPS', 'Parcelforce', 'Royal Mail'],
+    description:
+      "For bulk orders and deliveries outside our usual area — we'll confirm the exact price and courier once your order is weighed.",
+  },
   banner: {
     messages: [
       '🥩  Free home delivery within 5 miles',
@@ -89,6 +97,7 @@ export async function getShopSettings(): Promise<AppSettings> {
   const result: AppSettings = {
     shop: { ...DEFAULT_SETTINGS.shop },
     delivery: { ...DEFAULT_SETTINGS.delivery },
+    premiumDelivery: { ...DEFAULT_SETTINGS.premiumDelivery, carriers: [...DEFAULT_SETTINGS.premiumDelivery.carriers] },
     banner: { ...DEFAULT_SETTINGS.banner },
     deliverySlots: { blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks], closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays] },
     sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
@@ -101,6 +110,11 @@ export async function getShopSettings(): Promise<AppSettings> {
         result.shop = { ...DEFAULT_SETTINGS.shop, ...(row.value as AppSettings['shop']) };
       } else if (row.key === 'delivery') {
         result.delivery = { ...DEFAULT_SETTINGS.delivery, ...(row.value as AppSettings['delivery']) };
+      } else if (row.key === 'premiumDelivery') {
+        result.premiumDelivery = {
+          ...DEFAULT_SETTINGS.premiumDelivery,
+          ...(row.value as AppSettings['premiumDelivery']),
+        };
       } else if (row.key === 'banner') {
         result.banner = { ...DEFAULT_SETTINGS.banner, ...(row.value as AppSettings['banner']) };
       } else if (row.key === 'deliverySlots') {

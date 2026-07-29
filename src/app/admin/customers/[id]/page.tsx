@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { users, orders } from '@/lib/db/schema';
 import { and, eq, desc, ne, or } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { sql } from '@vercel/postgres';
 import { CustomerProfile } from '@/components/admin/customer-profile';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +12,10 @@ export default async function AdminCustomerDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
+  } catch { /* already exists */ }
+
   const { id } = await params;
 
   // Guest customer ids are base64url-encoded emails, not UUIDs — querying the
@@ -59,6 +63,7 @@ export default async function AdminCustomerDetailPage({
           phone: user.phone,
           role: user.role,
           emailVerified: user.emailVerified,
+          premiumDeliveryEligible: user.premiumDeliveryEligible,
           defaultAddress: user.defaultAddress,
           createdAt: user.createdAt.toISOString(),
           totalSpentInPence: totalSpent,
@@ -109,6 +114,7 @@ export default async function AdminCustomerDetailPage({
         phone: latestOrder.customerPhone,
         role: null,
         emailVerified: null,
+        premiumDeliveryEligible: false,
         defaultAddress: latestOrder.deliveryAddress,
         createdAt: customerOrders[customerOrders.length - 1].createdAt.toISOString(),
         totalSpentInPence: paidOrders.reduce((s, o) => s + o.totalInPence, 0),
