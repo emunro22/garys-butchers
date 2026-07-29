@@ -5,6 +5,7 @@ import { categories, products } from '@/lib/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { getCategoryImageMap } from '@/lib/db/category-images';
 import { ProductCard } from '@/components/shop/product-card';
+import { RecommendedForYou } from '@/components/shop/recommended-for-you';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
 
@@ -95,6 +96,8 @@ export default async function ShopPage() {
       </section>
 
       <SeasonalDeals compact />
+
+      <RecommendedForYou />
 
       {/* Bestsellers */}
       {bestsellers.length > 0 && (

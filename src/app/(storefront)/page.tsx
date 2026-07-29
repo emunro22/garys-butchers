@@ -5,6 +5,7 @@ import { getCategoryImageMap } from '@/lib/db/category-images';
 import { Hero } from '@/components/home/hero';
 import { FeaturedCategories } from '@/components/home/featured-categories';
 import { FeaturedPacks } from '@/components/home/featured-packs';
+import { RecommendedForYou } from '@/components/shop/recommended-for-you';
 import { Reviews } from '@/components/home/reviews';
 import { ReviewsStrip } from '@/components/home/reviews-strip';
 import { AboutStrip } from '@/components/home/about-strip';
@@ -53,6 +54,7 @@ export default async function HomePage() {
     <>
       <Hero />
       <FeaturedCategories categories={cats} />
+      <RecommendedForYou />
       <ReviewsStrip />
       <DeliveryStrip />
       <SeasonalDeals />
