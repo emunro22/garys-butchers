@@ -1,8 +1,13 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { Suspense } from 'react';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
-import { and, eq, asc } from 'drizzle-orm';
+import { and, eq, asc, desc, ilike } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
+import { noticeLabel } from '@/lib/notice';
+import { ProductSort } from '@/components/shop/product-sort';
+import { SearchBar } from '@/components/shop/search-bar';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -13,14 +18,41 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-export default async function MeatPacksPage() {
+function sortOrderBy(sort: string | undefined) {
+  switch (sort) {
+    case 'price-asc':
+      return [asc(products.priceInPence)];
+    case 'price-desc':
+      return [desc(products.priceInPence)];
+    case 'name':
+      return [asc(products.name)];
+    case 'bestseller':
+    default:
+      return [desc(products.isFeatured), asc(products.priceInPence)];
+  }
+}
+
+export default async function MeatPacksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; q?: string }>;
+}) {
+  const { sort, q } = await searchParams;
+  const query = (q ?? '').trim();
+
   let packs: any[] = [];
   try {
     packs = await db
       .select()
       .from(products)
-      .where(and(eq(products.isPack, true), eq(products.isActive, true)))
-      .orderBy(asc(products.priceInPence));
+      .where(
+        and(
+          eq(products.isPack, true),
+          eq(products.isActive, true),
+          query ? ilike(products.name, `%${query}%`) : undefined
+        )
+      )
+      .orderBy(...sortOrderBy(sort));
   } catch {
     // empty fallback
   }
@@ -52,10 +84,34 @@ export default async function MeatPacksPage() {
       {/* Grid */}
       <section className="bg-cream-50 py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="flex flex-wrap items-center justify-end gap-4 mb-10">
+            <Suspense fallback={null}>
+              <SearchBar variant="inline" placeholder="Search packs…" className="w-52" />
+            </Suspense>
+            {packs.length > 0 && (
+              <Suspense fallback={null}>
+                <ProductSort />
+              </Suspense>
+            )}
+          </div>
+
           {packs.length === 0 ? (
-            <p className="text-ink-500 text-center py-20">
-              Packs are being prepared. Please check back shortly.
-            </p>
+            <div className="py-20 text-center">
+              {query ? (
+                <>
+                  <p className="font-display text-2xl text-ink-700">No matches for “{query}”.</p>
+                  <p className="text-ink-500 mt-2">Try a different word, or clear the search.</p>
+                  <Link
+                    href="/meat-packs"
+                    className="inline-block mt-6 text-sm uppercase tracking-[0.2em] text-ink-900 underline underline-offset-4"
+                  >
+                    Clear search
+                  </Link>
+                </>
+              ) : (
+                <p className="text-ink-500">Packs are being prepared. Please check back shortly.</p>
+              )}
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {packs.map((pack) => {
@@ -64,8 +120,21 @@ export default async function MeatPacksPage() {
                   <Link
                     key={pack.id}
                     href={`/meat-packs/${pack.slug}`}
-                    className="group bg-cream-100 border border-ink-900/10 hover:border-gold-500 transition-colors flex flex-col"
+                    className="group bg-cream-100 border border-ink-900/10 hover:border-gold-500 transition-colors flex flex-col overflow-hidden"
                   >
+                    {/* Image */}
+                    {pack.imageUrl && (
+                      <div className="relative aspect-[16/9] bg-ink-900/5 overflow-hidden">
+                        <Image
+                          src={pack.imageUrl}
+                          alt={pack.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
+
                     {/* Plate header */}
                     <div className="bg-ink-900 text-cream-50 p-6 md:p-8 relative">
                       <div className="flex items-start justify-between gap-4">
@@ -82,9 +151,18 @@ export default async function MeatPacksPage() {
                         </div>
                       </div>
                       <div className="mt-6 h-px bg-gold-400/30" />
-                      <p className="mt-3 text-xs uppercase tracking-[0.22em] text-cream-200/60">
-                        {contents.length} items
-                      </p>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-xs uppercase tracking-[0.22em] text-cream-200/60">
+                          {contents.length} items
+                        </p>
+                        <p
+                          className={`text-xs font-medium ${
+                            pack.noticeDays > 0 ? 'text-gold-400' : 'text-green-400'
+                          }`}
+                        >
+                          {noticeLabel(pack.noticeDays)}
+                        </p>
+                      </div>
                     </div>
 
                     {/* Contents */}

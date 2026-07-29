@@ -164,11 +164,11 @@ export function Header({ categories }: { categories: { name: string; slug: strin
       <AnimatePresence>
         {searchOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="border-t border-ink-900/10 overflow-hidden"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="border-t border-ink-900/10"
           >
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-4">
               <Suspense fallback={null}>
