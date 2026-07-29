@@ -143,7 +143,7 @@ export function SearchBar({
           role="combobox"
           aria-expanded={open}
           aria-controls="search-suggestions"
-          className="w-full bg-cream-50 border border-ink-900/15 pl-9 pr-9 h-11 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-ink-900 transition-colors"
+          className="w-full bg-cream-50 border border-ink-900/15 pl-9 pr-9 h-11 text-base sm:text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-ink-900 transition-colors"
         />
         {value && (
           <button
