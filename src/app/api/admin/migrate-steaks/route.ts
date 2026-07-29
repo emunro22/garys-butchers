@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getSession } from '@/lib/auth';
 
 /**
  * Consolidates steak products that have a size baked into their name (e.g. "7oz Sirloin Steak")
@@ -7,6 +8,9 @@ import { sql } from '@vercel/postgres';
  * Safe to run multiple times — uses slug matching and skips if already consolidated.
  */
 export async function POST() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const results: string[] = [];
 
   // Each entry: current slug, new name, new slug, weight label, existing price becomes the 7oz variant

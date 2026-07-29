@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import { getSession } from '@/lib/auth';
 
 export async function POST() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
     await sql`DO $$ BEGIN
       CREATE TYPE analytics_event_type AS ENUM ('pageview', 'click');

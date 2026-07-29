@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
+import { randomInt } from 'crypto';
 
 const ADMIN_SESSION_COOKIE = 'garys_session';
 const CUSTOMER_SESSION_COOKIE = 'garys_customer_session';
@@ -127,7 +128,7 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 1000000).toString();
 }
 
 export const SESSION_COOKIE_NAME = ADMIN_SESSION_COOKIE;

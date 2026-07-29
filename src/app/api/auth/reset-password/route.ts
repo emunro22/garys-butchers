@@ -4,12 +4,18 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 const Schema = z.object({
   email: z.string().email(),
   code: z.string().length(6),
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
 });
+
+// A successful guess here resets the account password outright, so this is
+// capped tighter than the email-verification code check.
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 8;
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +30,13 @@ export async function POST(req: NextRequest) {
 
     const { email, code, newPassword } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
+
+    if (rateLimit(`reset-password:${normalizedEmail}`, WINDOW_MS, MAX_ATTEMPTS)) {
+      return NextResponse.json(
+        { error: 'Too many attempts — please request a new reset code and try again shortly.' },
+        { status: 429 }
+      );
+    }
 
     const [user] = await db
       .select()

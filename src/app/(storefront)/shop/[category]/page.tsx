@@ -3,9 +3,10 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
-import { and, eq, asc, desc } from 'drizzle-orm';
+import { and, eq, asc, desc, ilike } from 'drizzle-orm';
 import { ProductCard } from '@/components/shop/product-card';
 import { ProductSort } from '@/components/shop/product-sort';
+import { SearchBar } from '@/components/shop/search-bar';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
 
@@ -52,10 +53,11 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ category: string }>;
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; q?: string }>;
 }) {
   const { category } = await params;
-  const { sort } = await searchParams;
+  const { sort, q } = await searchParams;
+  const query = (q ?? '').trim();
 
   let cat: any = null;
   let items: any[] = [];
@@ -67,7 +69,13 @@ export default async function CategoryPage({
     items = await db
       .select()
       .from(products)
-      .where(and(eq(products.categoryId, cat.id), eq(products.isActive, true)))
+      .where(
+        and(
+          eq(products.categoryId, cat.id),
+          eq(products.isActive, true),
+          query ? ilike(products.name, `%${query}%`) : undefined
+        )
+      )
       .orderBy(...sortOrderBy(sort));
     allCats = await db
       .select()
@@ -124,25 +132,45 @@ export default async function CategoryPage({
               </Link>
             ))}
           </div>
-          {items.length > 0 && (
+          <div className="flex items-center gap-4">
             <Suspense fallback={null}>
-              <ProductSort />
+              <SearchBar variant="inline" placeholder={`Search ${cat.name.toLowerCase()}…`} className="w-52" />
             </Suspense>
-          )}
+            {items.length > 0 && (
+              <Suspense fallback={null}>
+                <ProductSort />
+              </Suspense>
+            )}
+          </div>
         </div>
 
         {items.length === 0 ? (
           <div className="py-20 text-center">
-            <p className="font-display text-2xl text-ink-700">Nothing here yet.</p>
-            <p className="text-ink-500 mt-2">
-              We&apos;re still stocking this counter — check back soon.
-            </p>
-            <Link
-              href="/shop"
-              className="inline-block mt-6 text-sm uppercase tracking-[0.2em] text-ink-900 underline underline-offset-4"
-            >
-              Back to shop
-            </Link>
+            {query ? (
+              <>
+                <p className="font-display text-2xl text-ink-700">No matches for “{query}”.</p>
+                <p className="text-ink-500 mt-2">Try a different word, or clear the search.</p>
+                <Link
+                  href={`/shop/${cat.slug}`}
+                  className="inline-block mt-6 text-sm uppercase tracking-[0.2em] text-ink-900 underline underline-offset-4"
+                >
+                  Clear search
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="font-display text-2xl text-ink-700">Nothing here yet.</p>
+                <p className="text-ink-500 mt-2">
+                  We&apos;re still stocking this counter — check back soon.
+                </p>
+                <Link
+                  href="/shop"
+                  className="inline-block mt-6 text-sm uppercase tracking-[0.2em] text-ink-900 underline underline-offset-4"
+                >
+                  Back to shop
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">

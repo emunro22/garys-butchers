@@ -5,11 +5,17 @@ import { users } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { signCustomerSession, setCustomerSessionCookie } from '@/lib/auth';
 import { sendNewCustomerNotification } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
 
 const Schema = z.object({
   email: z.string().email(),
   code: z.string().length(6),
 });
+
+// Codes are 6 digits (1M possibilities) — cap attempts per email so the
+// window can't be brute-forced before it expires.
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 10;
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,6 +27,13 @@ export async function POST(req: NextRequest) {
 
     const { email, code } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
+
+    if (rateLimit(`verify-email:${normalizedEmail}`, WINDOW_MS, MAX_ATTEMPTS)) {
+      return NextResponse.json(
+        { error: 'Too many attempts — please request a new code and try again shortly.' },
+        { status: 429 }
+      );
+    }
 
     const [user] = await db
       .select()

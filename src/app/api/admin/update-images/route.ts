@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getSession } from '@/lib/auth';
 
 const PRODUCT_IMAGES: Array<[RegExp, string]> = [
   // ── Beef ──────────────────────────────────────────────────────────────────
@@ -74,6 +75,9 @@ function pickImage(name: string, catSlug: string | null | undefined): string | n
 }
 
 export async function POST(_req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
     const allCats = await db.select().from(categories);
     const slugById = new Map(allCats.map((c) => [c.id, c.slug]));

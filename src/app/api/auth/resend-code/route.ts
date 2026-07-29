@@ -5,12 +5,21 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateVerificationCode } from '@/lib/auth';
 import { sendVerificationCode } from '@/lib/email';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 const Schema = z.object({
   email: z.string().email(),
 });
 
+// Keeps this from being used to spam a target's inbox with codes.
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 5;
+
 export async function POST(req: NextRequest) {
+  if (rateLimit(`resend-code:${clientIp(req)}`, WINDOW_MS, MAX_ATTEMPTS)) {
+    return NextResponse.json({ error: 'Too many attempts, try again later' }, { status: 429 });
+  }
+
   try {
     const body = await req.json();
     const parsed = Schema.safeParse(body);

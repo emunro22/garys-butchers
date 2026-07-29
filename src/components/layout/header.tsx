@@ -2,17 +2,19 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ShoppingBag, Search, MapPin, UserCircle } from 'lucide-react';
 import { useCart, cartItemCount } from '@/lib/cart';
 import { cn } from '@/lib/utils';
 import { useCustomerSession } from '@/components/account/session-provider';
+import { SearchBar } from '@/components/shop/search-bar';
 
 const CURATED_SLUGS = ['beef', 'pork-ham', 'chicken', 'fish'];
 
 export function Header({ categories }: { categories: { name: string; slug: string }[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const items = useCart((s) => s.items);
   const openCart = useCart((s) => s.open);
@@ -118,6 +120,14 @@ export function Header({ categories }: { categories: { name: string; slug: strin
               <MapPin className="h-3.5 w-3.5" />
               Erskine
             </Link>
+            <button
+              onClick={() => setSearchOpen((v) => !v)}
+              className="flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
+              aria-label={searchOpen ? 'Close search' : 'Search'}
+              aria-expanded={searchOpen}
+            >
+              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            </button>
             <Link
               href={user ? '/account' : '/account/login'}
               className="relative flex items-center justify-center w-10 h-10 text-ink-900 hover:bg-ink-900/5 transition-colors"
@@ -149,6 +159,29 @@ export function Header({ categories }: { categories: { name: string; slug: strin
 
         </div>
       </div>
+
+      {/* Expandable search row */}
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-t border-ink-900/10 overflow-hidden"
+          >
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-4">
+              <Suspense fallback={null}>
+                <SearchBar
+                  variant="page"
+                  onNavigate={() => setSearchOpen(false)}
+                  autoFocus
+                />
+              </Suspense>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile drawer */}
       <AnimatePresence>
