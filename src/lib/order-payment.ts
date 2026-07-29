@@ -32,6 +32,16 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
     return existing ?? null;
   }
 
+  // Premium/bulk orders skip the customer-visible 'paid' state and go
+  // straight to 'preparing' — the price and courier aren't finalised until
+  // admin weighs the order, so "confirmed" would be misleading. A follow-up
+  // shipping-update email (see the admin orders screen) tells the customer
+  // once it's actually on its way.
+  if (won.fulfilment === 'premium') {
+    await db.update(orders).set({ status: 'preparing', updatedAt: new Date() }).where(eq(orders.id, orderId));
+    won.status = 'preparing';
+  }
+
   if (won.promotionCode) {
     await db
       .update(promotions)

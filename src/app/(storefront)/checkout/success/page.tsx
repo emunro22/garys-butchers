@@ -44,8 +44,9 @@ export default async function CheckoutSuccessPage({
           Thanks{order?.customerName ? `, ${order.customerName.split(' ')[0]}` : ''}.
         </h1>
         <p className="mt-5 text-ink-700 max-w-xl mx-auto leading-relaxed">
-          We&apos;ve received your order and we&apos;re on it. You&apos;ll get a confirmation email
-          in the next minute or two.
+          {order?.fulfilment === 'premium'
+            ? "We're preparing your order. You'll get a confirmation email shortly, and a separate email with your tracking number once it's on its way."
+            : "We've received your order and we're on it. You'll get a confirmation email in the next minute or two."}
         </p>
 
         {order && stillConfirming && (
@@ -71,7 +72,11 @@ export default async function CheckoutSuccessPage({
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-700">
-                  {order.fulfilment === 'delivery' ? 'Delivery' : 'Collection'}
+                  {order.fulfilment === 'pickup'
+                    ? 'Collection'
+                    : order.fulfilment === 'premium'
+                    ? 'Premium delivery'
+                    : 'Delivery'}
                 </dt>
                 <dd className="text-ink-900">
                   {(order.deliverySlot || order.pickupSlot)

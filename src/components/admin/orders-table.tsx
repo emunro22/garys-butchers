@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronRight, Trash2, Mail, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Mail, Truck, X } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
@@ -46,6 +46,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [emailTarget, setEmailTarget] = useState<Order | null>(null);
+  const [shippingTarget, setShippingTarget] = useState<Order | null>(null);
   const [premiumRates, setPremiumRates] = useState<PremiumDeliveryRates | null>(null);
 
   // Rate table for the premium/bulk delivery weight calculator below — admin
@@ -263,6 +264,16 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                             <Mail className="h-4 w-4" />
                           </button>
                         )}
+                        {o.fulfilment === 'premium' && (
+                          <button
+                            onClick={() => setShippingTarget(o)}
+                            className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-ink-900/5"
+                            aria-label="Send shipping update"
+                            title="Send shipping update"
+                          >
+                            <Truck className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => deleteOrder(o.id, o.orderNumber)}
                           disabled={deleting === o.id}
@@ -383,6 +394,13 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
       {emailTarget && (
         <EmailOrderModal order={emailTarget} onClose={() => setEmailTarget(null)} />
       )}
+      {shippingTarget && (
+        <ShippingUpdateModal
+          order={shippingTarget}
+          carriers={premiumRates?.carriers ?? []}
+          onClose={() => setShippingTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -464,6 +482,152 @@ function PremiumDeliveryCalculator({
           {order.weightGrams != null ? ` · ${(order.weightGrams / 1000).toFixed(1)}kg` : ''}
         </p>
       )}
+    </div>
+  );
+}
+
+const SHIPPING_STATUSES = ['Preparing', 'Shipped', 'Out for delivery', 'Delivered'] as const;
+
+function ShippingUpdateModal({
+  order,
+  carriers,
+  onClose,
+}: {
+  order: Order;
+  carriers: string[];
+  onClose: () => void;
+}) {
+  const orderLabel = order.orderNumber ? `#${String(order.orderNumber).padStart(5, '0')}` : 'this order';
+  const [status, setStatus] = useState<(typeof SHIPPING_STATUSES)[number]>('Shipped');
+  const [courier, setCourier] = useState(order.courierName ?? carriers[0] ?? '');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [note, setNote] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  async function send() {
+    setSending(true);
+    setError(null);
+    try {
+      const lines = [
+        "Here's an update on your order.",
+        '',
+        `Status: ${status}`,
+        courier ? `Courier: ${courier}` : null,
+        trackingNumber.trim() ? `Tracking number: ${trackingNumber.trim()}` : null,
+        note.trim() ? `\n${note.trim()}` : null,
+      ].filter((l): l is string => l !== null);
+
+      const res = await fetch('/api/admin/orders/email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
+          subject: `Update on your order ${orderLabel}`,
+          message: lines.join('\n'),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? 'Could not send email');
+      }
+      setSent(true);
+      setTimeout(onClose, 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send email');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink-900/60" onClick={onClose} aria-hidden />
+      <div className="relative bg-cream-50 border border-ink-900/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <header className="p-5 border-b border-ink-900/10 flex items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow text-ink-500 mb-1">Shipping update</p>
+            <h3 className="font-display text-xl text-ink-900">{order.customerName}</h3>
+            <p className="text-xs text-ink-500">{order.customerEmail} · Order {orderLabel}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 -m-1.5 text-ink-400 hover:text-ink-900"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="shipping-status">Status</Label>
+              <select
+                id="shipping-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as (typeof SHIPPING_STATUSES)[number])}
+                className="w-full border border-ink-900/15 bg-cream-50 px-3 py-2 text-sm text-ink-900 focus:outline-none focus:border-ink-900"
+              >
+                {SHIPPING_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="shipping-courier">Courier</Label>
+              <select
+                id="shipping-courier"
+                value={courier}
+                onChange={(e) => setCourier(e.target.value)}
+                className="w-full border border-ink-900/15 bg-cream-50 px-3 py-2 text-sm text-ink-900 focus:outline-none focus:border-ink-900"
+              >
+                <option value="">Choose…</option>
+                {carriers.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="tracking-number">Tracking number</Label>
+            <Input
+              id="tracking-number"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              placeholder="e.g. JD0001234567"
+              maxLength={100}
+            />
+          </div>
+          <div>
+            <Label htmlFor="shipping-note">Additional note (optional)</Label>
+            <Textarea
+              id="shipping-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={4}
+              maxLength={2000}
+              placeholder="Anything else the customer should know"
+            />
+          </div>
+          {error && <p className="text-sm text-butcher-500">{error}</p>}
+          {sent && <p className="text-sm text-green-700">Sent!</p>}
+        </div>
+
+        <div className="p-5 border-t border-ink-900/10 flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose} disabled={sending}>
+            Cancel
+          </Button>
+          <Button onClick={send} disabled={sending || sent}>
+            {sending ? 'Sending…' : sent ? 'Sent' : 'Send update'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

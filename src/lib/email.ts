@@ -167,9 +167,12 @@ function renderCustomerHtml(o: OrderEmailPayload) {
     </p>`;
 
   return renderEmailLayout({
-    eyebrow: 'Order confirmed',
+    eyebrow: o.fulfilment === 'premium' ? 'Order received' : 'Order confirmed',
     title: `Thanks, ${o.customerName.split(' ')[0]}.`,
-    intro: 'Your order has been confirmed.',
+    intro:
+      o.fulfilment === 'premium'
+        ? "We're preparing your order. We'll send a separate email with your tracking number and courier once it's on its way."
+        : 'Your order has been confirmed.',
     bodyHtml,
   });
 }
@@ -351,7 +354,7 @@ export async function sendOrderConfirmation(payload: OrderEmailPayload) {
 export async function sendShopNotification(payload: OrderEmailPayload) {
   const isSameDayOrder =
     payload.fulfilment === 'delivery' && !!payload.deliverySlot && isToday(new Date(payload.deliverySlot));
-  const prefix = isSameDayOrder ? '⚡ SAME-DAY' : '🥩';
+  const prefix = isSameDayOrder ? '⚡ SAME-DAY' : payload.fulfilment === 'premium' ? '📦 PREMIUM' : '🥩';
   await resend.emails.send({
     from: `Gary's Butchers Orders <${FROM}>`,
     to: ADMIN_EMAILS,
