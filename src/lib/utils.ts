@@ -44,14 +44,12 @@ export function slugify(str: string) {
 
 export const STANDARD_DELIVERY_FEE_PENCE = 395;
 export const MINIMUM_DELIVERY_ORDER_PENCE = 2500;
-export const FREE_DELIVERY_OVER_PENCE = 10000;
 
 // Rough pre-postcode estimate shown before the customer enters an address —
 // the real, distance-based fee (see calculateDeliveryByDistance) replaces this
 // once the postcode is known.
-export function calculateDelivery(subtotalInPence: number, fulfilment: 'pickup' | 'delivery') {
+export function calculateDelivery(fulfilment: 'pickup' | 'delivery') {
   if (fulfilment === 'pickup') return 0;
-  if (subtotalInPence >= FREE_DELIVERY_OVER_PENCE) return 0;
   return STANDARD_DELIVERY_FEE_PENCE;
 }
 
@@ -110,15 +108,11 @@ export function calculateDeliveryByDistance(
     midTierFeePence: number;
     farFeePence: number;
     radiusMiles: number;
-  },
-  subtotalInPence = 0
+  }
 ): { feePence: number; withinRadius: boolean } {
   // Unknown distance (geocoding failed, e.g. bad postcode) → can't verify it's in range, so don't allow it.
   if (distanceMiles === null || distanceMiles > settings.radiusMiles) {
     return { feePence: 0, withinRadius: false };
-  }
-  if (subtotalInPence >= FREE_DELIVERY_OVER_PENCE) {
-    return { feePence: 0, withinRadius: true };
   }
   let feePence: number;
   if (distanceMiles < settings.freeUnderMiles) {

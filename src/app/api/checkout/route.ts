@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
         radiusMiles: delivery.radiusMiles,
       };
       const distanceMiles = await getDistanceMiles(data.deliveryAddress.postcode);
-      const result = calculateDeliveryByDistance(distanceMiles, settings, subtotal);
+      const result = calculateDeliveryByDistance(distanceMiles, settings);
       if (!result.withinRadius) {
         const error =
           distanceMiles === null
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
       }
       deliveryFee = result.feePence;
     } else {
-      deliveryFee = calculateDelivery(subtotal, data.fulfilment);
+      deliveryFee = calculateDelivery(data.fulfilment);
     }
     let appliedPromoCode: string | null = null;
 
