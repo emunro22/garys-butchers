@@ -26,5 +26,17 @@ export async function ensureOrdersSchema() {
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS weight_grams integer`;
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name varchar(60)`;
     await sql`ALTER TYPE fulfilment ADD VALUE IF NOT EXISTS 'premium'`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS printed_at timestamptz`;
+  } catch { /* already exists */ }
+}
+
+// variants/marinades were previously guarded inline in only a handful of the
+// routes that touch `products` (see the file-level comment above for what
+// that pattern costs) — every unqualified `.select()`/`.returning()` against
+// `products` needs this called first.
+export async function ensureProductsSchema() {
+  try {
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb NOT NULL DEFAULT '[]'::jsonb`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS marinades jsonb NOT NULL DEFAULT '[]'::jsonb`;
   } catch { /* already exists */ }
 }

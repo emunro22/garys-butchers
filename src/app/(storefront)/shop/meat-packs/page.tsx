@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { and, eq, asc, desc, ilike } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { ProductCard } from '@/components/shop/product-card';
 import { ProductSort } from '@/components/shop/product-sort';
 import { SearchBar } from '@/components/shop/search-bar';
@@ -42,6 +43,7 @@ export default async function MeatPacksPage({
   let allCats: any[] = [];
 
   try {
+    await ensureProductsSchema();
     packs = await db
       .select()
       .from(products)

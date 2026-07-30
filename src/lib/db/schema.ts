@@ -110,6 +110,10 @@ export const products = pgTable(
     packContents: jsonb('pack_contents').$type<string[]>().default([]).notNull(),
     // size/weight variants (e.g. [{label:"7oz",priceInPence:999},{label:"10oz",priceInPence:1299}])
     variants: jsonb('variants').$type<Array<{ label: string; priceInPence: number }>>().default([]).notNull(),
+    // optional marinade choices (e.g. ["Peri Peri","Lemon & Herb","Plain"]) — a
+    // product only gets a marinade dropdown on its page when this is non-empty,
+    // so this list doubles as the admin on/off switch per product.
+    marinades: jsonb('marinades').$type<string[]>().default([]).notNull(),
     isPack: boolean('is_pack').default(false).notNull(),
     isFeatured: boolean('is_featured').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
@@ -193,6 +197,10 @@ export const orders = pgTable(
     promotionCode: varchar('promotion_code', { length: 60 }),
     stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 200 }),
     status: orderStatusEnum('status').default('pending').notNull(),
+    // Null until the receipt printer's agent (see print-agent/) acks the
+    // job — null is also what puts a paid order back into the print queue,
+    // so an admin "reprint" is just clearing this back to null.
+    printedAt: timestamp('printed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

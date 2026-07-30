@@ -19,11 +19,16 @@ export function AddToCartButton({
 }) {
   const variants: Variant[] = (product.variants as Variant[] | undefined) ?? [];
   const hasVariants = variants.length > 0;
+  const marinades: string[] = (product.marinades as string[] | undefined) ?? [];
+  const hasMarinades = marinades.length > 0;
 
   const [quantity, setQuantity] = useState(1);
   const [showAdded, setShowAdded] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
     hasVariants ? variants[0] : null
+  );
+  const [selectedMarinade, setSelectedMarinade] = useState<string | null>(
+    hasMarinades ? marinades[0] : null
   );
   const addItem = useCart((s) => s.addItem);
 
@@ -31,6 +36,7 @@ export function AddToCartButton({
 
   const onAdd = () => {
     if (hasVariants && !selectedVariant) return;
+    if (hasMarinades && !selectedMarinade) return;
     addItem(
       {
         productId: product.id,
@@ -40,6 +46,7 @@ export function AddToCartButton({
         imageUrl: product.imageUrl ?? undefined,
         weightLabel: product.weightLabel ?? undefined,
         variantLabel: selectedVariant?.label,
+        marinadeLabel: selectedMarinade ?? undefined,
         noticeDays: product.noticeDays,
       },
       quantity
@@ -82,6 +89,24 @@ export function AddToCartButton({
               {formatPrice(selectedVariant.priceInPence)}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Marinade dropdown */}
+      {hasMarinades && (
+        <div>
+          <p className={`text-xs uppercase tracking-[0.18em] mb-2 ${variant === 'dark' ? 'text-gold-400/70' : 'text-ink-500'}`}>
+            Choose marinade
+          </p>
+          <select
+            value={selectedMarinade ?? ''}
+            onChange={(e) => setSelectedMarinade(e.target.value || null)}
+            className={`w-full border px-3 h-11 text-sm ${selectBg}`}
+          >
+            {marinades.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
         </div>
       )}
 

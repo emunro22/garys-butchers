@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { getSession } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const ProductSchema = z.object({
   allergyInfo: z.string().max(4000).optional().nullable(),
   nutritionInfo: z.string().max(4000).optional().nullable(),
   variants: z.array(z.object({ label: z.string().min(1).max(80), priceInPence: z.number().int().min(0) })).optional(),
+  marinades: z.array(z.string().min(1).max(80)).optional(),
   packContents: z.array(z.string()).optional(),
   isPack: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
@@ -32,6 +34,7 @@ const ProductSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureProductsSchema();
     const url = new URL(req.url);
     const categoryId = url.searchParams.get('categoryId');
     const isPack = url.searchParams.get('isPack');
@@ -55,6 +58,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    await ensureProductsSchema();
     const body = await req.json();
     const parsed = ProductSchema.safeParse(body);
     if (!parsed.success) {
@@ -82,6 +86,7 @@ export async function POST(req: NextRequest) {
         allergyInfo: data.allergyInfo ?? null,
         nutritionInfo: data.nutritionInfo ?? null,
         variants: data.variants ?? [],
+        marinades: data.marinades ?? [],
         packContents: data.packContents ?? [],
         isPack: data.isPack ?? false,
         isFeatured: data.isFeatured ?? false,

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { products, reviews, categories } from '@/lib/db/schema';
 import { eq, and, desc, asc, count } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { getCategoryImageMap } from '@/lib/db/category-images';
 import { Hero } from '@/components/home/hero';
 import { FeaturedCategories } from '@/components/home/featured-categories';
@@ -16,6 +17,7 @@ export const revalidate = 60;
 
 async function getHomepageData() {
   try {
+    await ensureProductsSchema();
     const [packsRes, packCountRes, reviewsRes, catsRes, categoryImages] = await Promise.all([
       db
         .select()

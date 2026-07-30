@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { asc } from 'drizzle-orm';
-import { sql } from '@vercel/postgres';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { formatPrice } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,7 @@ import { ProductsTable } from '@/components/admin/products-table';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminProductsPage() {
-  // Ensure the variants column exists — safe no-op once the column is present
-  try {
-    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb NOT NULL DEFAULT '[]'::jsonb`;
-  } catch { /* column already exists or DB error — proceed anyway */ }
+  await ensureProductsSchema();
 
   const [allProducts, allCategories] = await Promise.all([
     db.select().from(products).orderBy(asc(products.name)),

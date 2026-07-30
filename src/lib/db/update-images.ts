@@ -12,6 +12,7 @@ config({ path: '.env.local' });
 import { db } from './index';
 import { products, categories } from './schema';
 import { eq } from 'drizzle-orm';
+import { ensureProductsSchema } from './ensure-schema';
 
 // Matched against product name (case-insensitive) in order — first match wins.
 // All photos from Unsplash (https://unsplash.com) — free to use under the Unsplash licence.
@@ -95,6 +96,7 @@ function pickImage(name: string, catSlug: string | null | undefined): string | n
 async function main() {
   console.log('📸  Assigning stock images to all products…');
 
+  await ensureProductsSchema();
   const allCats = await db.select().from(categories);
   const slugById = new Map(allCats.map((c) => [c.id, c.slug]));
 

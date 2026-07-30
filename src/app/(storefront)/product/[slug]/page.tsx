@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
-import { sql } from '@vercel/postgres';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { formatPrice } from '@/lib/utils';
 import { noticeLabel } from '@/lib/notice';
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
@@ -20,6 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   try {
+    await ensureProductsSchema();
     const [p] = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
     if (!p) return { title: 'Not found' };
     return {
@@ -38,15 +39,12 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
 
-  try {
-    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb NOT NULL DEFAULT '[]'::jsonb`;
-  } catch { /* column already exists */ }
-
   let product: any = null;
   let category: any = null;
   let related: any[] = [];
 
   try {
+    await ensureProductsSchema();
     [product] = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
     if (!product) notFound();
     if (product.categoryId) {

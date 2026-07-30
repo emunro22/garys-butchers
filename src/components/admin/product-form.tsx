@@ -16,9 +16,14 @@ type FormProduct = Partial<Product> & {
   packContents?: string[];
   galleryUrls?: string[];
   variants?: Variant[];
+  marinades?: string[];
 };
 
 const PRESET_SIZES = ['4oz', '6oz', '7oz', '8oz', '10oz', '12oz', '14oz', '16oz / 1lb', 'Custom'];
+
+const PRESET_MARINADES = [
+  'Peri Peri', 'Lemon & Herb', 'BBQ', 'Cajun', 'Garlic & Herb', 'Tikka', 'Plain', 'Custom',
+];
 
 export function ProductForm({
   initial,
@@ -87,6 +92,31 @@ export function ProductForm({
     if (j < 0 || j >= variants.length) return;
     setVariants((v) => {
       const next = [...v];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  }
+
+  const [marinades, setMarinades] = useState<string[]>(initial?.marinades ?? []);
+  const [newMarinade, setNewMarinade] = useState('Peri Peri');
+  const [customMarinade, setCustomMarinade] = useState('');
+
+  function addMarinade() {
+    const label = (newMarinade === 'Custom' ? customMarinade : newMarinade).trim();
+    if (!label || marinades.includes(label)) return;
+    setMarinades((m) => [...m, label]);
+    if (newMarinade === 'Custom') setCustomMarinade('');
+  }
+
+  function removeMarinade(i: number) {
+    setMarinades((m) => m.filter((_, idx) => idx !== i));
+  }
+
+  function moveMarinade(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= marinades.length) return;
+    setMarinades((m) => {
+      const next = [...m];
       [next[i], next[j]] = [next[j], next[i]];
       return next;
     });
@@ -161,6 +191,7 @@ export function ProductForm({
         noticeDays: form.noticeDays,
         packContents: form.isPack ? packContents : [],
         variants,
+        marinades,
       };
       const url = mode === 'create' ? '/api/products' : `/api/products/${initial!.id}`;
       const method = mode === 'create' ? 'POST' : 'PATCH';
@@ -558,6 +589,89 @@ export function ProductForm({
             </div>
 
             <Button type="button" variant="outline" onClick={addVariant} className="h-11">
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Marinades */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-1">Marinade options</h2>
+        <p className="text-xs text-ink-500 mb-5">
+          Add one or more marinades to give this product a &quot;Choose marinade&quot; dropdown on
+          its product page — this is how you grant the dropdown to specific products (e.g. chicken
+          strips, chicken breasts). Leave empty for no dropdown.
+        </p>
+
+        {marinades.length > 0 && (
+          <div className="mb-5 border border-ink-900/10 divide-y divide-ink-900/10">
+            {marinades.map((label, i) => (
+              <div key={label} className="flex items-center justify-between px-3 py-2 bg-cream-50">
+                <span className="text-sm font-medium text-ink-900">{label}</span>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => moveMarinade(i, -1)}
+                    disabled={i === 0}
+                    className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
+                    aria-label="Move up"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveMarinade(i, 1)}
+                    disabled={i === marinades.length - 1}
+                    className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
+                    aria-label="Move down"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeMarinade(i)}
+                    className="p-1 text-ink-400 hover:text-butcher-500"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="bg-cream-100 border border-ink-900/10 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Add a marinade</p>
+          <div className="flex flex-wrap gap-2 items-end">
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Marinade</label>
+              <select
+                value={newMarinade}
+                onChange={(e) => setNewMarinade(e.target.value)}
+                className="border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+              >
+                {PRESET_MARINADES.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            {newMarinade === 'Custom' && (
+              <div>
+                <label className="block text-xs text-ink-500 mb-1">Custom label</label>
+                <Input
+                  placeholder="e.g. Smoky Chipotle"
+                  value={customMarinade}
+                  onChange={(e) => setCustomMarinade(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMarinade(); } }}
+                  className="w-40"
+                />
+              </div>
+            )}
+
+            <Button type="button" variant="outline" onClick={addMarinade} className="h-11">
               <Plus className="h-4 w-4 mr-1" /> Add
             </Button>
           </div>

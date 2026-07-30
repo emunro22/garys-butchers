@@ -12,20 +12,21 @@ export type CartItem = {
   quantity: number;
   weightLabel?: string;
   variantLabel?: string;
+  marinadeLabel?: string;
   noticeDays?: number;
 };
 
-// Unique key per cart line (product + optional variant)
-export function cartKey(productId: string, variantLabel?: string) {
-  return variantLabel ? `${productId}::${variantLabel}` : productId;
+// Unique key per cart line (product + optional variant + optional marinade)
+export function cartKey(productId: string, variantLabel?: string, marinadeLabel?: string) {
+  return [productId, variantLabel, marinadeLabel].filter(Boolean).join('::');
 }
 
 type CartState = {
   items: CartItem[];
   isOpen: boolean;
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
-  removeItem: (productId: string, variantLabel?: string) => void;
-  updateQuantity: (productId: string, quantity: number, variantLabel?: string) => void;
+  removeItem: (productId: string, variantLabel?: string, marinadeLabel?: string) => void;
+  updateQuantity: (productId: string, quantity: number, variantLabel?: string, marinadeLabel?: string) => void;
   clear: () => void;
   open: () => void;
   close: () => void;
@@ -39,14 +40,14 @@ export const useCart = create<CartState>()(
       isOpen: false,
       addItem: (item, quantity = 1) =>
         set((state) => {
-          const key = cartKey(item.productId, item.variantLabel);
+          const key = cartKey(item.productId, item.variantLabel, item.marinadeLabel);
           const existing = state.items.find(
-            (i) => cartKey(i.productId, i.variantLabel) === key
+            (i) => cartKey(i.productId, i.variantLabel, i.marinadeLabel) === key
           );
           if (existing) {
             return {
               items: state.items.map((i) =>
-                cartKey(i.productId, i.variantLabel) === key
+                cartKey(i.productId, i.variantLabel, i.marinadeLabel) === key
                   ? { ...i, quantity: i.quantity + quantity }
                   : i
               ),
@@ -58,20 +59,20 @@ export const useCart = create<CartState>()(
             isOpen: true,
           };
         }),
-      removeItem: (productId, variantLabel) =>
+      removeItem: (productId, variantLabel, marinadeLabel) =>
         set((state) => {
-          const key = cartKey(productId, variantLabel);
-          return { items: state.items.filter((i) => cartKey(i.productId, i.variantLabel) !== key) };
+          const key = cartKey(productId, variantLabel, marinadeLabel);
+          return { items: state.items.filter((i) => cartKey(i.productId, i.variantLabel, i.marinadeLabel) !== key) };
         }),
-      updateQuantity: (productId, quantity, variantLabel) =>
+      updateQuantity: (productId, quantity, variantLabel, marinadeLabel) =>
         set((state) => {
-          const key = cartKey(productId, variantLabel);
+          const key = cartKey(productId, variantLabel, marinadeLabel);
           return {
             items:
               quantity <= 0
-                ? state.items.filter((i) => cartKey(i.productId, i.variantLabel) !== key)
+                ? state.items.filter((i) => cartKey(i.productId, i.variantLabel, i.marinadeLabel) !== key)
                 : state.items.map((i) =>
-                    cartKey(i.productId, i.variantLabel) === key ? { ...i, quantity } : i
+                    cartKey(i.productId, i.variantLabel, i.marinadeLabel) === key ? { ...i, quantity } : i
                   ),
           };
         }),

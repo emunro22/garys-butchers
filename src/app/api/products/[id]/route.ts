@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { getSession } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const PatchSchema = z.object({
   allergyInfo: z.string().max(4000).nullable().optional(),
   nutritionInfo: z.string().max(4000).nullable().optional(),
   variants: z.array(z.object({ label: z.string().min(1).max(80), priceInPence: z.number().int().min(0) })).optional(),
+  marinades: z.array(z.string().min(1).max(80)).optional(),
   packContents: z.array(z.string()).optional(),
   isPack: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
@@ -36,6 +38,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
+    await ensureProductsSchema();
     const [p] = await db.select().from(products).where(eq(products.id, id)).limit(1);
     if (!p) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ product: p });
@@ -54,6 +57,7 @@ export async function PATCH(
   const { id } = await params;
 
   try {
+    await ensureProductsSchema();
     const body = await req.json();
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { orders, products, promotions, users } from '@/lib/db/schema';
-import { ensureOrdersSchema, ensureUsersSchema } from '@/lib/db/ensure-schema';
+import { ensureOrdersSchema, ensureUsersSchema, ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
 import {
@@ -42,6 +42,7 @@ const ItemSchema = z.object({
   quantity: z.number().int().min(1).max(99),
   weightLabel: z.string().optional(),
   variantLabel: z.string().optional(),
+  marinadeLabel: z.string().optional(),
 });
 
 const CheckoutSchema = z.object({
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
     // unconditionally, not just for premium orders, or ALL checkouts break.
     await ensureOrdersSchema();
     await ensureUsersSchema();
+    await ensureProductsSchema();
 
     const customerSession = await getCustomerSession();
 
@@ -150,9 +152,21 @@ export async function POST(req: NextRequest) {
         priceInPence = variant.priceInPence;
       }
 
+      // Marinade choice never affects price — just validate it's still one of
+      // this product's current options, and fold it into the display name
+      // (there's no separate column for it, same as variantLabel above).
+      if (i.marinadeLabel) {
+        const marinades = (dbP.marinades as string[] | null) ?? [];
+        if (!marinades.includes(i.marinadeLabel)) {
+          throw new CheckoutError(`Marinade "${i.marinadeLabel}" is no longer available for "${dbP.name}".`);
+        }
+      }
+
+      const suffix = [i.variantLabel, i.marinadeLabel].filter(Boolean).join(', ');
+
       return {
         productId: i.productId,
-        name: i.variantLabel ? `${dbP.name} (${i.variantLabel})` : dbP.name,
+        name: suffix ? `${dbP.name} (${suffix})` : dbP.name,
         priceInPence,
         quantity: i.quantity,
         imageUrl: dbP.imageUrl ?? undefined,

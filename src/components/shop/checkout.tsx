@@ -804,7 +804,7 @@ export function Checkout() {
 
         <ul className="mt-5 divide-y divide-ink-900/10 border-b border-ink-900/10">
           {items.map((item) => (
-            <li key={cartKey(item.productId, item.variantLabel)} className="py-3 flex gap-3 items-center">
+            <li key={cartKey(item.productId, item.variantLabel, item.marinadeLabel)} className="py-3 flex gap-3 items-center">
               <div className="relative h-14 w-14 shrink-0 bg-ink-900/5">
                 {item.imageUrl ? (
                   <Image
@@ -821,8 +821,10 @@ export function Checkout() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-900 truncate">{item.name}</p>
-                {(item.variantLabel || item.weightLabel) && (
-                  <p className="text-xs text-ink-500">{item.variantLabel ?? item.weightLabel}</p>
+                {(item.variantLabel || item.weightLabel || item.marinadeLabel) && (
+                  <p className="text-xs text-ink-500">
+                    {[item.variantLabel ?? item.weightLabel, item.marinadeLabel].filter(Boolean).join(' · ')}
+                  </p>
                 )}
               </div>
               <p className="text-sm font-medium text-ink-900 tabular shrink-0">

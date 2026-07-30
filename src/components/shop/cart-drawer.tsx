@@ -65,7 +65,7 @@ export function CartDrawer() {
               ) : (
                 <ul className="divide-y divide-ink-900/10">
                   {items.map((item) => (
-                    <li key={cartKey(item.productId, item.variantLabel)} className="py-4 flex gap-4">
+                    <li key={cartKey(item.productId, item.variantLabel, item.marinadeLabel)} className="py-4 flex gap-4">
                       <div className="h-20 w-20 bg-ink-900/5 shrink-0 relative overflow-hidden">
                         {item.imageUrl && (
                           <Image
@@ -87,22 +87,22 @@ export function CartDrawer() {
                             {item.name}
                           </Link>
                           <button
-                            onClick={() => removeItem(item.productId, item.variantLabel)}
+                            onClick={() => removeItem(item.productId, item.variantLabel, item.marinadeLabel)}
                             className="text-ink-400 hover:text-butcher-500 text-xs eyebrow"
                           >
                             Remove
                           </button>
                         </div>
-                        {(item.variantLabel || item.weightLabel) && (
+                        {(item.variantLabel || item.weightLabel || item.marinadeLabel) && (
                           <p className="text-xs text-ink-500 mt-0.5">
-                            {item.variantLabel ?? item.weightLabel}
+                            {[item.variantLabel ?? item.weightLabel, item.marinadeLabel].filter(Boolean).join(' · ')}
                           </p>
                         )}
                         <div className="mt-auto pt-2 flex items-center justify-between">
                           <div className="flex items-center border border-ink-900/20">
                             <button
                               onClick={() =>
-                                updateQuantity(item.productId, item.quantity - 1, item.variantLabel)
+                                updateQuantity(item.productId, item.quantity - 1, item.variantLabel, item.marinadeLabel)
                               }
                               className="h-8 w-8 flex items-center justify-center hover:bg-ink-900/5"
                               aria-label="Decrease"
@@ -114,7 +114,7 @@ export function CartDrawer() {
                             </span>
                             <button
                               onClick={() =>
-                                updateQuantity(item.productId, item.quantity + 1, item.variantLabel)
+                                updateQuantity(item.productId, item.quantity + 1, item.variantLabel, item.marinadeLabel)
                               }
                               className="h-8 w-8 flex items-center justify-center hover:bg-ink-900/5"
                               aria-label="Increase"

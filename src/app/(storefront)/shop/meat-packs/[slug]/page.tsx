@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { formatPrice } from '@/lib/utils';
 import { noticeLabel } from '@/lib/notice';
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
@@ -18,6 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   try {
+    await ensureProductsSchema();
     const [p] = await db
       .select()
       .from(products)
@@ -44,6 +46,7 @@ export default async function MeatPackPage({
   let otherPacks: any[] = [];
 
   try {
+    await ensureProductsSchema();
     [pack] = await db
       .select()
       .from(products)

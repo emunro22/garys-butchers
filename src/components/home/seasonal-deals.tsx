@@ -1,11 +1,13 @@
 import { db } from '@/lib/db';
 import { deals, products } from '@/lib/db/schema';
 import { and, eq, or, isNull, gte, inArray } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { DealCard, type EnrichedDealItem } from '@/components/shop/deal-card';
 
 export async function SeasonalDeals({ compact = false }: { compact?: boolean }) {
   let activeDeals: (typeof deals.$inferSelect)[] = [];
   try {
+    await ensureProductsSchema();
     const now = new Date();
     activeDeals = await db
       .select()

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { db } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { getCategoryImageMap } from '@/lib/db/category-images';
 import { ProductCard } from '@/components/shop/product-card';
 import { RecommendedForYou } from '@/components/shop/recommended-for-you';
@@ -21,6 +22,7 @@ export default async function ShopPage() {
   let cats: Awaited<ReturnType<typeof db.select>> extends never ? never : any[] = [];
   let bestsellers: any[] = [];
   try {
+    await ensureProductsSchema();
     const [catsRes, categoryImages] = await Promise.all([
       db
         .select()

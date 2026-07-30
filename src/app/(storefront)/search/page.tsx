@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, or, ilike } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { ProductCard } from '@/components/shop/product-card';
 import { SearchBar } from '@/components/shop/search-bar';
 import type { Metadata } from 'next';
@@ -23,6 +24,7 @@ export default async function SearchPage({
   let results: any[] = [];
   if (query) {
     try {
+      await ensureProductsSchema();
       const term = `%${query}%`;
       results = await db
         .select()

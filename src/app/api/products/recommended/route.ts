@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, inArray, desc } from 'drizzle-orm';
+import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
   if (categoryIds.length === 0) return NextResponse.json({ products: [] });
 
   try {
+    await ensureProductsSchema();
     const results = await db
       .select()
       .from(products)
