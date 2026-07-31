@@ -161,21 +161,29 @@ export function Checkout() {
       ? postcodeFeePence
       : calculateDelivery('delivery');
 
+  // Meat packs are already bundled/discounted pricing — promo codes apply
+  // only to the non-pack portion of the order, mirrored server-side in
+  // /api/checkout (the actual charge is always computed there, not here).
+  const discountableSubtotal = useMemo(
+    () => items.reduce((sum, i) => (i.isPack ? sum : sum + i.priceInPence * i.quantity), 0),
+    [items]
+  );
+
   const totals = useMemo(() => {
     let discount = 0;
     let dFee = deliveryFee;
     if (promo) {
       if (promo.type === 'percent_off') {
-        discount = Math.round((subtotal * promo.value) / 100);
+        discount = Math.round((discountableSubtotal * promo.value) / 100);
       } else if (promo.type === 'amount_off') {
-        discount = Math.min(promo.value, subtotal);
+        discount = Math.min(promo.value, discountableSubtotal);
       } else if (promo.type === 'free_delivery') {
         dFee = 0;
       }
     }
     const total = Math.max(0, subtotal - discount) + dFee;
     return { discount, deliveryFee: dFee, total };
-  }, [subtotal, deliveryFee, promo]);
+  }, [subtotal, discountableSubtotal, deliveryFee, promo]);
 
   // Slot block definitions (times, capacity, closed days) are admin-configurable —
   // fetched per fulfilment type below, alongside live booked/capacity counts.
@@ -894,6 +902,11 @@ export function Checkout() {
               <dt>Discount</dt>
               <dd className="tabular">−{formatPrice(totals.discount)}</dd>
             </div>
+          )}
+          {promo && promo.type !== 'free_delivery' && discountableSubtotal < subtotal && (
+            <p className="text-xs text-ink-500 -mt-1">
+              Discount codes don&apos;t apply to meat packs.
+            </p>
           )}
           <div className="flex justify-between">
             <dt className="text-ink-700">

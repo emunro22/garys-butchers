@@ -48,6 +48,7 @@ export function AddToCartButton({
         variantLabel: selectedVariant?.label,
         marinadeLabel: selectedMarinade ?? undefined,
         noticeDays: product.noticeDays,
+        isPack: product.isPack,
       },
       quantity
     );

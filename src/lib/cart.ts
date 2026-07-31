@@ -14,6 +14,7 @@ export type CartItem = {
   variantLabel?: string;
   marinadeLabel?: string;
   noticeDays?: number;
+  isPack?: boolean;
 };
 
 // Unique key per cart line (product + optional variant + optional marinade)

@@ -178,6 +178,14 @@ export async function POST(req: NextRequest) {
       0
     );
 
+    // Meat packs are already bundled/discounted pricing — promo codes apply
+    // only to the non-pack portion of the order, so percent_off/amount_off
+    // below is calculated against this instead of the full subtotal.
+    const discountableSubtotal = lineItems.reduce((sum, i) => {
+      const dbP = priceMap.get(i.productId);
+      return dbP?.isPack ? sum : sum + i.priceInPence * i.quantity;
+    }, 0);
+
     if (data.fulfilment !== 'pickup' && subtotal < MINIMUM_DELIVERY_ORDER_PENCE) {
       return NextResponse.json(
         {
@@ -288,9 +296,9 @@ export async function POST(req: NextRequest) {
         const minOk = subtotal >= promo.minimumOrderInPence;
         if (startsOk && endsOk && redemptionsOk && minOk) {
           if (promo.type === 'percent_off') {
-            discount = Math.round((subtotal * promo.value) / 100);
+            discount = Math.round((discountableSubtotal * promo.value) / 100);
           } else if (promo.type === 'amount_off') {
-            discount = Math.min(promo.value, subtotal);
+            discount = Math.min(promo.value, discountableSubtotal);
           } else if (promo.type === 'free_delivery') {
             deliveryFee = 0;
           }

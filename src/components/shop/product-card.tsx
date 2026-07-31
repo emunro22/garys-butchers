@@ -81,6 +81,7 @@ export function ProductCard({
                 imageUrl: product.imageUrl ?? undefined,
                 weightLabel: product.weightLabel ?? undefined,
                 noticeDays: product.noticeDays,
+                isPack: product.isPack,
               });
             }}
             aria-label={`Add ${product.name} to basket`}
