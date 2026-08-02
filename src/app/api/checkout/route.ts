@@ -311,6 +311,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Referral rewards are never entered as a code — auto-applied here (never
+    // trusting anything from the client) for any logged-in customer sitting on
+    // an unspent credit, one credit per order regardless of how many they have.
+    let referralCreditRedeemed = false;
+    if (customerSession && shopSettings.referrals.enabled) {
+      const [buyer] = await db
+        .select({ referralCreditsAvailable: users.referralCreditsAvailable })
+        .from(users)
+        .where(eq(users.id, customerSession.userId))
+        .limit(1);
+      if (buyer && buyer.referralCreditsAvailable > 0) {
+        const remainingDiscountable = Math.max(0, discountableSubtotal - discount);
+        const referralDiscount = Math.round(
+          (discountableSubtotal * shopSettings.referrals.rewardPercent) / 100
+        );
+        discount += Math.min(referralDiscount, remainingDiscountable);
+        referralCreditRedeemed = true;
+      }
+    }
+
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
     // data.slot (and therefore slotDate) is guaranteed non-null here — enforced
@@ -368,6 +388,7 @@ export async function POST(req: NextRequest) {
         discountInPence: discount,
         totalInPence: total,
         promotionCode: appliedPromoCode,
+        referralCreditRedeemed,
         status: 'pending',
       })
       .returning();

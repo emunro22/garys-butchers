@@ -23,6 +23,7 @@ export async function GET() {
       defaultAddress: users.defaultAddress,
       createdAt: users.createdAt,
       premiumDeliveryEligible: users.premiumDeliveryEligible,
+      referralCreditsAvailable: users.referralCreditsAvailable,
     })
     .from(users)
     .where(eq(users.id, session.userId))

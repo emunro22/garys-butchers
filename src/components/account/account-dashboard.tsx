@@ -15,7 +15,11 @@ import {
   ChevronRight,
   ShoppingBag,
   Heart,
+  Gift,
+  RefreshCw,
 } from 'lucide-react';
+import { ReferralsPanel } from '@/components/account/referrals-panel';
+import { SubscriptionsPanel } from '@/components/account/subscriptions-panel';
 
 type UserProfile = {
   id: string;
@@ -58,7 +62,7 @@ type Recommendation = {
   badge: string | null;
 };
 
-type Tab = 'orders' | 'profile' | 'address';
+type Tab = 'orders' | 'profile' | 'address' | 'referrals' | 'subscriptions';
 
 export function AccountDashboard({
   user,
@@ -197,6 +201,26 @@ export function AccountDashboard({
                 }`}
               >
                 <MapPin className="h-4 w-4" /> Saved address
+              </button>
+              <button
+                onClick={() => { setTab('referrals'); setSaveMsg(null); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                  tab === 'referrals'
+                    ? 'bg-ink-900 text-cream-50'
+                    : 'text-ink-700 hover:bg-ink-900/5'
+                }`}
+              >
+                <Gift className="h-4 w-4" /> Refer a friend
+              </button>
+              <button
+                onClick={() => { setTab('subscriptions'); setSaveMsg(null); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                  tab === 'subscriptions'
+                    ? 'bg-ink-900 text-cream-50'
+                    : 'text-ink-700 hover:bg-ink-900/5'
+                }`}
+              >
+                <RefreshCw className="h-4 w-4" /> My subscriptions
               </button>
               <button
                 onClick={handleLogout}
@@ -410,6 +434,12 @@ export function AccountDashboard({
                   </Button>
                 </div>
               )}
+
+              {/* ─── Referrals tab ─── */}
+              {tab === 'referrals' && <ReferralsPanel />}
+
+              {/* ─── Subscriptions tab ─── */}
+              {tab === 'subscriptions' && <SubscriptionsPanel />}
             </div>
           </div>
         </div>

@@ -38,6 +38,12 @@ export const DEFAULT_SETTINGS = {
     // guest) can only ever redeem a given promo code once. See hasCustomerUsedPromotion.
     singleUsePerCustomer: false,
   },
+  referrals: {
+    enabled: true,
+    // Percent off the referrer's next order, auto-applied once the person
+    // they referred completes their first paid order. See src/lib/referrals.ts.
+    rewardPercent: 5,
+  },
   deliverySlots: {
     blocks: [
       { id: 'morning', startMinutes: 540, endMinutes: 720, capacity: 8 },
@@ -105,6 +111,7 @@ export async function getShopSettings(): Promise<AppSettings> {
     premiumDelivery: { ...DEFAULT_SETTINGS.premiumDelivery, carriers: [...DEFAULT_SETTINGS.premiumDelivery.carriers] },
     banner: { ...DEFAULT_SETTINGS.banner },
     promotions: { ...DEFAULT_SETTINGS.promotions },
+    referrals: { ...DEFAULT_SETTINGS.referrals },
     deliverySlots: { blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks], closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays] },
     sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
     pickupSlots: { blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks], closedDays: [...DEFAULT_SETTINGS.pickupSlots.closedDays] },
@@ -125,6 +132,8 @@ export async function getShopSettings(): Promise<AppSettings> {
         result.banner = { ...DEFAULT_SETTINGS.banner, ...(row.value as AppSettings['banner']) };
       } else if (row.key === 'promotions') {
         result.promotions = { ...DEFAULT_SETTINGS.promotions, ...(row.value as AppSettings['promotions']) };
+      } else if (row.key === 'referrals') {
+        result.referrals = { ...DEFAULT_SETTINGS.referrals, ...(row.value as AppSettings['referrals']) };
       } else if (row.key === 'deliverySlots') {
         result.deliverySlots = migrateSlotGroup(row.value, DEFAULT_SETTINGS.deliverySlots, [
           'morning',

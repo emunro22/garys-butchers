@@ -10,6 +10,7 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') ?? '/account';
+  const referralCode = searchParams.get('ref');
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,7 @@ function SignupForm() {
           email: form.email,
           phone: form.phone || undefined,
           password: form.password,
+          referralCode: referralCode || undefined,
         }),
       });
       const data = await res.json();
@@ -60,6 +62,11 @@ function SignupForm() {
           <p className="text-sm text-ink-500 mt-2">
             Track your orders, save your details, and checkout faster.
           </p>
+          {referralCode && (
+            <p className="text-sm text-gold-700 mt-3 bg-gold-400/10 border border-gold-400/30 px-4 py-2 inline-block">
+              You&apos;ve been invited by a friend — create your account to get started.
+            </p>
+          )}
         </div>
       </section>
 

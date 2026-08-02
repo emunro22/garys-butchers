@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
-import { orders } from '@/lib/db/schema';
+import { orders, subscriptions, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { markOrderPaid } from '@/lib/order-payment';
+import { ensureSubscriptionsSchema } from '@/lib/db/ensure-schema';
+import { createRenewalOrder } from '@/lib/subscription-renewal';
 
 // Stripe needs the raw body to verify signatures
 export const runtime = 'nodejs';
@@ -44,6 +46,66 @@ export async function POST(req: NextRequest) {
           .update(orders)
           .set({ status: 'cancelled', updatedAt: new Date() })
           .where(eq(orders.id, orderId));
+      }
+    } else if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.mode === 'subscription') {
+        const subscriptionId = session.metadata?.subscriptionId;
+        const stripeSubscriptionId =
+          typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+        const stripeCustomerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+        if (subscriptionId && stripeSubscriptionId) {
+          await ensureSubscriptionsSchema();
+          await db
+            .update(subscriptions)
+            .set({
+              status: 'active',
+              stripeSubscriptionId,
+              stripeCustomerId: stripeCustomerId ?? null,
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.id, subscriptionId));
+        }
+      }
+    } else if (event.type === 'invoice.paid') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const stripeSubscriptionId =
+        typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+      if (stripeSubscriptionId) {
+        await ensureSubscriptionsSchema();
+        const [sub] = await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
+          .limit(1);
+        if (sub && sub.status !== 'cancelled') {
+          const [buyer] = await db
+            .select({ email: users.email, name: users.name })
+            .from(users)
+            .where(eq(users.id, sub.userId))
+            .limit(1);
+          if (buyer) {
+            await createRenewalOrder(sub, invoice.id!, buyer.email, buyer.name);
+          }
+        }
+      }
+    } else if (event.type === 'customer.subscription.deleted') {
+      const sub = event.data.object as Stripe.Subscription;
+      await ensureSubscriptionsSchema();
+      await db
+        .update(subscriptions)
+        .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+        .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+    } else if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const stripeSubscriptionId =
+        typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+      if (stripeSubscriptionId) {
+        await ensureSubscriptionsSchema();
+        await db
+          .update(subscriptions)
+          .set({ status: 'past_due', updatedAt: new Date() })
+          .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
       }
     }
 

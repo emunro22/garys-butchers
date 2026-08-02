@@ -10,7 +10,7 @@ import { useCart, cartSubtotal, cartKey } from '@/lib/cart';
 import { formatPrice, calculateDelivery, MINIMUM_DELIVERY_ORDER_PENCE } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
-import { Truck, Store, Zap, Tag, Check, Package } from 'lucide-react';
+import { Truck, Store, Zap, Tag, Check, Package, Gift } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
 import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, formatClock, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
@@ -76,6 +76,20 @@ export function Checkout() {
       .catch(() => {});
   }, []);
 
+  // Referral reward: auto-applied (no code to enter) for a logged-in customer
+  // sitting on an unspent credit — see the profile fetch below for the actual
+  // eligibility flag. The real charge is always computed server-side in
+  // /api/checkout; this is only used to show an accurate total up front.
+  const [referralSettings, setReferralSettings] = useState<{ enabled: boolean; rewardPercent: number } | null>(null);
+  const [referralCreditsAvailable, setReferralCreditsAvailable] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/referral-settings')
+      .then((r) => r.json())
+      .then((data) => setReferralSettings(data.referrals ?? null))
+      .catch(() => {});
+  }, []);
+
   // Auto-fill form from logged-in user's profile
   useEffect(() => {
     if (!user || prefilled) return;
@@ -95,6 +109,7 @@ export function Checkout() {
             postcode: prev.postcode || p.defaultAddress?.postcode || '',
           }));
           setPremiumEligible(Boolean(p.premiumDeliveryEligible));
+          setReferralCreditsAvailable(Number(p.referralCreditsAvailable) || 0);
           setPrefilled(true);
         }
       })
@@ -104,7 +119,10 @@ export function Checkout() {
   // If the customer signs out mid-checkout, immediately drop premium
   // eligibility rather than leaving the last-known (stale) flag in place.
   useEffect(() => {
-    if (!user) setPremiumEligible(false);
+    if (!user) {
+      setPremiumEligible(false);
+      setReferralCreditsAvailable(0);
+    }
   }, [user]);
 
   const showPremiumOption = premiumEligible && Boolean(premiumSettings?.enabled);
@@ -169,6 +187,9 @@ export function Checkout() {
     [items]
   );
 
+  const referralCreditApplies =
+    referralCreditsAvailable > 0 && Boolean(referralSettings?.enabled);
+
   const totals = useMemo(() => {
     let discount = 0;
     let dFee = deliveryFee;
@@ -181,9 +202,14 @@ export function Checkout() {
         dFee = 0;
       }
     }
+    if (referralCreditApplies && referralSettings) {
+      const remaining = Math.max(0, discountableSubtotal - discount);
+      const referralDiscount = Math.round((discountableSubtotal * referralSettings.rewardPercent) / 100);
+      discount += Math.min(referralDiscount, remaining);
+    }
     const total = Math.max(0, subtotal - discount) + dFee;
     return { discount, deliveryFee: dFee, total };
-  }, [subtotal, discountableSubtotal, deliveryFee, promo]);
+  }, [subtotal, discountableSubtotal, deliveryFee, promo, referralCreditApplies, referralSettings]);
 
   // Slot block definitions (times, capacity, closed days) are admin-configurable —
   // fetched per fulfilment type below, alongside live booked/capacity counts.
@@ -845,6 +871,18 @@ export function Checkout() {
             </li>
           ))}
         </ul>
+
+        {/* Referral reward — automatic, nothing for the customer to enter */}
+        {referralCreditApplies && referralSettings && (
+          <div className="pt-5">
+            <div className="flex items-center gap-2 bg-gold-400/10 border border-gold-400/40 px-3 py-2.5">
+              <Gift className="h-4 w-4 text-gold-700 shrink-0" />
+              <p className="text-sm text-ink-900">
+                Referral reward: {referralSettings.rewardPercent}% off will be applied to this order.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Promo */}
         <div className="pt-5">

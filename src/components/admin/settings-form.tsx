@@ -16,6 +16,7 @@ type DeliverySettings = {
 };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
 type PromotionsSettings = { singleUsePerCustomer: boolean };
+type ReferralsSettings = { enabled: boolean; rewardPercent: number };
 type PremiumDeliverySettings = {
   enabled: boolean;
   minimumFeeInPence: number;
@@ -29,6 +30,7 @@ type AllSettings = {
   premiumDelivery: PremiumDeliverySettings;
   banner: BannerSettings;
   promotions: PromotionsSettings;
+  referrals: ReferralsSettings;
   deliverySlots: SlotGroupSettings;
   sameDay: SlotGroupSettings;
   pickupSlots: SlotGroupSettings;
@@ -178,6 +180,10 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
   const [promotionsSettings, setPromotionsSettings] = useState<PromotionsSettings>({
     singleUsePerCustomer: initial.promotions?.singleUsePerCustomer ?? false,
   });
+  const [referralsSettings, setReferralsSettings] = useState<ReferralsSettings>({
+    enabled: initial.referrals?.enabled ?? true,
+    rewardPercent: initial.referrals?.rewardPercent ?? 5,
+  });
   const [deliverySlots, setDeliverySlots] = useState<SlotGroupSettings>(initial.deliverySlots);
   const [sameDay, setSameDay] = useState<SlotGroupSettings>(initial.sameDay);
   const [pickupSlots, setPickupSlots] = useState<SlotGroupSettings>(initial.pickupSlots);
@@ -235,6 +241,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           premiumDelivery: { ...premiumDelivery, carriers: cleanedCarriers },
           banner: { ...banner, messages: cleanedMessages },
           promotions: promotionsSettings,
+          referrals: referralsSettings,
           deliverySlots,
           sameDay,
           pickupSlots,
@@ -515,6 +522,40 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           they checked out as a guest or while signed in) will be blocked from applying that same
           code again, by matching the email address on the order.
         </p>
+      </section>
+
+      {/* Referrals */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Referral scheme</p>
+          <p className="text-xs text-ink-500">
+            Each customer gets a shareable referral link from their account. Once someone they
+            referred signs up and completes their first paid order, the referrer is automatically
+            given a one-time discount off their next order — no code to enter.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            checked={referralsSettings.enabled}
+            onChange={(e) => setReferralsSettings({ ...referralsSettings, enabled: e.target.checked })}
+            className="h-4 w-4"
+          />
+          Enable the referral scheme
+        </label>
+        <div className="max-w-[220px]">
+          <Label htmlFor="referralReward">Reward for the referrer (%)</Label>
+          <Input
+            id="referralReward"
+            type="number"
+            min="1"
+            max="100"
+            value={referralsSettings.rewardPercent}
+            onChange={(e) =>
+              setReferralsSettings({ ...referralsSettings, rewardPercent: Number(e.target.value) || 1 })
+            }
+          />
+        </div>
       </section>
 
       {/* Delivery slots */}

@@ -20,6 +20,8 @@ import {
   ExternalLink,
   FileBarChart,
   LineChart,
+  Gift,
+  RefreshCw,
 } from 'lucide-react';
 
 const NAV = [
@@ -28,6 +30,8 @@ const NAV = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/categories', label: 'Categories', icon: Tags },
   { href: '/admin/promotions', label: 'Promotions', icon: TicketPercent },
+  { href: '/admin/referrals', label: 'Referrals', icon: Gift },
+  { href: '/admin/subscriptions', label: 'Subscriptions', icon: RefreshCw },
   { href: '/admin/deals', label: 'Seasonal Deals', icon: Sparkles },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/subscribers', label: 'Mailing list', icon: Mail },

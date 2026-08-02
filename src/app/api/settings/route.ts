@@ -50,6 +50,11 @@ const PromotionsSchema = z.object({
   singleUsePerCustomer: z.boolean(),
 });
 
+const ReferralsSchema = z.object({
+  enabled: z.boolean(),
+  rewardPercent: z.number().int().min(1).max(100),
+});
+
 const SlotBlockSchema = z
   .object({
     id: z.string().min(1).max(80),
@@ -72,6 +77,7 @@ const PatchSchema = z.object({
   premiumDelivery: PremiumDeliverySchema.optional(),
   banner: BannerSchema.optional(),
   promotions: PromotionsSchema.optional(),
+  referrals: ReferralsSchema.optional(),
   deliverySlots: SlotGroupSchema.optional(),
   sameDay: SlotGroupSchema.optional(),
   pickupSlots: SlotGroupSchema.optional(),
@@ -139,6 +145,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.promotions, updatedAt: new Date() },
+        });
+    }
+
+    if (data.referrals) {
+      await db
+        .insert(settings)
+        .values({ key: 'referrals', value: data.referrals, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.referrals, updatedAt: new Date() },
         });
     }
 

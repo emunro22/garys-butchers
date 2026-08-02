@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { orders, promotions } from '@/lib/db/schema';
-import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
+import { orders, promotions, referrals, users } from '@/lib/db/schema';
+import { ensureOrdersSchema, ensureUsersSchema, ensureReferralsSchema } from '@/lib/db/ensure-schema';
 import { sendOrderConfirmation, sendShopNotification } from '@/lib/email';
 
 type OrderRow = typeof orders.$inferSelect;
@@ -54,6 +54,38 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
       .update(promotions)
       .set({ redemptionCount: sql`${promotions.redemptionCount} + 1` })
       .where(eq(promotions.code, won.promotionCode));
+  }
+
+  if (won.userId) {
+    await ensureUsersSchema();
+
+    // This order spent one of the buyer's own referral rewards — consume it now
+    // that payment has actually succeeded (never at checkout time, in case the
+    // payment fails).
+    if (won.referralCreditRedeemed) {
+      await db
+        .update(users)
+        .set({ referralCreditsAvailable: sql`GREATEST(${users.referralCreditsAvailable} - 1, 0)` })
+        .where(eq(users.id, won.userId));
+    }
+
+    // Was this buyer referred by someone, and is this the first paid order to
+    // land since they signed up? The conditional UPDATE (status must still be
+    // 'pending') both answers that and claims the reward atomically — a
+    // second paid order for the same buyer will match zero rows here.
+    await ensureReferralsSchema();
+    const [rewarded] = await db
+      .update(referrals)
+      .set({ status: 'rewarded', qualifyingOrderId: won.id, rewardedAt: new Date() })
+      .where(and(eq(referrals.referredUserId, won.userId), eq(referrals.status, 'pending')))
+      .returning({ referrerUserId: referrals.referrerUserId });
+
+    if (rewarded) {
+      await db
+        .update(users)
+        .set({ referralCreditsAvailable: sql`${users.referralCreditsAvailable} + 1` })
+        .where(eq(users.id, rewarded.referrerUserId));
+    }
   }
 
   try {

@@ -53,6 +53,7 @@ export function ProductForm({
     isPack: initial?.isPack ?? false,
     isFeatured: initial?.isFeatured ?? false,
     isActive: initial?.isActive ?? true,
+    isSubscribable: initial?.isSubscribable ?? false,
     noticeDays: initial?.noticeDays ?? 0,
   });
   const [packContents, setPackContents] = useState<string[]>(
@@ -188,6 +189,7 @@ export function ProductForm({
         isPack: form.isPack,
         isFeatured: form.isFeatured,
         isActive: form.isActive,
+        isSubscribable: form.isSubscribable,
         noticeDays: form.noticeDays,
         packContents: form.isPack ? packContents : [],
         variants,
@@ -433,6 +435,12 @@ export function ProductForm({
             checked={form.isActive}
             onChange={(v) => setForm({ ...form, isActive: v })}
             label="Active (visible in shop)"
+          />
+          <Toggle
+            checked={form.isSubscribable}
+            onChange={(v) => setForm({ ...form, isSubscribable: v })}
+            label="Available in build-your-own subscriptions"
+            hint="Lets customers add this to a recurring monthly subscription. Only turn this on for staple items, not day-fresh stock."
           />
         </div>
       </section>
