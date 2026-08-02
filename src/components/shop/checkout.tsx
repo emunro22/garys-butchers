@@ -355,7 +355,11 @@ export function Checkout() {
       const res = await fetch('/api/promotions/validate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ code: promoCode.trim(), subtotalInPence: subtotal }),
+        body: JSON.stringify({
+          code: promoCode.trim(),
+          subtotalInPence: subtotal,
+          ...(form.email.trim() ? { email: form.email.trim() } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {

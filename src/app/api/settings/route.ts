@@ -46,6 +46,10 @@ const BannerSchema = z.object({
   cutoffHour: z.number().int().min(0).max(23),
 });
 
+const PromotionsSchema = z.object({
+  singleUsePerCustomer: z.boolean(),
+});
+
 const SlotBlockSchema = z
   .object({
     id: z.string().min(1).max(80),
@@ -67,6 +71,7 @@ const PatchSchema = z.object({
   delivery: DeliverySchema.optional(),
   premiumDelivery: PremiumDeliverySchema.optional(),
   banner: BannerSchema.optional(),
+  promotions: PromotionsSchema.optional(),
   deliverySlots: SlotGroupSchema.optional(),
   sameDay: SlotGroupSchema.optional(),
   pickupSlots: SlotGroupSchema.optional(),
@@ -124,6 +129,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.banner, updatedAt: new Date() },
+        });
+    }
+
+    if (data.promotions) {
+      await db
+        .insert(settings)
+        .values({ key: 'promotions', value: data.promotions, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.promotions, updatedAt: new Date() },
         });
     }
 

@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils';
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
+import { hasCustomerUsedPromotion } from '@/lib/promotions';
 import { bucketKey, findBlock, getDateKey, getWeekday, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
@@ -294,7 +295,10 @@ export async function POST(req: NextRequest) {
         const redemptionsOk =
           promo.maxRedemptions === null || promo.redemptionCount < promo.maxRedemptions;
         const minOk = subtotal >= promo.minimumOrderInPence;
-        if (startsOk && endsOk && redemptionsOk && minOk) {
+        const singleUseOk =
+          !shopSettings.promotions.singleUsePerCustomer ||
+          !(await hasCustomerUsedPromotion(data.customer.email, promo.code));
+        if (startsOk && endsOk && redemptionsOk && minOk && singleUseOk) {
           if (promo.type === 'percent_off') {
             discount = Math.round((discountableSubtotal * promo.value) / 100);
           } else if (promo.type === 'amount_off') {

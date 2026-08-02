@@ -33,6 +33,11 @@ export const DEFAULT_SETTINGS = {
     showCountdown: true,
     cutoffHour: 18,
   },
+  promotions: {
+    // When on, a customer (identified by the email on their order — account or
+    // guest) can only ever redeem a given promo code once. See hasCustomerUsedPromotion.
+    singleUsePerCustomer: false,
+  },
   deliverySlots: {
     blocks: [
       { id: 'morning', startMinutes: 540, endMinutes: 720, capacity: 8 },
@@ -99,6 +104,7 @@ export async function getShopSettings(): Promise<AppSettings> {
     delivery: { ...DEFAULT_SETTINGS.delivery },
     premiumDelivery: { ...DEFAULT_SETTINGS.premiumDelivery, carriers: [...DEFAULT_SETTINGS.premiumDelivery.carriers] },
     banner: { ...DEFAULT_SETTINGS.banner },
+    promotions: { ...DEFAULT_SETTINGS.promotions },
     deliverySlots: { blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks], closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays] },
     sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
     pickupSlots: { blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks], closedDays: [...DEFAULT_SETTINGS.pickupSlots.closedDays] },
@@ -117,6 +123,8 @@ export async function getShopSettings(): Promise<AppSettings> {
         };
       } else if (row.key === 'banner') {
         result.banner = { ...DEFAULT_SETTINGS.banner, ...(row.value as AppSettings['banner']) };
+      } else if (row.key === 'promotions') {
+        result.promotions = { ...DEFAULT_SETTINGS.promotions, ...(row.value as AppSettings['promotions']) };
       } else if (row.key === 'deliverySlots') {
         result.deliverySlots = migrateSlotGroup(row.value, DEFAULT_SETTINGS.deliverySlots, [
           'morning',

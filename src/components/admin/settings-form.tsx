@@ -15,6 +15,7 @@ type DeliverySettings = {
   radiusMiles: number;
 };
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
+type PromotionsSettings = { singleUsePerCustomer: boolean };
 type PremiumDeliverySettings = {
   enabled: boolean;
   minimumFeeInPence: number;
@@ -27,6 +28,7 @@ type AllSettings = {
   delivery: DeliverySettings;
   premiumDelivery: PremiumDeliverySettings;
   banner: BannerSettings;
+  promotions: PromotionsSettings;
   deliverySlots: SlotGroupSettings;
   sameDay: SlotGroupSettings;
   pickupSlots: SlotGroupSettings;
@@ -173,6 +175,9 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     carriers: initial.premiumDelivery?.carriers?.length ? initial.premiumDelivery.carriers : [''],
     description: initial.premiumDelivery?.description ?? '',
   });
+  const [promotionsSettings, setPromotionsSettings] = useState<PromotionsSettings>({
+    singleUsePerCustomer: initial.promotions?.singleUsePerCustomer ?? false,
+  });
   const [deliverySlots, setDeliverySlots] = useState<SlotGroupSettings>(initial.deliverySlots);
   const [sameDay, setSameDay] = useState<SlotGroupSettings>(initial.sameDay);
   const [pickupSlots, setPickupSlots] = useState<SlotGroupSettings>(initial.pickupSlots);
@@ -229,6 +234,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           delivery,
           premiumDelivery: { ...premiumDelivery, carriers: cleanedCarriers },
           banner: { ...banner, messages: cleanedMessages },
+          promotions: promotionsSettings,
           deliverySlots,
           sameDay,
           pickupSlots,
@@ -483,6 +489,32 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Promotions */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Promotions</p>
+          <p className="text-xs text-ink-500">
+            Controls how discount codes can be redeemed at checkout.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            checked={promotionsSettings.singleUsePerCustomer}
+            onChange={(e) =>
+              setPromotionsSettings({ ...promotionsSettings, singleUsePerCustomer: e.target.checked })
+            }
+            className="h-4 w-4"
+          />
+          Limit each discount code to one use per customer
+        </label>
+        <p className="text-xs text-ink-500">
+          When on, a customer who has already used a discount code on a completed order (whether
+          they checked out as a guest or while signed in) will be blocked from applying that same
+          code again, by matching the email address on the order.
+        </p>
       </section>
 
       {/* Delivery slots */}

@@ -3,10 +3,13 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { promotions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getShopSettings } from '@/lib/settings';
+import { hasCustomerUsedPromotion } from '@/lib/promotions';
 
 const Schema = z.object({
   code: z.string().min(1).max(60),
   subtotalInPence: z.number().int().min(0),
+  email: z.string().email().max(200).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -16,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
-    const { code, subtotalInPence } = parsed.data;
+    const { code, subtotalInPence, email } = parsed.data;
     const [promo] = await db
       .select()
       .from(promotions)
@@ -51,6 +54,19 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    if (email) {
+      const shopSettings = await getShopSettings();
+      if (
+        shopSettings.promotions.singleUsePerCustomer &&
+        (await hasCustomerUsedPromotion(email, promo.code))
+      ) {
+        return NextResponse.json(
+          { error: "This discount code can only be used once, and it looks like you've already applied it." },
+          { status: 400 }
+        );
+      }
     }
 
     return NextResponse.json({
