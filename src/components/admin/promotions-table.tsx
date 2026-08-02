@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import Link from 'next/link';
+import { Trash2, ToggleLeft, ToggleRight, Pencil } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import type { Promotion } from '@/lib/db/schema';
 
@@ -114,14 +115,23 @@ export function PromotionsTable({ initial }: { initial: Promotion[] }) {
                 </button>
               </td>
               <td className="px-5 py-3 text-right">
-                <button
-                  onClick={() => deletePromo(p)}
-                  disabled={busy === p.id}
-                  title="Delete"
-                  className="inline-flex items-center justify-center text-ink-400 hover:text-butcher-500 transition-colors disabled:opacity-40"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center justify-end gap-3">
+                  <Link
+                    href={`/admin/promotions/${p.id}`}
+                    title="Edit"
+                    className="inline-flex items-center justify-center text-ink-400 hover:text-ink-900 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Link>
+                  <button
+                    onClick={() => deletePromo(p)}
+                    disabled={busy === p.id}
+                    title="Delete"
+                    className="inline-flex items-center justify-center text-ink-400 hover:text-butcher-500 transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

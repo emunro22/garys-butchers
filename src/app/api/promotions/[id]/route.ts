@@ -6,7 +6,11 @@ import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 
 const PatchSchema = z.object({
+  code: z.string().min(2).max(60).optional(),
   description: z.string().max(500).nullable().optional(),
+  type: z.enum(['percent_off', 'amount_off', 'free_delivery']).optional(),
+  value: z.number().int().min(0).optional(),
+  minimumOrderInPence: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
   maxRedemptions: z.number().int().min(1).nullable().optional(),
   startsAt: z.string().datetime().nullable().optional(),
@@ -27,7 +31,20 @@ export async function PATCH(
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid fields' }, { status: 400 });
     }
+    if (
+      parsed.data.type === 'percent_off' &&
+      parsed.data.value !== undefined &&
+      (parsed.data.value < 1 || parsed.data.value > 100)
+    ) {
+      return NextResponse.json(
+        { error: 'Percent value must be between 1 and 100' },
+        { status: 400 }
+      );
+    }
     const update: Record<string, unknown> = { ...parsed.data };
+    if (parsed.data.code !== undefined) {
+      update.code = parsed.data.code.toUpperCase();
+    }
     if (parsed.data.startsAt !== undefined) {
       update.startsAt = parsed.data.startsAt ? new Date(parsed.data.startsAt) : null;
     }

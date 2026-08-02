@@ -4,21 +4,30 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
+import type { Promotion } from '@/lib/db/schema';
 
 type PromoType = 'percent_off' | 'amount_off' | 'free_delivery';
 
-export function PromotionForm() {
+function toLocalDateTimeInput(value: string | Date | null) {
+  if (!value) return '';
+  const d = new Date(value);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function PromotionForm({ initial }: { initial?: Promotion }) {
   const router = useRouter();
+  const isEdit = !!initial;
   const [form, setForm] = useState({
-    code: '',
-    description: '',
-    type: 'percent_off' as PromoType,
-    value: 10,
-    minimumOrderInPence: 0,
-    maxRedemptions: '' as '' | number,
-    startsAt: '',
-    endsAt: '',
-    isActive: true,
+    code: initial?.code ?? '',
+    description: initial?.description ?? '',
+    type: (initial?.type ?? 'percent_off') as PromoType,
+    value: initial?.value ?? 10,
+    minimumOrderInPence: initial?.minimumOrderInPence ?? 0,
+    maxRedemptions: (initial?.maxRedemptions ?? '') as '' | number,
+    startsAt: toLocalDateTimeInput(initial?.startsAt ?? null),
+    endsAt: toLocalDateTimeInput(initial?.endsAt ?? null),
+    isActive: initial?.isActive ?? true,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,17 +63,17 @@ export function PromotionForm() {
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
         isActive: form.isActive,
       };
-      const res = await fetch('/api/promotions', {
-        method: 'POST',
+      const res = await fetch(isEdit ? `/api/promotions/${initial!.id}` : '/api/promotions', {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Could not create promotion');
+      if (!res.ok) throw new Error(data.error ?? `Could not ${isEdit ? 'update' : 'create'} promotion`);
       router.push('/admin/promotions');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create promotion');
+      setError(err instanceof Error ? err.message : `Could not ${isEdit ? 'update' : 'create'} promotion`);
       setSubmitting(false);
     }
   }
@@ -231,7 +240,7 @@ export function PromotionForm() {
           Cancel
         </Button>
         <Button type="submit" variant="primary" disabled={submitting}>
-          {submitting ? 'Creating…' : 'Create code'}
+          {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Create code'}
         </Button>
       </div>
     </form>
