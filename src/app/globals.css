@@ -74,11 +74,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Belt-and-braces against mobile horizontal scroll — any single
+       element that's a few pixels too wide (long product name, marquee
+       track, etc.) shouldn't be able to drag the whole page sideways. */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-cream text-ink-900 font-sans;
     font-feature-settings: 'ss01', 'ss02', 'cv11';
+    overflow-x: hidden;
+    width: 100%;
   }
 
   /* Selection — gold on charcoal */
@@ -92,6 +98,7 @@
     font-family: var(--font-display);
     font-weight: 500;
     letter-spacing: -0.01em;
+    overflow-wrap: break-word;
   }
 
   /* Numbers feel right with tabular figures in cart/checkout */

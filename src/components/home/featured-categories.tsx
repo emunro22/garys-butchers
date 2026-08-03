@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
+import { SeasonalCardFrame } from '@/components/seasonal/seasonal-card-frame';
 
 interface Category {
   id: string;
@@ -47,9 +48,9 @@ export function FeaturedCategories({ categories }: { categories: Category[] }) {
               viewport={{ once: true, margin: '-50px' }}
               transition={{ duration: 0.5, delay: i * 0.05 }}
             >
-              <Link href={`/shop/${cat.slug}`} className="group block">
+              <Link href={`/shop/${cat.slug}`} className="group relative block">
+                <SeasonalCardDecoration />
                 <div className="relative aspect-[4/3] overflow-hidden bg-ink-900/5">
-                  <SeasonalCardDecoration />
                   {cat.imageUrl ? (
                     <Image
                       src={cat.imageUrl}
@@ -63,6 +64,7 @@ export function FeaturedCategories({ categories }: { categories: Category[] }) {
                       <span className="font-display text-2xl">{cat.name}</span>
                     </div>
                   )}
+                  <SeasonalCardFrame />
                 </div>
                 <div className="pt-4">
                   <h3 className="font-display text-2xl lg:text-3xl mb-1 text-ink-900 group-hover:text-gold-600 transition-colors">

@@ -9,6 +9,7 @@ import { ProductCard } from '@/components/shop/product-card';
 import { RecommendedForYou } from '@/components/shop/recommended-for-you';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
+import { SeasonalCardFrame } from '@/components/seasonal/seasonal-card-frame';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -68,33 +69,35 @@ export default async function ShopPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {cats.map((c) => (
-            <Link
-              key={c.id}
-              href={`/shop/${c.slug}`}
-              className="group block aspect-[4/5] relative overflow-hidden bg-ink-900 text-cream-50"
-            >
+            <div key={c.id} className="relative group">
               <SeasonalCardDecoration />
-              {c.imageUrl && (
-                <Image
-                  src={c.imageUrl}
-                  alt={c.name}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-b from-ink-900/30 via-ink-900/20 to-ink-900/85" />
-              <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
-                <h3 className="font-display text-2xl md:text-3xl">{c.name}</h3>
-                <p className="text-xs text-cream-200/70 mt-2 line-clamp-2">
-                  {c.description}
-                </p>
-                <span className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-gold-400 group-hover:gap-3 transition-all">
-                  Shop {c.name.toLowerCase()}
-                  <span aria-hidden>→</span>
-                </span>
-              </div>
-            </Link>
+              <Link
+                href={`/shop/${c.slug}`}
+                className="block aspect-[4/5] relative overflow-hidden bg-ink-900 text-cream-50"
+              >
+                {c.imageUrl && (
+                  <Image
+                    src={c.imageUrl}
+                    alt={c.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-ink-900/30 via-ink-900/20 to-ink-900/85" />
+                <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
+                  <h3 className="font-display text-2xl md:text-3xl">{c.name}</h3>
+                  <p className="text-xs text-cream-200/70 mt-2 line-clamp-2">
+                    {c.description}
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-gold-400 group-hover:gap-3 transition-all">
+                    Shop {c.name.toLowerCase()}
+                    <span aria-hidden>→</span>
+                  </span>
+                </div>
+                <SeasonalCardFrame />
+              </Link>
+            </div>
           ))}
         </div>
       </section>

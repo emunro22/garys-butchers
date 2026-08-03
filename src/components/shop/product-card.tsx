@@ -9,6 +9,7 @@ import { formatPrice, cn } from '@/lib/utils';
 import { useCart } from '@/lib/cart';
 import { noticeLabel } from '@/lib/notice';
 import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
+import { SeasonalCardFrame } from '@/components/seasonal/seasonal-card-frame';
 import type { Product } from '@/lib/db/schema';
 
 type Variant = { label: string; priceInPence: number };
@@ -36,8 +37,10 @@ export function ProductCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-30px' }}
       transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.3) }}
-      className="group flex flex-col"
+      className="group relative flex flex-col"
     >
+      <SeasonalCardDecoration />
+
       <Link href={href} className="relative block overflow-hidden bg-ink-900/5 aspect-[4/5] mb-4">
         {product.imageUrl && !imgError ? (
           <Image
@@ -57,7 +60,7 @@ export function ProductCard({
           </div>
         )}
 
-        <SeasonalCardDecoration />
+        <SeasonalCardFrame />
 
         {product.badge && (
           <span className="absolute top-3 left-3 bg-gold-400 text-ink-900 text-[10px] uppercase tracking-[0.18em] font-semibold px-2 py-1">
