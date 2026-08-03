@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
@@ -202,6 +203,14 @@ export async function PATCH(req: NextRequest) {
           set: { value: data.pickupSlots, updatedAt: new Date() },
         });
     }
+
+    // The storefront layout and pages read settings via ISR (revalidate: 60),
+    // so without this a saved change can sit stale — served from cache — for
+    // up to a minute, and the *first* request after that only triggers a
+    // background rebuild rather than showing the update itself. Busting the
+    // whole layout tree on save makes admin changes (seasonal theme, banner,
+    // delivery pricing, etc.) appear on the next page load instead.
+    revalidatePath('/', 'layout');
 
     return NextResponse.json({ ok: true });
   } catch (err) {
