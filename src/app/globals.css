@@ -74,17 +74,19 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    /* Belt-and-braces against mobile horizontal scroll — any single
-       element that's a few pixels too wide (long product name, marquee
-       track, etc.) shouldn't be able to drag the whole page sideways. */
-    overflow-x: hidden;
+    /* Guard against mobile horizontal scroll (a slightly-too-wide element
+       dragging the whole page sideways) without breaking `position: sticky`
+       anywhere in the app (header, cart, checkout, admin sidebar, etc).
+       `hidden` would work but forces the other axis's used overflow value to
+       `auto`, turning html/body into a scroll container and breaking sticky
+       positioning for everything inside — `clip` prevents the visual overflow
+       without ever creating that scroll container. */
+    overflow-x: clip;
   }
 
   body {
     @apply bg-cream text-ink-900 font-sans;
     font-feature-settings: 'ss01', 'ss02', 'cv11';
-    overflow-x: hidden;
-    width: 100%;
   }
 
   /* Selection — gold on charcoal */
