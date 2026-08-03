@@ -3,12 +3,12 @@ import type { SeasonalTheme } from '@/lib/settings';
 
 const COPY = {
   christmas: {
-    icon: '/seasonal/santa-hat.png',
+    icon: '/seasonal/santa-cartoon.png',
     text: "It's beginning to look a lot like Christmas at Gary's Butchers — festive cuts in store now.",
     className: 'bg-gradient-to-r from-butcher-600 via-butcher-500 to-gold-600',
   },
   easter: {
-    icon: '/seasonal/easter-egg.png',
+    icon: '/seasonal/easter-bunny-cartoon.png',
     text: "Hoppy Easter! Our Easter specials are hopping onto shelves now.",
     className: 'bg-gradient-to-r from-gold-500 via-gold-400 to-butcher-400',
   },
@@ -22,8 +22,15 @@ export function SeasonalBanner({ theme }: { theme: SeasonalTheme }) {
 
   return (
     <div className={`${copy.className} text-cream-50`}>
-      <div className="mx-auto max-w-7xl px-4 md:px-8 py-2 flex items-center justify-center gap-2.5">
-        <Image src={copy.icon} alt="" aria-hidden width={18} height={18} className="w-[18px] h-auto shrink-0" />
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-1.5 flex items-center justify-center gap-3">
+        <Image
+          src={copy.icon}
+          alt=""
+          aria-hidden
+          width={44}
+          height={44}
+          className="w-9 h-9 md:w-11 md:h-11 shrink-0 object-contain drop-shadow"
+        />
         <p className="text-[11px] md:text-xs uppercase tracking-[0.14em] font-medium text-center">
           {copy.text}
         </p>

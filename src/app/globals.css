@@ -184,7 +184,8 @@
     opacity: 0;
     animation-name: seasonal-fall;
     animation-timing-function: linear;
-    animation-iteration-count: infinite;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
   }
   @keyframes seasonal-fall {
     0% {
