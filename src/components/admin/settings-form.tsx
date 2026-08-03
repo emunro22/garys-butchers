@@ -17,6 +17,7 @@ type DeliverySettings = {
 type BannerSettings = { messages: string[]; showCountdown: boolean; cutoffHour: number };
 type PromotionsSettings = { singleUsePerCustomer: boolean };
 type ReferralsSettings = { enabled: boolean; rewardPercent: number };
+type SeasonalSettings = { theme: 'none' | 'christmas' | 'easter' };
 type PremiumDeliverySettings = {
   enabled: boolean;
   minimumFeeInPence: number;
@@ -31,6 +32,7 @@ type AllSettings = {
   banner: BannerSettings;
   promotions: PromotionsSettings;
   referrals: ReferralsSettings;
+  seasonal: SeasonalSettings;
   deliverySlots: SlotGroupSettings;
   sameDay: SlotGroupSettings;
   pickupSlots: SlotGroupSettings;
@@ -184,6 +186,9 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
     enabled: initial.referrals?.enabled ?? true,
     rewardPercent: initial.referrals?.rewardPercent ?? 5,
   });
+  const [seasonalSettings, setSeasonalSettings] = useState<SeasonalSettings>({
+    theme: initial.seasonal?.theme ?? 'none',
+  });
   const [deliverySlots, setDeliverySlots] = useState<SlotGroupSettings>(initial.deliverySlots);
   const [sameDay, setSameDay] = useState<SlotGroupSettings>(initial.sameDay);
   const [pickupSlots, setPickupSlots] = useState<SlotGroupSettings>(initial.pickupSlots);
@@ -242,6 +247,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           banner: { ...banner, messages: cleanedMessages },
           promotions: promotionsSettings,
           referrals: referralsSettings,
+          seasonal: seasonalSettings,
           deliverySlots,
           sameDay,
           pickupSlots,
@@ -555,6 +561,46 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
               setReferralsSettings({ ...referralsSettings, rewardPercent: Number(e.target.value) || 1 })
             }
           />
+        </div>
+      </section>
+
+      {/* Seasonal theme */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Seasonal theme</p>
+          <p className="text-xs text-ink-500">
+            Recolours the storefront, adds a themed banner, and drops small decorations onto
+            product and category tiles. Only one can be active at a time — switch back to
+            &quot;None&quot; to return to the normal look. Doesn&apos;t affect this admin panel.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {(
+            [
+              { value: 'none', label: 'None (normal)' },
+              { value: 'christmas', label: '🎄 Christmas mode' },
+              { value: 'easter', label: '🐣 Easter mode' },
+            ] as const
+          ).map((opt) => (
+            <label
+              key={opt.value}
+              className={`flex items-center gap-2 text-sm px-4 py-2.5 border cursor-pointer transition-colors ${
+                seasonalSettings.theme === opt.value
+                  ? 'border-ink-900 bg-ink-900 text-cream-50'
+                  : 'border-ink-900/15 text-ink-700 hover:border-ink-900'
+              }`}
+            >
+              <input
+                type="radio"
+                name="seasonalTheme"
+                value={opt.value}
+                checked={seasonalSettings.theme === opt.value}
+                onChange={() => setSeasonalSettings({ theme: opt.value })}
+                className="sr-only"
+              />
+              {opt.label}
+            </label>
+          ))}
         </div>
       </section>
 

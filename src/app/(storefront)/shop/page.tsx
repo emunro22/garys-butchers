@@ -8,6 +8,7 @@ import { getCategoryImageMap } from '@/lib/db/category-images';
 import { ProductCard } from '@/components/shop/product-card';
 import { RecommendedForYou } from '@/components/shop/recommended-for-you';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
+import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -72,6 +73,7 @@ export default async function ShopPage() {
               href={`/shop/${c.slug}`}
               className="group block aspect-[4/5] relative overflow-hidden bg-ink-900 text-cream-50"
             >
+              <SeasonalCardDecoration />
               {c.imageUrl && (
                 <Image
                   src={c.imageUrl}

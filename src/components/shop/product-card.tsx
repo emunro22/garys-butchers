@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 import { formatPrice, cn } from '@/lib/utils';
 import { useCart } from '@/lib/cart';
 import { noticeLabel } from '@/lib/notice';
+import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
 import type { Product } from '@/lib/db/schema';
 
 type Variant = { label: string; priceInPence: number };
@@ -55,6 +56,8 @@ export function ProductCard({
             </svg>
           </div>
         )}
+
+        <SeasonalCardDecoration />
 
         {product.badge && (
           <span className="absolute top-3 left-3 bg-gold-400 text-ink-900 text-[10px] uppercase tracking-[0.18em] font-semibold px-2 py-1">

@@ -55,6 +55,10 @@ const ReferralsSchema = z.object({
   rewardPercent: z.number().int().min(1).max(100),
 });
 
+const SeasonalSchema = z.object({
+  theme: z.enum(['none', 'christmas', 'easter']),
+});
+
 const SlotBlockSchema = z
   .object({
     id: z.string().min(1).max(80),
@@ -78,6 +82,7 @@ const PatchSchema = z.object({
   banner: BannerSchema.optional(),
   promotions: PromotionsSchema.optional(),
   referrals: ReferralsSchema.optional(),
+  seasonal: SeasonalSchema.optional(),
   deliverySlots: SlotGroupSchema.optional(),
   sameDay: SlotGroupSchema.optional(),
   pickupSlots: SlotGroupSchema.optional(),
@@ -155,6 +160,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.referrals, updatedAt: new Date() },
+        });
+    }
+
+    if (data.seasonal) {
+      await db
+        .insert(settings)
+        .values({ key: 'seasonal', value: data.seasonal, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.seasonal, updatedAt: new Date() },
         });
     }
 

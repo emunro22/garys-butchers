@@ -2,6 +2,8 @@ import { db } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
 import type { SlotBlock, SlotGroupSettings } from '@/lib/slots';
 
+export type SeasonalTheme = 'none' | 'christmas' | 'easter';
+
 export const DEFAULT_SETTINGS = {
   shop: {
     name: "Gary's Butchers & Fishmongers",
@@ -43,6 +45,11 @@ export const DEFAULT_SETTINGS = {
     // Percent off the referrer's next order, auto-applied once the person
     // they referred completes their first paid order. See src/lib/referrals.ts.
     rewardPercent: 5,
+  },
+  seasonal: {
+    // Site-wide festive mode: recolours the storefront and adds decorative
+    // overlays/banner. See src/components/seasonal/.
+    theme: 'none' as SeasonalTheme,
   },
   deliverySlots: {
     blocks: [
@@ -112,6 +119,7 @@ export async function getShopSettings(): Promise<AppSettings> {
     banner: { ...DEFAULT_SETTINGS.banner },
     promotions: { ...DEFAULT_SETTINGS.promotions },
     referrals: { ...DEFAULT_SETTINGS.referrals },
+    seasonal: { ...DEFAULT_SETTINGS.seasonal },
     deliverySlots: { blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks], closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays] },
     sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
     pickupSlots: { blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks], closedDays: [...DEFAULT_SETTINGS.pickupSlots.closedDays] },
@@ -134,6 +142,8 @@ export async function getShopSettings(): Promise<AppSettings> {
         result.promotions = { ...DEFAULT_SETTINGS.promotions, ...(row.value as AppSettings['promotions']) };
       } else if (row.key === 'referrals') {
         result.referrals = { ...DEFAULT_SETTINGS.referrals, ...(row.value as AppSettings['referrals']) };
+      } else if (row.key === 'seasonal') {
+        result.seasonal = { ...DEFAULT_SETTINGS.seasonal, ...(row.value as AppSettings['seasonal']) };
       } else if (row.key === 'deliverySlots') {
         result.deliverySlots = migrateSlotGroup(row.value, DEFAULT_SETTINGS.deliverySlots, [
           'morning',

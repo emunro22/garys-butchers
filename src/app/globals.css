@@ -5,6 +5,68 @@
 :root {
   --font-display: 'Fraunces', 'Playfair Display', Georgia, serif;
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Brand accent colours as custom properties so the seasonal theme
+     (see src/components/seasonal/) can recolour the whole site by setting
+     `data-theme` on a wrapping element — default values match the normal
+     gold/butcher palette exactly, so "no theme" renders unchanged. */
+  --color-gold-50: #faf6ec;
+  --color-gold-100: #f3e9cb;
+  --color-gold-200: #e6d29a;
+  --color-gold-300: #d8ba74;
+  --color-gold-400: #c9a961;
+  --color-gold-500: #b08f47;
+  --color-gold-600: #8e7138;
+  --color-gold-700: #6c552c;
+  --color-gold-800: #4a3a1f;
+  --color-gold-900: #2c2212;
+
+  --color-butcher-50: #fbeeee;
+  --color-butcher-100: #f4caca;
+  --color-butcher-400: #b73838;
+  --color-butcher-500: #8b1f1f;
+  --color-butcher-600: #6b1717;
+  --color-butcher-700: #4d1010;
+}
+
+[data-theme='christmas'] {
+  --color-gold-50: #eef8f1;
+  --color-gold-100: #d3eedd;
+  --color-gold-200: #a6ddba;
+  --color-gold-300: #79cc98;
+  --color-gold-400: #3f9e64;
+  --color-gold-500: #2f7a4d;
+  --color-gold-600: #1f5c39;
+  --color-gold-700: #17452b;
+  --color-gold-800: #0f2e1d;
+  --color-gold-900: #081a10;
+
+  --color-butcher-50: #fdeeee;
+  --color-butcher-100: #f8caca;
+  --color-butcher-400: #d63c3c;
+  --color-butcher-500: #a81f1f;
+  --color-butcher-600: #7c1616;
+  --color-butcher-700: #5c1010;
+}
+
+[data-theme='easter'] {
+  --color-gold-50: #f6f1fb;
+  --color-gold-100: #e9dcf5;
+  --color-gold-200: #d3b9ea;
+  --color-gold-300: #bd97de;
+  --color-gold-400: #b48fd1;
+  --color-gold-500: #9671b8;
+  --color-gold-600: #7a5a9c;
+  --color-gold-700: #5e4478;
+  --color-gold-800: #453258;
+  --color-gold-900: #2c1f3a;
+
+  --color-butcher-50: #fdf1f4;
+  --color-butcher-100: #f9d9e1;
+  --color-butcher-400: #ef91a8;
+  --color-butcher-500: #e0708c;
+  --color-butcher-600: #c2536d;
+  --color-butcher-700: #9c3e54;
 }
 
 @layer base {
@@ -109,6 +171,36 @@
   /* Star rating style — small inline gold stars */
   .stars {
     @apply inline-flex gap-0.5 text-gold-400;
+  }
+
+  /* Seasonal mode: gently falling decoration (snowflakes / easter eggs), see
+     src/components/seasonal/seasonal-effects.tsx. Defined here rather than in
+     tailwind.config's keyframes for the same reason as .marquee-track above —
+     JIT only emits @keyframes for animate-* utilities actually found in
+     scanned content, and nothing uses an animate-* class for this. */
+  .seasonal-fall-item {
+    position: absolute;
+    top: -10vh;
+    opacity: 0;
+    animation-name: seasonal-fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  @keyframes seasonal-fall {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    8% {
+      opacity: 0.85;
+    }
+    92% {
+      opacity: 0.85;
+    }
+    100% {
+      transform: translateY(120vh) translateX(var(--seasonal-drift, 0px)) rotate(50deg);
+      opacity: 0;
+    }
   }
 }
 
