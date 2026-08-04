@@ -220,8 +220,14 @@ export function Checkout() {
   // Pickup: next 7 eligible days, admin-configured blocks.
   const pickupSlots = useMemo(() => (pickupGroup ? generateSlots(pickupGroup, 7) : []), [pickupGroup]);
 
-  // Delivery: next 7 eligible days, admin-configured blocks.
-  const deliverySlots = useMemo(() => (deliveryGroup ? generateSlots(deliveryGroup, 7) : []), [deliveryGroup]);
+  // Delivery: next 7 eligible days, admin-configured blocks. Once today's
+  // next-day cutoff has passed, deliveryCutoffNoticeDays (from the
+  // availability fetch below) pushes the earliest day out by one.
+  const [deliveryCutoffNoticeDays, setDeliveryCutoffNoticeDays] = useState(0);
+  const deliverySlots = useMemo(
+    () => (deliveryGroup ? generateSlots(deliveryGroup, 7, deliveryCutoffNoticeDays) : []),
+    [deliveryGroup, deliveryCutoffNoticeDays]
+  );
 
   // Same-day: today only, still-open admin-configured blocks. There's a single
   // window (no picking between multiple slots) — the whole point of same-day
@@ -341,6 +347,7 @@ export function Checkout() {
       .then((data) => {
         setAvailability(data.availability ?? {});
         setDeliveryGroup(data.group ?? null);
+        setDeliveryCutoffNoticeDays(data.minNoticeDays ?? 0);
       })
       .catch(() => {});
   }, [fulfilment]);
@@ -755,6 +762,11 @@ export function Checkout() {
           {maxNoticeDays > 0 && fulfilment !== 'sameDay' && fulfilment !== 'premium' && (
             <p className="text-xs text-butcher-500 mb-3">
               Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()} — earlier slots are unavailable.
+            </p>
+          )}
+          {fulfilment === 'delivery' && deliveryCutoffNoticeDays > 0 && (
+            <p className="text-xs text-butcher-500 mb-3">
+              Today&apos;s next-day delivery cutoff has passed — the earliest delivery is now the day after tomorrow.
             </p>
           )}
           {fulfilment === 'sameDay' ? (

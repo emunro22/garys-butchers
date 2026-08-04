@@ -90,12 +90,40 @@ async function getShopCoords(): Promise<{ lat: number; lon: number } | null> {
   return coords;
 }
 
+// Actual road distance, not straight-line — Erskine sits right at the
+// Erskine Bridge/River Clyde, so a postcode across the water can be within
+// a few hundred metres "as the crow flies" while genuinely being several
+// miles further by road. Uses OSRM's public demo routing server (free, no
+// API key) — not officially guaranteed for production traffic, but fine at
+// this shop's order volume.
+async function getDrivingDistanceMiles(
+  from: { lat: number; lon: number },
+  to: { lat: number; lon: number }
+): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`,
+      { next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const meters = data?.routes?.[0]?.distance;
+    return typeof meters === 'number' ? meters / 1609.344 : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getDistanceMiles(customerPostcode: string): Promise<number | null> {
   const [shopCoords, customerCoords] = await Promise.all([
     getShopCoords(),
     geocodePostcode(customerPostcode),
   ]);
   if (!shopCoords || !customerCoords) return null;
+  const drivingMiles = await getDrivingDistanceMiles(shopCoords, customerCoords);
+  if (drivingMiles !== null) return drivingMiles;
+  // Routing server unreachable — fall back to straight-line distance rather
+  // than blocking every delivery order on a third-party outage.
   const km = haversineKm(shopCoords.lat, shopCoords.lon, customerCoords.lat, customerCoords.lon);
   return km * 0.621371;
 }

@@ -398,6 +398,25 @@ export function ProductForm({
             />
           </div>
         </div>
+        {form.compareAtPriceInPence > 0 && (
+          form.compareAtPriceInPence > form.priceInPence ? (
+            <div className="mt-4 flex items-center gap-3 border border-ink-900/10 bg-cream-50 px-4 py-3">
+              <span className="text-sm text-ink-400 line-through tabular">
+                {formatPrice(form.compareAtPriceInPence)}
+              </span>
+              <span className="text-base font-medium text-ink-900 tabular">
+                {formatPrice(form.priceInPence)}
+              </span>
+              <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
+                Save {Math.round((1 - form.priceInPence / form.compareAtPriceInPence) * 100)}%
+              </span>
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-butcher-500">
+              Compare-at price should be higher than the price for the saving to show on the shop.
+            </p>
+          )
+        )}
       </section>
 
       {/* Type & flags */}

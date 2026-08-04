@@ -15,7 +15,7 @@ import {
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
 import { hasCustomerUsedPromotion } from '@/lib/promotions';
-import { bucketKey, findBlock, getDateKey, getWeekday, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
+import { bucketKey, findBlock, getDateKey, getWeekday, isPastCutoff, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
@@ -241,13 +241,22 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-    } else if (maxNoticeDays > 0 && data.fulfilment !== 'premium' && slotDate) {
+    } else if (data.fulfilment !== 'premium' && slotDate) {
       const [y, m, d] = getDateKey(new Date()).split('-').map(Number);
-      const minAllowed = londonDateTime(y, m, d + 1 + maxNoticeDays, 0);
+      // Standard delivery loses one more day of notice once today's next-day
+      // cutoff (banner.cutoffHour) has passed — mirrors the shift already
+      // applied client-side by /api/delivery-availability, so a late order
+      // can't slip a "tomorrow" slot in past the cutoff.
+      const cutoffExtraDay =
+        data.fulfilment === 'delivery' && isPastCutoff(shopSettings.banner.cutoffHour) ? 1 : 0;
+      const minAllowed = londonDateTime(y, m, d + 1 + maxNoticeDays + cutoffExtraDay, 0);
       if (getDateKey(slotDate) < getDateKey(minAllowed)) {
         return NextResponse.json(
           {
-            error: `Sorry, an item in your basket needs ${maxNoticeDays} day${maxNoticeDays === 1 ? '' : 's'} notice — please choose a later date.`,
+            error:
+              maxNoticeDays > 0
+                ? `Sorry, an item in your basket needs ${maxNoticeDays} day${maxNoticeDays === 1 ? '' : 's'} notice — please choose a later date.`
+                : "Sorry, today's next-day delivery cutoff has passed — please choose a later date.",
           },
           { status: 400 }
         );

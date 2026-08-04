@@ -95,6 +95,11 @@ export function minutesOfDay(date: Date): number {
   return hour * 60 + minute;
 }
 
+/** Whether the shop's own clock has passed cutoffHour today (Europe/London). */
+export function isPastCutoff(cutoffHour: number, now: Date = new Date()): boolean {
+  return minutesOfDay(now) >= cutoffHour * 60;
+}
+
 /** Which block (if any) a timestamp falls into — start inclusive, end exclusive, or an exact match for an instant block. */
 export function findBlock(blocks: SlotBlock[], date: Date): SlotBlock | null {
   const m = minutesOfDay(date);
@@ -113,11 +118,17 @@ function sortedBlocks(blocks: SlotBlock[]) {
   return [...blocks].sort((a, b) => a.startMinutes - b.startMinutes);
 }
 
-/** Next `days` eligible days (skipping closedDays), one slot per block. */
-export function generateSlots(group: SlotGroupSettings, days: number): GeneratedSlot[] {
+/**
+ * Next `days` eligible days (skipping closedDays), one slot per block.
+ * `minNoticeDays` pushes the baseline (normally "tomorrow") out further —
+ * e.g. delivery passes 1 here once today's next-day cutoff has passed, so
+ * the earliest bookable day becomes the day after tomorrow.
+ */
+export function generateSlots(group: SlotGroupSettings, days: number, minNoticeDays = 0): GeneratedSlot[] {
   const blocks = sortedBlocks(group.blocks);
   const out: GeneratedSlot[] = [];
   let { year, month, day } = londonParts(new Date());
+  day += minNoticeDays;
   let daysAdded = 0;
   while (daysAdded < days) {
     const next = new Date(Date.UTC(year, month - 1, day + 1));
