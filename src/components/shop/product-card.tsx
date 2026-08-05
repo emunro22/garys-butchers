@@ -16,7 +16,6 @@ type Variant = {
   label: string;
   priceInPence: number;
   compareAtPriceInPence?: number;
-  saleEnabled?: boolean;
 };
 
 export function ProductCard({
@@ -38,12 +37,10 @@ export function ProductCard({
   const displayPrice = cheapestVariant ? cheapestVariant.priceInPence : product.priceInPence;
   const variantOnSale =
     !!cheapestVariant?.compareAtPriceInPence &&
-    (cheapestVariant.saleEnabled ?? true) &&
     cheapestVariant.compareAtPriceInPence > cheapestVariant.priceInPence;
   const baseOnSale =
     !hasVariants &&
     !!product.compareAtPriceInPence &&
-    product.saleEnabled &&
     product.compareAtPriceInPence > product.priceInPence;
   const onSale = hasVariants ? variantOnSale : baseOnSale;
   const saleCompareAt = hasVariants ? cheapestVariant?.compareAtPriceInPence : product.compareAtPriceInPence;

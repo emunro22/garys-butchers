@@ -112,10 +112,6 @@ export const products = pgTable(
     priceInPence: integer('price_in_pence').notNull(),
     // optional compare-at price for "was £X" strikethroughs
     compareAtPriceInPence: integer('compare_at_price_in_pence'),
-    // whether the compareAtPriceInPence discount is currently live — kept
-    // separate from the value itself so admins can flip a sale on/off
-    // without losing the old price they had set
-    saleEnabled: boolean('sale_enabled').default(true).notNull(),
     imageUrl: text('image_url'),
     galleryUrls: jsonb('gallery_urls').$type<string[]>().default([]).notNull(),
     weightLabel: varchar('weight_label', { length: 80 }), // e.g. "approx 500g"
@@ -125,17 +121,12 @@ export const products = pgTable(
     nutritionInfo: text('nutrition_info'),
     // structured contents for meat packs (list of items in the box)
     packContents: jsonb('pack_contents').$type<string[]>().default([]).notNull(),
-    // size/weight variants (e.g. [{label:"7oz",priceInPence:999},{label:"10oz",priceInPence:1299}]).
-    // `grams` is set when the variant's price was derived from a price-per-kg
-    // (lets the admin form recalculate it when the per-kg price changes).
-    // `compareAtPriceInPence`/`saleEnabled` mirror the product-level discount
-    // fields, but per size.
+    // size variants (e.g. [{label:"7oz",priceInPence:999},{label:"10oz",priceInPence:1299}]).
+    // compareAtPriceInPence mirrors the product-level discount field, but per size.
     variants: jsonb('variants').$type<Array<{
       label: string;
       priceInPence: number;
       compareAtPriceInPence?: number;
-      saleEnabled?: boolean;
-      grams?: number;
     }>>().default([]).notNull(),
     // optional marinade choices (e.g. ["Peri Peri","Lemon & Herb","Plain"]) — a
     // product only gets a marinade dropdown on its page when this is non-empty,

@@ -14,8 +14,6 @@ type Variant = {
   label: string;
   priceInPence: number;
   compareAtPriceInPence?: number;
-  saleEnabled?: boolean;
-  grams?: number;
 };
 
 type FormProduct = Partial<Product> & {
@@ -31,16 +29,16 @@ const PRESET_MARINADES = [
   'Peri Peri', 'Lemon & Herb', 'BBQ', 'Cajun', 'Garlic & Herb', 'Tikka', 'Plain', 'Custom',
 ];
 
-// Turns a gram amount into a display label, e.g. 500 -> "500g", 1000 -> "1kg", 1500 -> "1.5kg"
-function gramsToLabel(g: number): string {
-  if (g < 1000) return `${g}g`;
-  const kg = g / 1000;
-  return `${kg % 1 === 0 ? kg.toFixed(0) : kg.toFixed(2).replace(/0$/, '')}kg`;
+// £, no reformatting — used only for the initial value on mount, never fed
+// back into a controlled input's `value` on every keystroke (that's what
+// made the price fields impossible to edit before).
+function penceToStr(p: number): string {
+  return p > 0 ? (p / 100).toFixed(2) : '';
 }
 
-// price/compareAt are in pence per whole item; £-per-kg inputs are pounds
-function penceFromPerKg(perKgPounds: number, grams: number): number {
-  return Math.round((perKgPounds * grams) / 10);
+function strToPence(s: string): number {
+  const n = Math.round(Number(s) * 100);
+  return Number.isNaN(n) || n < 0 ? 0 : n;
 }
 
 export function ProductForm({
@@ -55,15 +53,10 @@ export function ProductForm({
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<'details' | 'discounts'>('details');
-
   const [form, setForm] = useState({
     name: initial?.name ?? '',
     categoryId: initial?.categoryId ?? '',
     description: initial?.description ?? '',
-    priceInPence: initial?.priceInPence ?? 0,
-    compareAtPriceInPence: initial?.compareAtPriceInPence ?? 0,
-    saleEnabled: initial?.saleEnabled ?? true,
     weightLabel: initial?.weightLabel ?? '',
     badge: initial?.badge ?? '',
     cookingTips: initial?.cookingTips ?? '',
@@ -77,6 +70,23 @@ export function ProductForm({
     isSubscribable: initial?.isSubscribable ?? false,
     noticeDays: initial?.noticeDays ?? 0,
   });
+
+  // --- Base price: current price + optional discounted price ---
+  // Stored as the raw text the admin typed, not derived from a formatted
+  // number every render, so the field never fights their cursor.
+  const initialHasDiscount = !!(
+    initial?.compareAtPriceInPence && initial.compareAtPriceInPence > (initial?.priceInPence ?? 0)
+  );
+  const [currentPriceInput, setCurrentPriceInput] = useState(
+    initialHasDiscount ? penceToStr(initial!.compareAtPriceInPence!) : penceToStr(initial?.priceInPence ?? 0)
+  );
+  const [discountedPriceInput, setDiscountedPriceInput] = useState(
+    initialHasDiscount ? penceToStr(initial!.priceInPence!) : ''
+  );
+  const currentPriceInPence = strToPence(currentPriceInput);
+  const discountedPriceInPence = discountedPriceInput.trim() ? strToPence(discountedPriceInput) : 0;
+  const hasDiscount = discountedPriceInPence > 0 && discountedPriceInPence < currentPriceInPence;
+
   const [packContents, setPackContents] = useState<string[]>(
     initial?.packContents ?? []
   );
@@ -85,68 +95,62 @@ export function ProductForm({
   const [variants, setVariants] = useState<Variant[]>(
     (initial?.variants as Variant[] | undefined) ?? []
   );
-
-  // --- Manual (preset size) variants ---
   const [newSize, setNewSize] = useState('7oz');
   const [customSize, setCustomSize] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [newDiscountedPrice, setNewDiscountedPrice] = useState('');
 
   function addVariant() {
     const label = (newSize === 'Custom' ? customSize : newSize).trim();
-    const price = Math.round(Number(newPrice) * 100);
-    if (!label || Number.isNaN(price) || price < 0) return;
+    const current = strToPence(newPrice);
+    if (!label || current <= 0) return;
     if (variants.some((v) => v.label === label)) return; // no duplicates
-    setVariants((v) => [...v, { label, priceInPence: price }]);
+    const discounted = newDiscountedPrice.trim() ? strToPence(newDiscountedPrice) : 0;
+    const discountActive = discounted > 0 && discounted < current;
+    setVariants((v) => [...v, {
+      label,
+      priceInPence: discountActive ? discounted : current,
+      compareAtPriceInPence: discountActive ? current : undefined,
+    }]);
     setNewPrice('');
+    setNewDiscountedPrice('');
     if (newSize === 'Custom') setCustomSize('');
-  }
-
-  // --- Weight-based (price per kg) variants ---
-  const [sizeMode, setSizeMode] = useState<'preset' | 'weight'>(
-    variants.some((v) => v.grams) ? 'weight' : 'preset'
-  );
-  const firstWeighted = variants.find((v) => v.grams);
-  const [pricePerKg, setPricePerKg] = useState(
-    firstWeighted ? (penceFromPerKgInverse(firstWeighted.priceInPence, firstWeighted.grams!)) : ''
-  );
-  const [newGrams, setNewGrams] = useState('500');
-  // Bumped whenever a bulk £/kg recalculation touches variant prices, so the
-  // (uncontrolled) per-row price inputs below remount and pick up the new
-  // defaultValue instead of fighting the admin's cursor on every keystroke.
-  const [priceVersion, setPriceVersion] = useState(0);
-
-  function penceFromPerKgInverse(priceInPence: number, grams: number): string {
-    return ((priceInPence * 10) / grams / 100).toFixed(2);
-  }
-
-  function addWeightVariant() {
-    const grams = Number(newGrams);
-    const perKg = Number(pricePerKg);
-    if (!grams || grams <= 0 || Number.isNaN(perKg) || perKg <= 0) return;
-    const label = gramsToLabel(grams);
-    if (variants.some((v) => v.label === label)) return;
-    setVariants((v) => [...v, { label, priceInPence: penceFromPerKg(perKg, grams), grams }]);
-    setNewGrams('500');
-  }
-
-  function handlePricePerKgChange(raw: string) {
-    setPricePerKg(raw);
-    const perKg = Number(raw);
-    if (!raw.trim() || Number.isNaN(perKg) || perKg <= 0) return;
-    setVariants((vs) =>
-      vs.map((v) => (v.grams ? { ...v, priceInPence: penceFromPerKg(perKg, v.grams!) } : v))
-    );
-    setPriceVersion((n) => n + 1);
   }
 
   function removeVariant(i: number) {
     setVariants((v) => v.filter((_, idx) => idx !== i));
   }
 
-  function updateVariantPrice(i: number, raw: string) {
-    const price = Math.round(Number(raw) * 100);
-    if (Number.isNaN(price) || price < 0) return;
-    setVariants((v) => v.map((item, idx) => idx === i ? { ...item, priceInPence: price } : item));
+  function updateVariantCurrentPrice(i: number, raw: string) {
+    const current = strToPence(raw);
+    if (current <= 0) return;
+    setVariants((v) => v.map((item, idx) => {
+      if (idx !== i) return item;
+      const discounted = item.compareAtPriceInPence ? item.priceInPence : 0;
+      const discountActive = discounted > 0 && discounted < current;
+      return {
+        ...item,
+        priceInPence: discountActive ? discounted : current,
+        compareAtPriceInPence: discountActive ? current : undefined,
+      };
+    }));
+  }
+
+  function updateVariantDiscountedPrice(i: number, raw: string) {
+    setVariants((v) => v.map((item, idx) => {
+      if (idx !== i) return item;
+      const current = item.compareAtPriceInPence ?? item.priceInPence;
+      if (!raw.trim()) {
+        return { ...item, priceInPence: current, compareAtPriceInPence: undefined };
+      }
+      const discounted = strToPence(raw);
+      const discountActive = discounted > 0 && discounted < current;
+      return {
+        ...item,
+        priceInPence: discountActive ? discounted : current,
+        compareAtPriceInPence: discountActive ? current : undefined,
+      };
+    }));
   }
 
   function moveVariant(i: number, dir: -1 | 1) {
@@ -157,50 +161,6 @@ export function ProductForm({
       [next[i], next[j]] = [next[j], next[i]];
       return next;
     });
-  }
-
-  // --- Variant discounts (Discounts tab) ---
-  const [weightSaleActive, setWeightSaleActive] = useState(
-    variants.some((v) => v.grams && v.saleEnabled !== false && v.compareAtPriceInPence)
-  );
-  const [comparePricePerKg, setComparePricePerKg] = useState(() => {
-    const w = variants.find((v) => v.grams && v.compareAtPriceInPence);
-    return w ? penceFromPerKgInverse(w.compareAtPriceInPence!, w.grams!) : '';
-  });
-
-  function toggleWeightSale(active: boolean) {
-    setWeightSaleActive(active);
-    setVariants((vs) => vs.map((v) => (v.grams ? { ...v, saleEnabled: active } : v)));
-  }
-
-  function handleComparePricePerKgChange(raw: string) {
-    setComparePricePerKg(raw);
-    const perKg = Number(raw);
-    if (!raw.trim() || Number.isNaN(perKg) || perKg <= 0) return;
-    setVariants((vs) =>
-      vs.map((v) =>
-        v.grams ? { ...v, compareAtPriceInPence: penceFromPerKg(perKg, v.grams!) } : v
-      )
-    );
-    setPriceVersion((n) => n + 1);
-  }
-
-  function updateVariantCompareAtPrice(i: number, raw: string) {
-    if (!raw.trim()) {
-      setVariants((v) =>
-        v.map((item, idx) => idx === i ? { ...item, compareAtPriceInPence: undefined } : item)
-      );
-      return;
-    }
-    const price = Math.round(Number(raw) * 100);
-    if (Number.isNaN(price) || price < 0) return;
-    setVariants((v) =>
-      v.map((item, idx) => idx === i ? { ...item, compareAtPriceInPence: price } : item)
-    );
-  }
-
-  function toggleVariantSale(i: number, active: boolean) {
-    setVariants((v) => v.map((item, idx) => idx === i ? { ...item, saleEnabled: active } : item));
   }
 
   const [marinades, setMarinades] = useState<string[]>(initial?.marinades ?? []);
@@ -231,16 +191,6 @@ export function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function priceInputToPence(v: string) {
-    const n = Number(v);
-    if (Number.isNaN(n)) return 0;
-    return Math.round(n * 100);
-  }
-
-  function penceToInput(p: number) {
-    return (p / 100).toFixed(2);
-  }
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -275,16 +225,18 @@ export function ProductForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (currentPriceInPence <= 0) {
+      setError('Enter a current price');
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
         categoryId: form.categoryId || null,
         name: form.name,
         description: form.description || null,
-        priceInPence: form.priceInPence,
-        compareAtPriceInPence:
-          form.compareAtPriceInPence > 0 ? form.compareAtPriceInPence : null,
-        saleEnabled: form.saleEnabled,
+        priceInPence: hasDiscount ? discountedPriceInPence : currentPriceInPence,
+        compareAtPriceInPence: hasDiscount ? currentPriceInPence : null,
         imageUrl: form.imageUrl || null,
         weightLabel: form.weightLabel || null,
         badge: form.badge || null,
@@ -318,354 +270,345 @@ export function ProductForm({
     }
   }
 
-  const baseOnSale = form.saleEnabled && form.compareAtPriceInPence > form.priceInPence;
-
   return (
     <form onSubmit={handleSubmit} className="space-y-10 max-w-3xl">
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-ink-900/10 -mb-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab('details')}
-          className={`px-4 h-11 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'details'
-              ? 'border-gold-500 text-ink-900'
-              : 'border-transparent text-ink-500 hover:text-ink-900'
-          }`}
-        >
-          Details
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('discounts')}
-          className={`px-4 h-11 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'discounts'
-              ? 'border-gold-500 text-ink-900'
-              : 'border-transparent text-ink-500 hover:text-ink-900'
-          }`}
-        >
-          Discounts
-          {(baseOnSale || variants.some((v) => v.saleEnabled !== false && v.compareAtPriceInPence)) && (
-            <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-butcher-500 align-middle" />
-          )}
-        </button>
-      </div>
-
-      <div className={activeTab === 'details' ? 'space-y-10' : 'hidden'}>
-        {/* Image */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-4">Image</h2>
-          <div className="flex items-start gap-5">
-            <div className="relative h-32 w-32 bg-ink-900/5 border border-ink-900/10 overflow-hidden shrink-0">
-              {form.imageUrl ? (
-                <>
-                  <Image src={form.imageUrl} alt="" fill sizes="128px" className="object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, imageUrl: '' }))}
-                    className="absolute top-1 right-1 h-6 w-6 bg-ink-900/80 text-cream-50 flex items-center justify-center"
-                    aria-label="Remove image"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-ink-400 text-xs">
-                  No image
-                </div>
-              )}
-            </div>
-            <div className="flex-1">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                onChange={handleUpload}
-                className="hidden"
-                id="image-upload"
-              />
-              <label htmlFor="image-upload">
-                <span className="inline-flex items-center gap-2 px-4 h-10 border border-ink-900/15 hover:border-ink-900 text-sm cursor-pointer transition-colors">
-                  <Upload className="h-4 w-4" />
-                  {uploading ? 'Uploading…' : 'Upload image'}
-                </span>
-              </label>
-              <p className="text-xs text-ink-500 mt-2">
-                JPEG, PNG, WebP or AVIF · max 5MB · roughly square works best
-              </p>
-              {form.imageUrl && (
-                <p className="text-xs text-ink-500 mt-1 truncate">{form.imageUrl}</p>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Basic fields */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-4">Details</h2>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                rows={4}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="ingredients">Ingredients (optional)</Label>
-              <Textarea
-                id="ingredients"
-                rows={3}
-                placeholder="e.g. Pork, salt, black pepper, sage, rusk (wheat)"
-                value={form.ingredients ?? ''}
-                onChange={(e) => setForm({ ...form, ingredients: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="allergyInfo">Allergy information (optional)</Label>
-              <Textarea
-                id="allergyInfo"
-                rows={3}
-                placeholder="e.g. Contains gluten, sulphites. May contain traces of nuts."
-                value={form.allergyInfo ?? ''}
-                onChange={(e) => setForm({ ...form, allergyInfo: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="cookingTips">Cooking tips (optional)</Label>
-              <Textarea
-                id="cookingTips"
-                rows={3}
-                placeholder="e.g. Grill or fry over medium heat for 15-18 mins, turning occasionally."
-                value={form.cookingTips ?? ''}
-                onChange={(e) => setForm({ ...form, cookingTips: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="nutritionInfo">Nutritional information (optional)</Label>
-              <Textarea
-                id="nutritionInfo"
-                rows={3}
-                placeholder="e.g. Typical values per 100g: Energy 250kcal, Fat 15g, Protein 20g, Carbohydrate 2g"
-                value={form.nutritionInfo ?? ''}
-                onChange={(e) => setForm({ ...form, nutritionInfo: e.target.value })}
-              />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <select
-                  id="category"
-                  value={form.categoryId ?? ''}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                  className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+      {/* Image */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-4">Image</h2>
+        <div className="flex items-start gap-5">
+          <div className="relative h-32 w-32 bg-ink-900/5 border border-ink-900/10 overflow-hidden shrink-0">
+            {form.imageUrl ? (
+              <>
+                <Image src={form.imageUrl} alt="" fill sizes="128px" className="object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, imageUrl: '' }))}
+                  className="absolute top-1 right-1 h-6 w-6 bg-ink-900/80 text-cream-50 flex items-center justify-center"
+                  aria-label="Remove image"
                 >
-                  <option value="">—</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  <X className="h-3 w-3" />
+                </button>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-ink-400 text-xs">
+                No image
               </div>
-              <div>
-                <Label htmlFor="badge">Badge (optional)</Label>
-                <Input
-                  id="badge"
-                  placeholder="Bestseller, New, Limited"
-                  value={form.badge ?? ''}
-                  onChange={(e) => setForm({ ...form, badge: e.target.value })}
-                />
-              </div>
-            </div>
+            )}
           </div>
-        </section>
+          <div className="flex-1">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              onChange={handleUpload}
+              className="hidden"
+              id="image-upload"
+            />
+            <label htmlFor="image-upload">
+              <span className="inline-flex items-center gap-2 px-4 h-10 border border-ink-900/15 hover:border-ink-900 text-sm cursor-pointer transition-colors">
+                <Upload className="h-4 w-4" />
+                {uploading ? 'Uploading…' : 'Upload image'}
+              </span>
+            </label>
+            <p className="text-xs text-ink-500 mt-2">
+              JPEG, PNG, WebP or AVIF · max 5MB · roughly square works best
+            </p>
+            {form.imageUrl && (
+              <p className="text-xs text-ink-500 mt-1 truncate">{form.imageUrl}</p>
+            )}
+          </div>
+        </div>
+      </section>
 
-        {/* Price */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-4">Price</h2>
+      {/* Basic fields */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-4">Details</h2>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              rows={4}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="ingredients">Ingredients (optional)</Label>
+            <Textarea
+              id="ingredients"
+              rows={3}
+              placeholder="e.g. Pork, salt, black pepper, sage, rusk (wheat)"
+              value={form.ingredients ?? ''}
+              onChange={(e) => setForm({ ...form, ingredients: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="allergyInfo">Allergy information (optional)</Label>
+            <Textarea
+              id="allergyInfo"
+              rows={3}
+              placeholder="e.g. Contains gluten, sulphites. May contain traces of nuts."
+              value={form.allergyInfo ?? ''}
+              onChange={(e) => setForm({ ...form, allergyInfo: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="cookingTips">Cooking tips (optional)</Label>
+            <Textarea
+              id="cookingTips"
+              rows={3}
+              placeholder="e.g. Grill or fry over medium heat for 15-18 mins, turning occasionally."
+              value={form.cookingTips ?? ''}
+              onChange={(e) => setForm({ ...form, cookingTips: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="nutritionInfo">Nutritional information (optional)</Label>
+            <Textarea
+              id="nutritionInfo"
+              rows={3}
+              placeholder="e.g. Typical values per 100g: Energy 250kcal, Fat 15g, Protein 20g, Carbohydrate 2g"
+              value={form.nutritionInfo ?? ''}
+              onChange={(e) => setForm({ ...form, nutritionInfo: e.target.value })}
+            />
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="price">Price (£)</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={penceToInput(form.priceInPence)}
-                onChange={(e) =>
-                  setForm({ ...form, priceInPence: priceInputToPence(e.target.value) })
-                }
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="weight">Weight label</Label>
-              <Input
-                id="weight"
-                placeholder="approx 500g"
-                value={form.weightLabel ?? ''}
-                onChange={(e) => setForm({ ...form, weightLabel: e.target.value })}
-              />
-            </div>
-          </div>
-          <p className="text-xs text-ink-500 mt-3">
-            To run a discount on this price, use the <button type="button" onClick={() => setActiveTab('discounts')} className="underline hover:text-ink-900">Discounts tab</button>.
-          </p>
-        </section>
-
-        {/* Type & flags */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-4">Settings</h2>
-          <div className="space-y-3">
-            <div className="p-3 border border-ink-900/10">
-              <Label htmlFor="noticeDays">Order notice</Label>
+              <Label htmlFor="category">Category</Label>
               <select
-                id="noticeDays"
-                value={form.noticeDays}
-                onChange={(e) => setForm({ ...form, noticeDays: Number(e.target.value) })}
-                className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm mt-1"
+                id="category"
+                value={form.categoryId ?? ''}
+                onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
               >
-                {NOTICE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                <option value="">—</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
-              <p className="text-xs text-ink-500 mt-2">
-                How much extra advance notice this product needs beyond the normal earliest slot. Shown to customers and enforced at checkout.
-              </p>
             </div>
-            <Toggle
-              checked={form.isPack}
-              onChange={(v) => setForm({ ...form, isPack: v })}
-              label="This is a meat pack"
-              hint="Packs use a different layout and show their contents on the product page."
+            <div>
+              <Label htmlFor="badge">Badge (optional)</Label>
+              <Input
+                id="badge"
+                placeholder="Bestseller, New, Limited"
+                value={form.badge ?? ''}
+                onChange={(e) => setForm({ ...form, badge: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Price */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-4">Price</h2>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="price">Current price (£)</Label>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={currentPriceInput}
+              onChange={(e) => setCurrentPriceInput(e.target.value)}
+              required
             />
-            <Toggle
-              checked={form.isFeatured}
-              onChange={(v) => setForm({ ...form, isFeatured: v })}
-              label="Featured on the homepage"
+          </div>
+          <div>
+            <Label htmlFor="discountedPrice">Discounted price (£, optional)</Label>
+            <Input
+              id="discountedPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Leave blank for no discount"
+              value={discountedPriceInput}
+              onChange={(e) => setDiscountedPriceInput(e.target.value)}
             />
-            <Toggle
-              checked={form.isActive}
-              onChange={(v) => setForm({ ...form, isActive: v })}
-              label="Active (visible in shop)"
+          </div>
+          <div>
+            <Label htmlFor="weight">Weight label</Label>
+            <Input
+              id="weight"
+              placeholder="approx 500g"
+              value={form.weightLabel ?? ''}
+              onChange={(e) => setForm({ ...form, weightLabel: e.target.value })}
             />
-            <Toggle
-              checked={form.isSubscribable}
-              onChange={(v) => setForm({ ...form, isSubscribable: v })}
-              label="Available in build-your-own subscriptions"
-              hint="Lets customers add this to a recurring monthly subscription. Only turn this on for staple items, not day-fresh stock."
+          </div>
+        </div>
+        {discountedPriceInput.trim() && (
+          hasDiscount ? (
+            <div className="mt-4 flex items-center gap-3 border border-ink-900/10 bg-cream-50 px-4 py-3">
+              <span className="text-sm text-ink-400 line-through tabular">
+                {formatPrice(currentPriceInPence)}
+              </span>
+              <span className="text-base font-medium text-ink-900 tabular">
+                {formatPrice(discountedPriceInPence)}
+              </span>
+              <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
+                Save {percentOff(discountedPriceInPence, currentPriceInPence)}%
+              </span>
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-butcher-500">
+              Discounted price should be lower than the current price for the saving to show on the shop.
+            </p>
+          )
+        )}
+      </section>
+
+      {/* Type & flags */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-4">Settings</h2>
+        <div className="space-y-3">
+          <div className="p-3 border border-ink-900/10">
+            <Label htmlFor="noticeDays">Order notice</Label>
+            <select
+              id="noticeDays"
+              value={form.noticeDays}
+              onChange={(e) => setForm({ ...form, noticeDays: Number(e.target.value) })}
+              className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm mt-1"
+            >
+              {NOTICE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-ink-500 mt-2">
+              How much extra advance notice this product needs beyond the normal earliest slot. Shown to customers and enforced at checkout.
+            </p>
+          </div>
+          <Toggle
+            checked={form.isPack}
+            onChange={(v) => setForm({ ...form, isPack: v })}
+            label="This is a meat pack"
+            hint="Packs use a different layout and show their contents on the product page."
+          />
+          <Toggle
+            checked={form.isFeatured}
+            onChange={(v) => setForm({ ...form, isFeatured: v })}
+            label="Featured on the homepage"
+          />
+          <Toggle
+            checked={form.isActive}
+            onChange={(v) => setForm({ ...form, isActive: v })}
+            label="Active (visible in shop)"
+          />
+          <Toggle
+            checked={form.isSubscribable}
+            onChange={(v) => setForm({ ...form, isSubscribable: v })}
+            label="Available in build-your-own subscriptions"
+            hint="Lets customers add this to a recurring monthly subscription. Only turn this on for staple items, not day-fresh stock."
+          />
+        </div>
+      </section>
+
+      {/* Pack contents */}
+      {form.isPack && (
+        <section>
+          <h2 className="font-display text-xl text-ink-900 mb-4">Pack contents</h2>
+          <div className="space-y-2 mb-4">
+            {packContents.length === 0 && (
+              <p className="text-sm text-ink-500 italic">No items yet — add what&apos;s in the pack below.</p>
+            )}
+            {packContents.map((line, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 bg-cream-100 border border-ink-900/10 px-3 py-2"
+              >
+                <span className="text-gold-500 text-xs">●</span>
+                <span className="flex-1 text-sm">{line}</span>
+                <button
+                  type="button"
+                  onClick={() => removePackLine(i)}
+                  className="text-ink-400 hover:text-butcher-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="e.g. 2lb Pork Sausages"
+              value={packLine}
+              onChange={(e) => setPackLine(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addPackLine();
+                }
+              }}
+              className="flex-1"
             />
+            <Button type="button" variant="outline" onClick={addPackLine}>
+              <Plus className="h-4 w-4 mr-1" /> Add line
+            </Button>
           </div>
         </section>
+      )}
 
-        {/* Pack contents */}
-        {form.isPack && (
-          <section>
-            <h2 className="font-display text-xl text-ink-900 mb-4">Pack contents</h2>
-            <div className="space-y-2 mb-4">
-              {packContents.length === 0 && (
-                <p className="text-sm text-ink-500 italic">No items yet — add what&apos;s in the pack below.</p>
-              )}
-              {packContents.map((line, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 bg-cream-100 border border-ink-900/10 px-3 py-2"
-                >
-                  <span className="text-gold-500 text-xs">●</span>
-                  <span className="flex-1 text-sm">{line}</span>
-                  <button
-                    type="button"
-                    onClick={() => removePackLine(i)}
-                    className="text-ink-400 hover:text-butcher-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+      {/* Variants */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-1">Size variants</h2>
+        <p className="text-xs text-ink-500 mb-5">
+          When variants are added, customers pick a size from a dropdown on the product page — each
+          size has its own current price and, optionally, its own discounted price. Leave empty to
+          use the base price above.
+        </p>
+
+        {/* Existing variants */}
+        {variants.length > 0 && (
+          <div className="mb-5 border border-ink-900/10 divide-y divide-ink-900/10">
+            <div className="grid grid-cols-[1fr_110px_110px_72px] bg-cream-100 px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-ink-500">
+              <span>Size</span>
+              <span>Current (£)</span>
+              <span>Discounted (£)</span>
+              <span />
             </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g. 2lb Pork Sausages"
-                value={packLine}
-                onChange={(e) => setPackLine(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addPackLine();
-                  }
-                }}
-                className="flex-1"
-              />
-              <Button type="button" variant="outline" onClick={addPackLine}>
-                <Plus className="h-4 w-4 mr-1" /> Add line
-              </Button>
-            </div>
-          </section>
-        )}
-
-        {/* Variants */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-1">Size / weight variants</h2>
-          <p className="text-xs text-ink-500 mb-5">
-            When variants are added, customers pick a size from a dropdown on the product page — each
-            size has its own price. Leave empty to use the base price above.
-          </p>
-
-          {/* Size mode toggle */}
-          <div className="flex gap-1 mb-4 border border-ink-900/15 w-fit">
-            <button
-              type="button"
-              onClick={() => setSizeMode('preset')}
-              className={`px-3 h-9 text-xs font-medium ${sizeMode === 'preset' ? 'bg-ink-900 text-cream-50' : 'text-ink-700 hover:bg-cream-100'}`}
-            >
-              Preset sizes
-            </button>
-            <button
-              type="button"
-              onClick={() => setSizeMode('weight')}
-              className={`px-3 h-9 text-xs font-medium ${sizeMode === 'weight' ? 'bg-ink-900 text-cream-50' : 'text-ink-700 hover:bg-cream-100'}`}
-            >
-              By weight (£/kg)
-            </button>
-          </div>
-
-          {/* Existing variants */}
-          {variants.length > 0 && (
-            <div className="mb-5 border border-ink-900/10 divide-y divide-ink-900/10">
-              <div className="grid grid-cols-[1fr_140px_72px] bg-cream-100 px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-ink-500">
-                <span>Size</span>
-                <span>Price (£)</span>
-                <span />
-              </div>
-              {variants.map((v, i) => (
-                <div key={i} className="grid grid-cols-[1fr_140px_72px] items-center px-3 py-2 bg-cream-50">
-                  <span className="text-sm font-medium text-ink-900">
-                    {v.label}
-                    {v.grams && <span className="text-ink-400 font-normal"> · £/kg size</span>}
-                  </span>
+            {variants.map((v, i) => {
+              const currentPrice = v.compareAtPriceInPence ?? v.priceInPence;
+              const discounted = v.compareAtPriceInPence ? v.priceInPence : null;
+              return (
+                <div key={i} className="grid grid-cols-[1fr_110px_110px_72px] items-center px-3 py-2 bg-cream-50">
                   <div>
-                    <input
-                      key={`price-${i}-${priceVersion}`}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      defaultValue={(v.priceInPence / 100).toFixed(2)}
-                      onBlur={(e) => updateVariantPrice(i, e.target.value)}
-                      className="w-28 border border-ink-900/15 bg-cream-50 px-2 h-8 text-sm"
-                    />
+                    <span className="text-sm font-medium text-ink-900">{v.label}</span>
+                    {discounted && (
+                      <span className="ml-2 text-[10px] uppercase tracking-[0.1em] font-semibold text-butcher-500 bg-butcher-500/10 px-1.5 py-0.5">
+                        Save {percentOff(discounted, currentPrice)}%
+                      </span>
+                    )}
                   </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={(currentPrice / 100).toFixed(2)}
+                    onBlur={(e) => updateVariantCurrentPrice(i, e.target.value)}
+                    className="w-24 border border-ink-900/15 bg-cream-50 px-2 h-8 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="—"
+                    defaultValue={discounted ? (discounted / 100).toFixed(2) : ''}
+                    onBlur={(e) => updateVariantDiscountedPrice(i, e.target.value)}
+                    className="w-24 border border-ink-900/15 bg-cream-50 px-2 h-8 text-sm"
+                  />
                   <div className="flex items-center gap-0.5 justify-end">
                     <button
                       type="button"
@@ -695,341 +638,158 @@ export function ProductForm({
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
+          </div>
+        )}
+
+        {/* Add new variant */}
+        <div className="bg-cream-100 border border-ink-900/10 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Add a size</p>
+          <div className="flex flex-wrap gap-2 items-end">
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Size</label>
+              <select
+                value={newSize}
+                onChange={(e) => setNewSize(e.target.value)}
+                className="border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+              >
+                {PRESET_SIZES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {/* Add new variant */}
-          {sizeMode === 'preset' ? (
-            <div className="bg-cream-100 border border-ink-900/10 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Add a size</p>
-              <div className="flex flex-wrap gap-2 items-end">
-                <div>
-                  <label className="block text-xs text-ink-500 mb-1">Size</label>
-                  <select
-                    value={newSize}
-                    onChange={(e) => setNewSize(e.target.value)}
-                    className="border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
-                  >
-                    {PRESET_SIZES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {newSize === 'Custom' && (
-                  <div>
-                    <label className="block text-xs text-ink-500 mb-1">Custom label</label>
-                    <Input
-                      placeholder="e.g. 500g"
-                      value={customSize}
-                      onChange={(e) => setCustomSize(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
-                      className="w-32"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs text-ink-500 mb-1">Price (£)</label>
-                  <Input
-                    placeholder="0.00"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newPrice}
-                    onChange={(e) => setNewPrice(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
-                    className="w-28"
-                  />
-                </div>
-
-                <Button type="button" variant="outline" onClick={addVariant} className="h-11">
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-cream-100 border border-ink-900/10 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Price per kg, then add sizes by weight</p>
-              <div className="mb-4">
-                <label className="block text-xs text-ink-500 mb-1">Price per kg (£)</label>
-                <Input
-                  placeholder="e.g. 12.00"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={pricePerKg}
-                  onChange={(e) => handlePricePerKgChange(e.target.value)}
-                  className="w-32"
-                />
-                <p className="text-xs text-ink-500 mt-2">
-                  Every weight size below is priced from this automatically. Change it any time and every
-                  weight size updates at once — handy for a straight price change (for discounts, use the
-                  Discounts tab instead so customers see the old price struck through).
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 items-end">
-                <div>
-                  <label className="block text-xs text-ink-500 mb-1">Weight (g)</label>
-                  <Input
-                    placeholder="500"
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={newGrams}
-                    onChange={(e) => setNewGrams(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addWeightVariant(); } }}
-                    className="w-28"
-                  />
-                </div>
-                <p className="text-sm text-ink-700 pb-2.5">
-                  {Number(newGrams) > 0 && Number(pricePerKg) > 0 && (
-                    <>= {gramsToLabel(Number(newGrams))} for {formatPrice(penceFromPerKg(Number(pricePerKg), Number(newGrams)))}</>
-                  )}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addWeightVariant}
-                  disabled={!Number(newGrams) || !Number(pricePerKg)}
-                  className="h-11"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Marinades */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-1">Marinade options</h2>
-          <p className="text-xs text-ink-500 mb-5">
-            Add one or more marinades to give this product a &quot;Choose marinade&quot; dropdown on
-            its product page — this is how you grant the dropdown to specific products (e.g. chicken
-            strips, chicken breasts). Leave empty for no dropdown.
-          </p>
-
-          {marinades.length > 0 && (
-            <div className="mb-5 border border-ink-900/10 divide-y divide-ink-900/10">
-              {marinades.map((label, i) => (
-                <div key={label} className="flex items-center justify-between px-3 py-2 bg-cream-50">
-                  <span className="text-sm font-medium text-ink-900">{label}</span>
-                  <div className="flex items-center gap-0.5">
-                    <button
-                      type="button"
-                      onClick={() => moveMarinade(i, -1)}
-                      disabled={i === 0}
-                      className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
-                      aria-label="Move up"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveMarinade(i, 1)}
-                      disabled={i === marinades.length - 1}
-                      className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
-                      aria-label="Move down"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeMarinade(i)}
-                      className="p-1 text-ink-400 hover:text-butcher-500"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="bg-cream-100 border border-ink-900/10 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Add a marinade</p>
-            <div className="flex flex-wrap gap-2 items-end">
+            {newSize === 'Custom' && (
               <div>
-                <label className="block text-xs text-ink-500 mb-1">Marinade</label>
-                <select
-                  value={newMarinade}
-                  onChange={(e) => setNewMarinade(e.target.value)}
-                  className="border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
-                >
-                  {PRESET_MARINADES.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-
-              {newMarinade === 'Custom' && (
-                <div>
-                  <label className="block text-xs text-ink-500 mb-1">Custom label</label>
-                  <Input
-                    placeholder="e.g. Smoky Chipotle"
-                    value={customMarinade}
-                    onChange={(e) => setCustomMarinade(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMarinade(); } }}
-                    className="w-40"
-                  />
-                </div>
-              )}
-
-              <Button type="button" variant="outline" onClick={addMarinade} className="h-11">
-                <Plus className="h-4 w-4 mr-1" /> Add
-              </Button>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div className={activeTab === 'discounts' ? 'space-y-10' : 'hidden'}>
-        {/* Base price discount */}
-        <section>
-          <h2 className="font-display text-xl text-ink-900 mb-1">Base price discount</h2>
-          <p className="text-xs text-ink-500 mb-5">
-            Set an old price to show a &quot;was / now&quot; strikethrough and saving percentage on the
-            shop. Toggle it off to hide the discount without losing the number — handy for running the
-            same sale again later.
-          </p>
-          <Toggle
-            checked={form.saleEnabled}
-            onChange={(v) => setForm({ ...form, saleEnabled: v })}
-            label="Discount active"
-            hint="Only applies while an old price above the current price is set below."
-          />
-          <div className="mt-4 max-w-xs">
-            <Label htmlFor="compare">Old price (£)</Label>
-            <Input
-              id="compare"
-              type="number"
-              step="0.01"
-              min="0"
-              value={penceToInput(form.compareAtPriceInPence ?? 0)}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  compareAtPriceInPence: priceInputToPence(e.target.value),
-                })
-              }
-            />
-          </div>
-          {form.compareAtPriceInPence > 0 && (
-            form.compareAtPriceInPence > form.priceInPence ? (
-              <div className="mt-4 flex items-center gap-3 border border-ink-900/10 bg-cream-50 px-4 py-3">
-                <span className="text-sm text-ink-400 line-through tabular">
-                  {formatPrice(form.compareAtPriceInPence)}
-                </span>
-                <span className="text-base font-medium text-ink-900 tabular">
-                  {formatPrice(form.priceInPence)}
-                </span>
-                <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
-                  Save {percentOff(form.priceInPence, form.compareAtPriceInPence)}%
-                </span>
-                {!form.saleEnabled && (
-                  <span className="text-xs text-ink-500 italic">Hidden — discount is toggled off</span>
-                )}
-              </div>
-            ) : (
-              <p className="mt-3 text-xs text-butcher-500">
-                Old price should be higher than the price for the saving to show on the shop.
-              </p>
-            )
-          )}
-        </section>
-
-        {/* Weight-based variant discount */}
-        {variants.some((v) => v.grams) && (
-          <section>
-            <h2 className="font-display text-xl text-ink-900 mb-1">Weight-size discount</h2>
-            <p className="text-xs text-ink-500 mb-5">
-              Set an old price per kg to discount every gram-based size at once. Toggle off to pause the
-              sale without losing the number.
-            </p>
-            <Toggle
-              checked={weightSaleActive}
-              onChange={toggleWeightSale}
-              label="Discount active for weight sizes"
-            />
-            {weightSaleActive && (
-              <div className="mt-4 max-w-xs">
-                <label className="block text-xs text-ink-500 mb-1">Old price per kg (£)</label>
+                <label className="block text-xs text-ink-500 mb-1">Custom label</label>
                 <Input
-                  placeholder="e.g. 15.00"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={comparePricePerKg}
-                  onChange={(e) => handleComparePricePerKgChange(e.target.value)}
+                  placeholder="e.g. 500g"
+                  value={customSize}
+                  onChange={(e) => setCustomSize(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
                   className="w-32"
                 />
               </div>
             )}
-          </section>
-        )}
 
-        {/* Per-size discount table */}
-        {variants.length > 0 && (
-          <section>
-            <h2 className="font-display text-xl text-ink-900 mb-1">Per-size old price</h2>
-            <p className="text-xs text-ink-500 mb-5">
-              Fine-tune or override an individual size&apos;s discount here — this works whether the size
-              uses the £/kg cascade above or a manual price.
-            </p>
-            <div className="border border-ink-900/10 divide-y divide-ink-900/10">
-              <div className="grid grid-cols-[1fr_100px_100px_60px] bg-cream-100 px-3 py-2 text-[11px] uppercase tracking-[0.16em] text-ink-500">
-                <span>Size</span>
-                <span>Price (£)</span>
-                <span>Old price (£)</span>
-                <span>On sale</span>
-              </div>
-              {variants.map((v, i) => {
-                const onSale = (v.saleEnabled ?? true) && !!v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence;
-                return (
-                  <div key={i} className="grid grid-cols-[1fr_100px_100px_60px] items-center px-3 py-2 bg-cream-50">
-                    <div>
-                      <span className="text-sm font-medium text-ink-900">{v.label}</span>
-                      {onSale && (
-                        <span className="ml-2 text-[10px] uppercase tracking-[0.1em] font-semibold text-butcher-500 bg-butcher-500/10 px-1.5 py-0.5">
-                          Save {percentOff(v.priceInPence, v.compareAtPriceInPence!)}%
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-sm tabular text-ink-700">{formatPrice(v.priceInPence)}</span>
-                    <input
-                      key={`compareAt-${i}-${priceVersion}`}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="—"
-                      defaultValue={v.compareAtPriceInPence ? (v.compareAtPriceInPence / 100).toFixed(2) : ''}
-                      onBlur={(e) => updateVariantCompareAtPrice(i, e.target.value)}
-                      className="w-24 border border-ink-900/15 bg-cream-50 px-2 h-8 text-sm"
-                    />
-                    <input
-                      type="checkbox"
-                      checked={v.saleEnabled ?? true}
-                      onChange={(e) => toggleVariantSale(i, e.target.checked)}
-                      disabled={!v.compareAtPriceInPence}
-                      className="h-4 w-4 accent-gold-500 disabled:opacity-30"
-                      aria-label={`Toggle discount for ${v.label}`}
-                    />
-                  </div>
-                );
-              })}
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Current price (£)</label>
+              <Input
+                placeholder="0.00"
+                type="number"
+                step="0.01"
+                min="0"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+                className="w-28"
+              />
             </div>
-          </section>
+
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Discounted (£, optional)</label>
+              <Input
+                placeholder="—"
+                type="number"
+                step="0.01"
+                min="0"
+                value={newDiscountedPrice}
+                onChange={(e) => setNewDiscountedPrice(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+                className="w-28"
+              />
+            </div>
+
+            <Button type="button" variant="outline" onClick={addVariant} className="h-11">
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Marinades */}
+      <section>
+        <h2 className="font-display text-xl text-ink-900 mb-1">Marinade options</h2>
+        <p className="text-xs text-ink-500 mb-5">
+          Add one or more marinades to give this product a &quot;Choose marinade&quot; dropdown on
+          its product page — this is how you grant the dropdown to specific products (e.g. chicken
+          strips, chicken breasts). Leave empty for no dropdown.
+        </p>
+
+        {marinades.length > 0 && (
+          <div className="mb-5 border border-ink-900/10 divide-y divide-ink-900/10">
+            {marinades.map((label, i) => (
+              <div key={label} className="flex items-center justify-between px-3 py-2 bg-cream-50">
+                <span className="text-sm font-medium text-ink-900">{label}</span>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => moveMarinade(i, -1)}
+                    disabled={i === 0}
+                    className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
+                    aria-label="Move up"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveMarinade(i, 1)}
+                    disabled={i === marinades.length - 1}
+                    className="p-1 text-ink-400 hover:text-ink-900 disabled:opacity-20"
+                    aria-label="Move down"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeMarinade(i)}
+                    className="p-1 text-ink-400 hover:text-butcher-500"
+                    aria-label="Remove"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
-        {variants.length === 0 && (
-          <p className="text-sm text-ink-500 italic">
-            Add sizes on the Details tab first to discount them individually.
-          </p>
-        )}
-      </div>
+        <div className="bg-cream-100 border border-ink-900/10 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-ink-500 mb-3">Add a marinade</p>
+          <div className="flex flex-wrap gap-2 items-end">
+            <div>
+              <label className="block text-xs text-ink-500 mb-1">Marinade</label>
+              <select
+                value={newMarinade}
+                onChange={(e) => setNewMarinade(e.target.value)}
+                className="border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+              >
+                {PRESET_MARINADES.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            {newMarinade === 'Custom' && (
+              <div>
+                <label className="block text-xs text-ink-500 mb-1">Custom label</label>
+                <Input
+                  placeholder="e.g. Smoky Chipotle"
+                  value={customMarinade}
+                  onChange={(e) => setCustomMarinade(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMarinade(); } }}
+                  className="w-40"
+                />
+              </div>
+            )}
+
+            <Button type="button" variant="outline" onClick={addMarinade} className="h-11">
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {error && (
         <p className="text-sm text-butcher-500 bg-butcher-500/10 border border-butcher-500/30 px-3 py-2">

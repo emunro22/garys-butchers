@@ -70,7 +70,6 @@ export async function ensureProductsSchema() {
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb NOT NULL DEFAULT '[]'::jsonb`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS marinades jsonb NOT NULL DEFAULT '[]'::jsonb`;
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_subscribable boolean NOT NULL DEFAULT false`;
-    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_enabled boolean NOT NULL DEFAULT true`;
   } catch { /* already exists */ }
 }
 

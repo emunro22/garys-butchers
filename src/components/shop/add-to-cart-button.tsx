@@ -12,7 +12,6 @@ type Variant = {
   label: string;
   priceInPence: number;
   compareAtPriceInPence?: number;
-  saleEnabled?: boolean;
 };
 
 export function AddToCartButton({
@@ -40,7 +39,6 @@ export function AddToCartButton({
   const activePrice = selectedVariant?.priceInPence ?? product.priceInPence;
   const variantOnSale =
     !!selectedVariant?.compareAtPriceInPence &&
-    (selectedVariant.saleEnabled ?? true) &&
     selectedVariant.compareAtPriceInPence > selectedVariant.priceInPence;
 
   const onAdd = () => {
@@ -88,7 +86,7 @@ export function AddToCartButton({
           >
             {variants.map((v) => {
               const saleActive =
-                !!v.compareAtPriceInPence && (v.saleEnabled ?? true) && v.compareAtPriceInPence > v.priceInPence;
+                !!v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence;
               return (
                 <option key={v.label} value={v.label}>
                   {v.label} — {formatPrice(v.priceInPence)}

@@ -74,17 +74,12 @@ export default async function ProductPage({
     label: string;
     priceInPence: number;
     compareAtPriceInPence?: number;
-    saleEnabled?: boolean;
   }> | undefined) ?? [];
   const baseOnSale =
-    product.saleEnabled &&
-    product.compareAtPriceInPence &&
-    product.compareAtPriceInPence > product.priceInPence;
+    product.compareAtPriceInPence && product.compareAtPriceInPence > product.priceInPence;
   const onSale =
     baseOnSale ||
-    variantsList.some(
-      (v) => (v.saleEnabled ?? true) && v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence
-    );
+    variantsList.some((v) => v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence);
 
   return (
     <div className="bg-cream-50">
