@@ -1,15 +1,20 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
-import { promotions } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { promotions, products } from '@/lib/db/schema';
+import { desc, asc } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PromotionsTable } from '@/components/admin/promotions-table';
+import { ensurePromotionsSchema } from '@/lib/db/ensure-schema';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPromotionsPage() {
-  const all = await db.select().from(promotions).orderBy(desc(promotions.createdAt));
+  await ensurePromotionsSchema();
+  const [all, allProducts] = await Promise.all([
+    db.select().from(promotions).orderBy(desc(promotions.createdAt)),
+    db.select({ id: products.id, name: products.name }).from(products).orderBy(asc(products.name)),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -25,7 +30,7 @@ export default async function AdminPromotionsPage() {
         </Link>
       </header>
 
-      <PromotionsTable initial={all} />
+      <PromotionsTable initial={all} products={allProducts} />
     </div>
   );
 }

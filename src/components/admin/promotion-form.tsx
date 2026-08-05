@@ -15,7 +15,13 @@ function toLocalDateTimeInput(value: string | Date | null) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function PromotionForm({ initial }: { initial?: Promotion }) {
+export function PromotionForm({
+  initial,
+  products,
+}: {
+  initial?: Promotion;
+  products: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const isEdit = !!initial;
   const [form, setForm] = useState({
@@ -28,6 +34,7 @@ export function PromotionForm({ initial }: { initial?: Promotion }) {
     startsAt: toLocalDateTimeInput(initial?.startsAt ?? null),
     endsAt: toLocalDateTimeInput(initial?.endsAt ?? null),
     isActive: initial?.isActive ?? true,
+    productId: initial?.productId ?? '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +69,7 @@ export function PromotionForm({ initial }: { initial?: Promotion }) {
           : null,
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
         isActive: form.isActive,
+        productId: form.productId || null,
       };
       const res = await fetch(isEdit ? `/api/promotions/${initial!.id}` : '/api/promotions', {
         method: isEdit ? 'PATCH' : 'POST',
@@ -107,11 +115,31 @@ export function PromotionForm({ initial }: { initial?: Promotion }) {
               }
               className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
             >
-              <option value="percent_off">Percent off subtotal</option>
-              <option value="amount_off">Fixed amount off subtotal</option>
+              <option value="percent_off">Percent off</option>
+              <option value="amount_off">Fixed amount off</option>
               <option value="free_delivery">Free delivery</option>
             </select>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <Label htmlFor="targetProduct">Applies to</Label>
+          <select
+            id="targetProduct"
+            value={form.productId}
+            onChange={(e) => setForm({ ...form, productId: e.target.value })}
+            className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+          >
+            <option value="">Store-wide (any order)</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <p className="text-xs text-ink-500 mt-2">
+            {form.productId
+              ? "This code only works if the chosen product is in the customer's basket, and the discount only applies to that product's line — not the rest of the order."
+              : 'Applies to the whole order (minus meat packs, which already have bundled pricing).'}
+          </p>
         </div>
 
         <div className="mt-4">

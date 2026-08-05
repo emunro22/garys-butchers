@@ -19,10 +19,17 @@ function formatValue(p: Promotion) {
   return 'Free delivery';
 }
 
-export function PromotionsTable({ initial }: { initial: Promotion[] }) {
+export function PromotionsTable({
+  initial,
+  products,
+}: {
+  initial: Promotion[];
+  products: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const [rows, setRows] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
+  const productNameById = new Map(products.map((p) => [p.id, p.name]));
 
   async function toggleActive(p: Promotion) {
     setBusy(p.id);
@@ -61,6 +68,7 @@ export function PromotionsTable({ initial }: { initial: Promotion[] }) {
           <tr className="text-left text-ink-500 uppercase tracking-[0.16em] text-[11px]">
             <th className="px-5 py-3">Code</th>
             <th className="px-5 py-3">Description</th>
+            <th className="px-5 py-3">Applies to</th>
             <th className="px-5 py-3">Type</th>
             <th className="px-5 py-3">Value</th>
             <th className="px-5 py-3 text-right">Min order</th>
@@ -72,7 +80,7 @@ export function PromotionsTable({ initial }: { initial: Promotion[] }) {
         <tbody className="divide-y divide-ink-900/5">
           {rows.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-5 py-10 text-center text-ink-500">
+              <td colSpan={9} className="px-5 py-10 text-center text-ink-500">
                 No promotions yet — create your first discount code.
               </td>
             </tr>
@@ -84,6 +92,11 @@ export function PromotionsTable({ initial }: { initial: Promotion[] }) {
               </td>
               <td className="px-5 py-3 text-ink-700 max-w-sm truncate">
                 {p.description ?? '—'}
+              </td>
+              <td className="px-5 py-3 text-ink-700 max-w-[160px] truncate">
+                {p.productId ? (productNameById.get(p.productId) ?? 'Deleted product') : (
+                  <span className="text-ink-500">Store-wide</span>
+                )}
               </td>
               <td className="px-5 py-3">
                 <span className="text-xs uppercase tracking-[0.18em] text-ink-500">

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { orders, products, promotions, users } from '@/lib/db/schema';
-import { ensureOrdersSchema, ensureUsersSchema, ensureProductsSchema } from '@/lib/db/ensure-schema';
+import { ensureOrdersSchema, ensureUsersSchema, ensureProductsSchema, ensurePromotionsSchema } from '@/lib/db/ensure-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
 import {
@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
     await ensureOrdersSchema();
     await ensureUsersSchema();
     await ensureProductsSchema();
+    await ensurePromotionsSchema();
 
     const customerSession = await getCustomerSession();
 
@@ -307,11 +308,21 @@ export async function POST(req: NextRequest) {
         const singleUseOk =
           !shopSettings.promotions.singleUsePerCustomer ||
           !(await hasCustomerUsedPromotion(data.customer.email, promo.code));
-        if (startsOk && endsOk && redemptionsOk && minOk && singleUseOk) {
+        // Product-targeted codes only apply if that exact product is in the
+        // basket, and only discount that product's own line total — never
+        // trust the client for this, always resolved from lineItems above.
+        const targetLineTotal = promo.productId
+          ? lineItems
+              .filter((i) => i.productId === promo.productId)
+              .reduce((sum, i) => sum + i.priceInPence * i.quantity, 0)
+          : null;
+        const productOk = !promo.productId || (targetLineTotal !== null && targetLineTotal > 0);
+        if (startsOk && endsOk && redemptionsOk && minOk && singleUseOk && productOk) {
+          const applicableSubtotal = promo.productId ? targetLineTotal! : discountableSubtotal;
           if (promo.type === 'percent_off') {
-            discount = Math.round((discountableSubtotal * promo.value) / 100);
+            discount = Math.round((applicableSubtotal * promo.value) / 100);
           } else if (promo.type === 'amount_off') {
-            discount = Math.min(promo.value, discountableSubtotal);
+            discount = Math.min(promo.value, applicableSubtotal);
           } else if (promo.type === 'free_delivery') {
             deliveryFee = 0;
           }

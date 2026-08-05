@@ -74,6 +74,14 @@ export async function ensureProductsSchema() {
   } catch { /* already exists */ }
 }
 
+// Every unqualified `.select()`/`.returning()` against `promotions` needs
+// this called first (see the file-level comment above).
+export async function ensurePromotionsSchema() {
+  try {
+    await sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS product_id uuid REFERENCES products(id) ON DELETE SET NULL`;
+  } catch { /* already exists */ }
+}
+
 // Brand-new table — only needs to be called from the routes that touch it.
 export async function ensureSubscriptionsSchema() {
   try {

@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { promotions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
+import { ensurePromotionsSchema } from '@/lib/db/ensure-schema';
 
 const PatchSchema = z.object({
   code: z.string().min(2).max(60).optional(),
@@ -15,6 +16,7 @@ const PatchSchema = z.object({
   maxRedemptions: z.number().int().min(1).nullable().optional(),
   startsAt: z.string().datetime().nullable().optional(),
   endsAt: z.string().datetime().nullable().optional(),
+  productId: z.string().uuid().nullable().optional(),
 });
 
 export async function PATCH(
@@ -26,6 +28,7 @@ export async function PATCH(
   const { id } = await params;
 
   try {
+    await ensurePromotionsSchema();
     const body = await req.json();
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {

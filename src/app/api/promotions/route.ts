@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { promotions } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
+import { ensurePromotionsSchema } from '@/lib/db/ensure-schema';
 
 const Schema = z.object({
   code: z.string().min(2).max(60),
@@ -15,12 +16,14 @@ const Schema = z.object({
   startsAt: z.string().datetime().nullable().optional(),
   endsAt: z.string().datetime().nullable().optional(),
   isActive: z.boolean().optional(),
+  productId: z.string().uuid().nullable().optional(),
 });
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
+    await ensurePromotionsSchema();
     const all = await db.select().from(promotions).orderBy(desc(promotions.createdAt));
     return NextResponse.json({ promotions: all });
   } catch (err) {
@@ -34,6 +37,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    await ensurePromotionsSchema();
     const body = await req.json();
     const parsed = Schema.safeParse(body);
     if (!parsed.success) {
@@ -61,6 +65,7 @@ export async function POST(req: NextRequest) {
         startsAt: d.startsAt ? new Date(d.startsAt) : null,
         endsAt: d.endsAt ? new Date(d.endsAt) : null,
         isActive: d.isActive ?? true,
+        productId: d.productId ?? null,
       })
       .returning();
     return NextResponse.json({ promotion: created });

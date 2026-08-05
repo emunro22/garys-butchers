@@ -167,6 +167,11 @@ export const promotions = pgTable(
     type: promotionTypeEnum('type').notNull(),
     // value is percentage (1-100) for percent_off, or pence for amount_off, or 0 for free_delivery
     value: integer('value').notNull(),
+    // null = store-wide code (applies to the whole discountable subtotal, as
+    // before). When set, the code only applies if this product is in the
+    // basket, and the discount is calculated against that product's line
+    // total only, not the rest of the order.
+    productId: uuid('product_id').references(() => products.id, { onDelete: 'set null' }),
     minimumOrderInPence: integer('minimum_order_in_pence').default(0).notNull(),
     maxRedemptions: integer('max_redemptions'), // null = unlimited
     redemptionCount: integer('redemption_count').default(0).notNull(),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
@@ -104,6 +105,12 @@ export async function POST(req: NextRequest) {
         noticeDays: data.noticeDays ?? 0,
       })
       .returning();
+    // Storefront product/shop pages read via ISR (revalidate: 60) — without
+    // this a saved price/discount change sits stale for up to a minute, and
+    // even then the first request after that only triggers a background
+    // rebuild rather than showing it. Mirrors the same fix already applied
+    // to /api/settings.
+    revalidatePath('/', 'layout');
     return NextResponse.json({ product: created });
   } catch (err) {
     console.error('product POST error', err);

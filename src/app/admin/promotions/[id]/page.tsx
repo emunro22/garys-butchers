@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
-import { promotions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { promotions, products } from '@/lib/db/schema';
+import { eq, asc } from 'drizzle-orm';
 import { PromotionForm } from '@/components/admin/promotion-form';
+import { ensurePromotionsSchema } from '@/lib/db/ensure-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,11 @@ export default async function EditPromotionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [promotion] = await db.select().from(promotions).where(eq(promotions.id, id)).limit(1);
+  await ensurePromotionsSchema();
+  const [[promotion], allProducts] = await Promise.all([
+    db.select().from(promotions).where(eq(promotions.id, id)).limit(1),
+    db.select({ id: products.id, name: products.name }).from(products).orderBy(asc(products.name)),
+  ]);
   if (!promotion) notFound();
 
   return (
@@ -27,7 +32,7 @@ export default async function EditPromotionPage({
         </Link>
         <h1 className="font-display text-4xl text-ink-900">Edit {promotion.code}</h1>
       </header>
-      <PromotionForm initial={promotion} />
+      <PromotionForm initial={promotion} products={allProducts} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -82,6 +83,9 @@ export async function PATCH(
       .where(eq(products.id, id))
       .returning();
     if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // See /api/products POST — storefront pages are ISR-cached and won't
+    // pick up a price/discount change for up to a minute without this.
+    revalidatePath('/', 'layout');
     return NextResponse.json({ product: updated });
   } catch (err) {
     console.error('product PATCH error', err);
@@ -98,6 +102,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await db.delete(products).where(eq(products.id, id));
+    revalidatePath('/', 'layout');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('product DELETE error', err);
