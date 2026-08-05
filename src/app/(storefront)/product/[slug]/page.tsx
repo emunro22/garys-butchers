@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, percentOff } from '@/lib/utils';
 import { noticeLabel } from '@/lib/notice';
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
 import { ProductCard } from '@/components/shop/product-card';
@@ -70,8 +70,21 @@ export default async function ProductPage({
     if (!product) notFound();
   }
 
+  const variantsList = (product.variants as Array<{
+    label: string;
+    priceInPence: number;
+    compareAtPriceInPence?: number;
+    saleEnabled?: boolean;
+  }> | undefined) ?? [];
+  const baseOnSale =
+    product.saleEnabled &&
+    product.compareAtPriceInPence &&
+    product.compareAtPriceInPence > product.priceInPence;
   const onSale =
-    product.compareAtPriceInPence && product.compareAtPriceInPence > product.priceInPence;
+    baseOnSale ||
+    variantsList.some(
+      (v) => (v.saleEnabled ?? true) && v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence
+    );
 
   return (
     <div className="bg-cream-50">
@@ -136,15 +149,20 @@ export default async function ProductPage({
               {product.name}
             </h1>
 
-            {(!product.variants || product.variants.length === 0) && (
+            {variantsList.length === 0 && (
               <div className="mt-6 flex items-baseline gap-3">
                 <p className="font-display text-3xl text-ink-900 tabular">
                   {formatPrice(product.priceInPence)}
                 </p>
-                {onSale && (
-                  <p className="text-base text-ink-400 line-through tabular">
-                    {formatPrice(product.compareAtPriceInPence!)}
-                  </p>
+                {baseOnSale && (
+                  <>
+                    <p className="text-base text-ink-400 line-through tabular">
+                      {formatPrice(product.compareAtPriceInPence!)}
+                    </p>
+                    <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
+                      Save {percentOff(product.priceInPence, product.compareAtPriceInPence!)}%
+                    </span>
+                  </>
                 )}
               </div>
             )}

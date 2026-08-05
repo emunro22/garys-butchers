@@ -13,6 +13,12 @@ export function formatPrice(pence: number): string {
   }).format(pence / 100);
 }
 
+// Rounds down so a "20% off" badge never overstates the actual saving.
+export function percentOff(priceInPence: number, compareAtPriceInPence: number): number {
+  if (compareAtPriceInPence <= priceInPence) return 0;
+  return Math.floor((1 - priceInPence / compareAtPriceInPence) * 100);
+}
+
 export function timeAgo(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));

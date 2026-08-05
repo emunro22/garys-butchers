@@ -5,14 +5,19 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { formatPrice, cn } from '@/lib/utils';
+import { formatPrice, percentOff, cn } from '@/lib/utils';
 import { useCart } from '@/lib/cart';
 import { noticeLabel } from '@/lib/notice';
 import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
 import { SeasonalCardFrame } from '@/components/seasonal/seasonal-card-frame';
 import type { Product } from '@/lib/db/schema';
 
-type Variant = { label: string; priceInPence: number };
+type Variant = {
+  label: string;
+  priceInPence: number;
+  compareAtPriceInPence?: number;
+  saleEnabled?: boolean;
+};
 
 export function ProductCard({
   product,
@@ -27,9 +32,21 @@ export function ProductCard({
 
   const variants = (product.variants as Variant[] | undefined) ?? [];
   const hasVariants = variants.length > 0;
-  const displayPrice = hasVariants
-    ? Math.min(...variants.map((v) => v.priceInPence))
-    : product.priceInPence;
+  const cheapestVariant = hasVariants
+    ? variants.reduce((min, v) => (v.priceInPence < min.priceInPence ? v : min), variants[0])
+    : null;
+  const displayPrice = cheapestVariant ? cheapestVariant.priceInPence : product.priceInPence;
+  const variantOnSale =
+    !!cheapestVariant?.compareAtPriceInPence &&
+    (cheapestVariant.saleEnabled ?? true) &&
+    cheapestVariant.compareAtPriceInPence > cheapestVariant.priceInPence;
+  const baseOnSale =
+    !hasVariants &&
+    !!product.compareAtPriceInPence &&
+    product.saleEnabled &&
+    product.compareAtPriceInPence > product.priceInPence;
+  const onSale = hasVariants ? variantOnSale : baseOnSale;
+  const saleCompareAt = hasVariants ? cheapestVariant?.compareAtPriceInPence : product.compareAtPriceInPence;
 
   return (
     <motion.article
@@ -68,9 +85,9 @@ export function ProductCard({
           </span>
         )}
 
-        {product.compareAtPriceInPence && (
+        {onSale && (
           <span className="absolute top-3 right-3 bg-butcher-500 text-cream-50 text-[10px] uppercase tracking-[0.18em] font-semibold px-2 py-1">
-            On offer
+            {percentOff(displayPrice, saleCompareAt!)}% off
           </span>
         )}
 
@@ -119,9 +136,9 @@ export function ProductCard({
             {hasVariants && <span className="text-xs text-ink-500 font-normal mr-0.5">From </span>}
             {formatPrice(displayPrice)}
           </p>
-          {!hasVariants && product.compareAtPriceInPence && (
+          {onSale && (
             <p className="text-xs text-ink-400 line-through tabular">
-              {formatPrice(product.compareAtPriceInPence)}
+              {formatPrice(saleCompareAt!)}
             </p>
           )}
         </div>

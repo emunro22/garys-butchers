@@ -6,9 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/lib/cart';
 import type { Product } from '@/lib/db/schema';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, percentOff } from '@/lib/utils';
 
-type Variant = { label: string; priceInPence: number };
+type Variant = {
+  label: string;
+  priceInPence: number;
+  compareAtPriceInPence?: number;
+  saleEnabled?: boolean;
+};
 
 export function AddToCartButton({
   product,
@@ -33,6 +38,10 @@ export function AddToCartButton({
   const addItem = useCart((s) => s.addItem);
 
   const activePrice = selectedVariant?.priceInPence ?? product.priceInPence;
+  const variantOnSale =
+    !!selectedVariant?.compareAtPriceInPence &&
+    (selectedVariant.saleEnabled ?? true) &&
+    selectedVariant.compareAtPriceInPence > selectedVariant.priceInPence;
 
   const onAdd = () => {
     if (hasVariants && !selectedVariant) return;
@@ -77,18 +86,35 @@ export function AddToCartButton({
             }}
             className={`w-full border px-3 h-11 text-sm ${selectBg}`}
           >
-            {variants.map((v) => (
-              <option key={v.label} value={v.label}>
-                {v.label} — {formatPrice(v.priceInPence)}
-              </option>
-            ))}
+            {variants.map((v) => {
+              const saleActive =
+                !!v.compareAtPriceInPence && (v.saleEnabled ?? true) && v.compareAtPriceInPence > v.priceInPence;
+              return (
+                <option key={v.label} value={v.label}>
+                  {v.label} — {formatPrice(v.priceInPence)}
+                  {saleActive ? ` (was ${formatPrice(v.compareAtPriceInPence!)})` : ''}
+                </option>
+              );
+            })}
           </select>
 
           {/* Price updates as you pick a size */}
           {selectedVariant && (
-            <p className={`font-display text-3xl mt-3 tabular ${variant === 'dark' ? 'text-cream-50' : 'text-ink-900'}`}>
-              {formatPrice(selectedVariant.priceInPence)}
-            </p>
+            <div className="mt-3 flex items-baseline gap-3">
+              <p className={`font-display text-3xl tabular ${variant === 'dark' ? 'text-cream-50' : 'text-ink-900'}`}>
+                {formatPrice(selectedVariant.priceInPence)}
+              </p>
+              {variantOnSale && (
+                <>
+                  <p className={`text-base line-through tabular ${variant === 'dark' ? 'text-gold-400/50' : 'text-ink-400'}`}>
+                    {formatPrice(selectedVariant.compareAtPriceInPence!)}
+                  </p>
+                  <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
+                    Save {percentOff(selectedVariant.priceInPence, selectedVariant.compareAtPriceInPence!)}%
+                  </span>
+                </>
+              )}
+            </div>
           )}
         </div>
       )}
