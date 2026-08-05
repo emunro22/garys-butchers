@@ -68,6 +68,7 @@ export function ProductForm({
     isFeatured: initial?.isFeatured ?? false,
     isActive: initial?.isActive ?? true,
     isSubscribable: initial?.isSubscribable ?? false,
+    showOnOffers: initial?.showOnOffers ?? false,
     noticeDays: initial?.noticeDays ?? 0,
   });
 
@@ -248,6 +249,7 @@ export function ProductForm({
         isFeatured: form.isFeatured,
         isActive: form.isActive,
         isSubscribable: form.isSubscribable,
+        showOnOffers: form.showOnOffers,
         noticeDays: form.noticeDays,
         packContents: form.isPack ? packContents : [],
         variants,
@@ -415,7 +417,7 @@ export function ProductForm({
       {/* Price */}
       <section>
         <h2 className="font-display text-xl text-ink-900 mb-4">Price</h2>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="price">Current price (£)</Label>
             <Input
@@ -429,7 +431,7 @@ export function ProductForm({
             />
           </div>
           <div>
-            <Label htmlFor="discountedPrice">Discounted price (£, optional)</Label>
+            <Label htmlFor="discountedPrice">Discounted price (£)</Label>
             <Input
               id="discountedPrice"
               type="number"
@@ -440,15 +442,15 @@ export function ProductForm({
               onChange={(e) => setDiscountedPriceInput(e.target.value)}
             />
           </div>
-          <div>
-            <Label htmlFor="weight">Weight label</Label>
-            <Input
-              id="weight"
-              placeholder="approx 500g"
-              value={form.weightLabel ?? ''}
-              onChange={(e) => setForm({ ...form, weightLabel: e.target.value })}
-            />
-          </div>
+        </div>
+        <div className="mt-4 max-w-xs">
+          <Label htmlFor="weight">Weight label</Label>
+          <Input
+            id="weight"
+            placeholder="approx 500g"
+            value={form.weightLabel ?? ''}
+            onChange={(e) => setForm({ ...form, weightLabel: e.target.value })}
+          />
         </div>
         {discountedPriceInput.trim() && (
           hasDiscount ? (
@@ -506,6 +508,12 @@ export function ProductForm({
             checked={form.isActive}
             onChange={(v) => setForm({ ...form, isActive: v })}
             label="Active (visible in shop)"
+          />
+          <Toggle
+            checked={form.showOnOffers}
+            onChange={(v) => setForm({ ...form, showOnOffers: v })}
+            label="Show on Offers page"
+            hint="Feature this product on /shop/offers — independent of whether a discounted price is set above."
           />
           <Toggle
             checked={form.isSubscribable}

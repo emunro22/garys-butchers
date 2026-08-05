@@ -71,12 +71,12 @@ export function Header({ categories }: { categories: { name: string; slug: strin
             >
               <Menu className="h-5 w-5" />
             </button>
-            <nav className="hidden lg:flex items-center gap-8">
-              {nav.slice(0, 3).map((item) => (
+            <nav className="hidden lg:flex items-center gap-6">
+              {nav.slice(0, 4).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="eyebrow text-ink-700 hover:text-ink-900 transition-colors relative group"
+                  className="text-xs uppercase tracking-[0.12em] font-medium whitespace-nowrap text-ink-700 hover:text-ink-900 transition-colors relative group"
                 >
                   {item.label}
                   <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gold-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />
@@ -103,12 +103,12 @@ export function Header({ categories }: { categories: { name: string; slug: strin
 
           {/* Right column: right nav (desktop) + icons */}
           <div className="flex items-center justify-end gap-1 lg:gap-2">
-            <nav className="hidden lg:flex items-center gap-8 mr-2">
-              {nav.slice(3).map((item) => (
+            <nav className="hidden lg:flex items-center gap-6 mr-2">
+              {nav.slice(4).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="eyebrow text-ink-700 hover:text-ink-900 transition-colors relative group"
+                  className="text-xs uppercase tracking-[0.12em] font-medium whitespace-nowrap text-ink-700 hover:text-ink-900 transition-colors relative group"
                 >
                   {item.label}
                   <span className="absolute -bottom-1.5 left-0 right-0 h-px bg-gold-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform" />

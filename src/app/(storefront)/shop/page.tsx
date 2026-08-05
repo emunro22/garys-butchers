@@ -68,6 +68,26 @@ export default async function ShopPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="relative group">
+            <SeasonalCardDecoration />
+            <Link
+              href="/shop/offers"
+              className="block aspect-[4/5] relative overflow-hidden bg-butcher-500 text-cream-50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-butcher-500/30 via-butcher-500/20 to-ink-900/85" />
+              <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
+                <h3 className="font-display text-2xl md:text-3xl">Offers</h3>
+                <p className="text-xs text-cream-200/70 mt-2 line-clamp-2">
+                  Today&apos;s discounts, while stocks last.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-gold-400 group-hover:gap-3 transition-all">
+                  Shop offers
+                  <span aria-hidden>→</span>
+                </span>
+              </div>
+              <SeasonalCardFrame />
+            </Link>
+          </div>
           {cats.map((c) => (
             <div key={c.id} className="relative group">
               <SeasonalCardDecoration />

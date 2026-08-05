@@ -144,6 +144,10 @@ export const products = pgTable(
     // day-fresh items like fish generally shouldn't be offered as a fixed
     // recurring monthly item.
     isSubscribable: boolean('is_subscribable').default(false).notNull(),
+    // Admin-curated placement on /shop/offers — independent of whether a
+    // discounted price is set, so a product can be featured there without
+    // one, or discounted without appearing there.
+    showOnOffers: boolean('show_on_offers').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

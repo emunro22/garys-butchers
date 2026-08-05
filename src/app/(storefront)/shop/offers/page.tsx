@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { products } from '@/lib/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { ProductCard } from '@/components/shop/product-card';
 import type { Metadata } from 'next';
@@ -13,29 +13,16 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-type VariantLite = { priceInPence: number; compareAtPriceInPence?: number };
-
-function isOnSale(p: {
-  priceInPence: number;
-  compareAtPriceInPence: number | null;
-  variants: unknown;
-}): boolean {
-  if (p.compareAtPriceInPence && p.compareAtPriceInPence > p.priceInPence) return true;
-  const variants = (p.variants as VariantLite[] | null) ?? [];
-  return variants.some((v) => v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence);
-}
-
 export default async function OffersPage() {
   let items: any[] = [];
 
   try {
     await ensureProductsSchema();
-    const all = await db
+    items = await db
       .select()
       .from(products)
-      .where(eq(products.isActive, true))
+      .where(and(eq(products.isActive, true), eq(products.showOnOffers, true)))
       .orderBy(asc(products.name));
-    items = all.filter(isOnSale);
   } catch {
     // empty fallback
   }
