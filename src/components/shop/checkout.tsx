@@ -80,6 +80,15 @@ export function Checkout() {
       .catch(() => {});
   }, []);
 
+  const [sameDayFeeSettings, setSameDayFeeSettings] = useState<{ enabled: boolean; feeInPence: number } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/same-day-fee')
+      .then((r) => r.json())
+      .then((data) => setSameDayFeeSettings(data.sameDayFee ?? null))
+      .catch(() => {});
+  }, []);
+
   // Referral reward: auto-applied (no code to enter) for a logged-in customer
   // sitting on an unspent credit — see the profile fetch below for the actual
   // eligibility flag. The real charge is always computed server-side in
@@ -174,7 +183,7 @@ export function Checkout() {
     return () => clearTimeout(timer);
   }, [form.postcode, subtotal, fulfilment]);
 
-  const deliveryFee =
+  const baseDeliveryFee =
     fulfilment === 'pickup'
       ? 0
       : fulfilment === 'premium'
@@ -182,6 +191,13 @@ export function Checkout() {
       : postcodeFeePence !== null
       ? postcodeFeePence
       : calculateDelivery('delivery');
+
+  // Same-day is still the normal local, distance-priced delivery — this is
+  // just an extra rush-service surcharge on top, mirrored authoritatively
+  // in /api/checkout.
+  const sameDaySurcharge =
+    fulfilment === 'sameDay' && sameDayFeeSettings?.enabled ? sameDayFeeSettings.feeInPence : 0;
+  const deliveryFee = baseDeliveryFee + sameDaySurcharge;
 
   // Meat packs are already bundled/discounted pricing — promo codes apply
   // only to the non-pack portion of the order, mirrored server-side in
@@ -309,7 +325,13 @@ export function Checkout() {
   const sameDayWindowText = sameDayBlock
     ? `between ${formatClock(sameDayBlock.startMinutes)} and ${formatClock(sameDayBlock.endMinutes)}`
     : null;
-  const sameDaySubtitle = sameDayBlock ? `Delivered today, ${blockLabel(sameDayBlock)}` : 'Today';
+  const sameDayFeeSuffix =
+    sameDayFeeSettings?.enabled && sameDayFeeSettings.feeInPence > 0
+      ? ` · +${formatPrice(sameDayFeeSettings.feeInPence)}`
+      : '';
+  const sameDaySubtitle = sameDayBlock
+    ? `Delivered today, ${blockLabel(sameDayBlock)}${sameDayFeeSuffix}`
+    : `Today${sameDayFeeSuffix}`;
 
   const earliestSlotDateKey = slots[0]?.dateKey;
   const minAllowedDateKey = useMemo(() => {
@@ -999,6 +1021,11 @@ export function Checkout() {
                 : formatPrice(totals.deliveryFee)}
             </dd>
           </div>
+          {fulfilment === 'sameDay' && sameDaySurcharge > 0 && (
+            <p className="text-xs text-ink-500 -mt-1">
+              Includes a {formatPrice(sameDaySurcharge)} same-day surcharge.
+            </p>
+          )}
           <div className="flex justify-between pt-3 border-t border-ink-900/10 text-base">
             <dt className="font-display text-lg text-ink-900">Total</dt>
             <dd className="font-display text-lg tabular text-ink-900">

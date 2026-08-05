@@ -290,6 +290,13 @@ export async function POST(req: NextRequest) {
     } else {
       deliveryFee = calculateDelivery(data.fulfilment);
     }
+
+    // Same-day is still a local, distance-priced delivery — this is just an
+    // extra rush-service surcharge on top of whatever the normal fee above
+    // worked out to, never a replacement for it.
+    if (isSameDaySlot && shopSettings.sameDayFee.enabled) {
+      deliveryFee += shopSettings.sameDayFee.feeInPence;
+    }
     let appliedPromoCode: string | null = null;
 
     if (data.promotionCode) {

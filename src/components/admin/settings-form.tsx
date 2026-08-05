@@ -25,6 +25,7 @@ type PremiumDeliverySettings = {
   carriers: string[];
   description: string;
 };
+type SameDayFeeSettings = { enabled: boolean; feeInPence: number };
 type AllSettings = {
   shop: ShopSettings;
   delivery: DeliverySettings;
@@ -35,6 +36,7 @@ type AllSettings = {
   seasonal: SeasonalSettings;
   deliverySlots: SlotGroupSettings;
   sameDay: SlotGroupSettings;
+  sameDayFee: SameDayFeeSettings;
   pickupSlots: SlotGroupSettings;
 };
 
@@ -191,6 +193,10 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
   });
   const [deliverySlots, setDeliverySlots] = useState<SlotGroupSettings>(initial.deliverySlots);
   const [sameDay, setSameDay] = useState<SlotGroupSettings>(initial.sameDay);
+  const [sameDayFee, setSameDayFee] = useState<SameDayFeeSettings>({
+    enabled: initial.sameDayFee?.enabled ?? false,
+    feeInPence: initial.sameDayFee?.feeInPence ?? 500,
+  });
   const [pickupSlots, setPickupSlots] = useState<SlotGroupSettings>(initial.pickupSlots);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -250,6 +256,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           seasonal: seasonalSettings,
           deliverySlots,
           sameDay,
+          sameDayFee,
           pickupSlots,
         }),
       });
@@ -628,6 +635,45 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           </p>
         </div>
         <SlotBlocksEditor group={sameDay} onChange={setSameDay} />
+      </section>
+
+      {/* Same-day delivery fee */}
+      <section className="bg-cream-100 border border-ink-900/10 p-6 space-y-4">
+        <div>
+          <p className="eyebrow text-ink-500 mb-1">Same-day delivery fee</p>
+          <p className="text-xs text-ink-500">
+            An optional rush-delivery surcharge, added on top of the normal distance-based delivery
+            fee above — only for orders placed with a same-day slot.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            checked={sameDayFee.enabled}
+            onChange={(e) => setSameDayFee({ ...sameDayFee, enabled: e.target.checked })}
+            className="h-4 w-4"
+          />
+          Charge extra for same-day delivery
+        </label>
+        {sameDayFee.enabled && (
+          <div className="max-w-xs">
+            <Label htmlFor="sameDayFeeAmount">Same-day surcharge (£)</Label>
+            <Input
+              id="sameDayFeeAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={(sameDayFee.feeInPence / 100).toFixed(2)}
+              onChange={(e) => setSameDayFee({ ...sameDayFee, feeInPence: priceToPence(e.target.value) })}
+              required
+            />
+            <p className="text-xs text-ink-500 mt-2">
+              Added on top of the normal delivery fee, e.g. free under {delivery.freeUnderMiles} miles
+              + £{(sameDayFee.feeInPence / 100).toFixed(2)} same-day surcharge ={' '}
+              £{(sameDayFee.feeInPence / 100).toFixed(2)} for a nearby same-day order.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Pickup slots */}

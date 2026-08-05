@@ -66,6 +66,14 @@ export const DEFAULT_SETTINGS = {
     blocks: [{ id: 'fiveEight', startMinutes: 1020, endMinutes: 1200, capacity: 20 }] as SlotBlock[],
     closedDays: [0] as number[],
   } satisfies SlotGroupSettings,
+  // Optional rush-delivery surcharge, added on top of the normal
+  // distance-based delivery fee (see delivery above) — same-day orders are
+  // still hand-delivered locally, so distance still matters, this is just
+  // an extra charge for the same-day turnaround.
+  sameDayFee: {
+    enabled: false,
+    feeInPence: 500,
+  },
   pickupSlots: {
     blocks: [
       { id: 'p9', startMinutes: 540, endMinutes: 600, capacity: 20 },
@@ -122,6 +130,7 @@ export async function getShopSettings(): Promise<AppSettings> {
     seasonal: { ...DEFAULT_SETTINGS.seasonal },
     deliverySlots: { blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks], closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays] },
     sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
+    sameDayFee: { ...DEFAULT_SETTINGS.sameDayFee },
     pickupSlots: { blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks], closedDays: [...DEFAULT_SETTINGS.pickupSlots.closedDays] },
   };
   try {
@@ -156,6 +165,8 @@ export async function getShopSettings(): Promise<AppSettings> {
           'elevenOne',
           'oneThree',
         ]);
+      } else if (row.key === 'sameDayFee') {
+        result.sameDayFee = { ...DEFAULT_SETTINGS.sameDayFee, ...(row.value as AppSettings['sameDayFee']) };
       } else if (row.key === 'pickupSlots') {
         result.pickupSlots = migrateSlotGroup(row.value, DEFAULT_SETTINGS.pickupSlots, []);
       }

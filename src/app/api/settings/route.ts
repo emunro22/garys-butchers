@@ -76,6 +76,11 @@ const SlotGroupSchema = z.object({
   closedDays: z.array(z.number().int().min(0).max(6)),
 });
 
+const SameDayFeeSchema = z.object({
+  enabled: z.boolean(),
+  feeInPence: z.number().int().min(0),
+});
+
 const PatchSchema = z.object({
   shop: ShopSchema.optional(),
   delivery: DeliverySchema.optional(),
@@ -86,6 +91,7 @@ const PatchSchema = z.object({
   seasonal: SeasonalSchema.optional(),
   deliverySlots: SlotGroupSchema.optional(),
   sameDay: SlotGroupSchema.optional(),
+  sameDayFee: SameDayFeeSchema.optional(),
   pickupSlots: SlotGroupSchema.optional(),
 });
 
@@ -191,6 +197,16 @@ export async function PATCH(req: NextRequest) {
         .onConflictDoUpdate({
           target: settings.key,
           set: { value: data.sameDay, updatedAt: new Date() },
+        });
+    }
+
+    if (data.sameDayFee) {
+      await db
+        .insert(settings)
+        .values({ key: 'sameDayFee', value: data.sameDayFee, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value: data.sameDayFee, updatedAt: new Date() },
         });
     }
 
