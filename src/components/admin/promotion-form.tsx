@@ -34,7 +34,7 @@ export function PromotionForm({
     startsAt: toLocalDateTimeInput(initial?.startsAt ?? null),
     endsAt: toLocalDateTimeInput(initial?.endsAt ?? null),
     isActive: initial?.isActive ?? true,
-    productId: initial?.productId ?? '',
+    productIds: initial?.productIds ?? ([] as string[]),
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +69,7 @@ export function PromotionForm({
           : null,
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
         isActive: form.isActive,
-        productId: form.productId || null,
+        productIds: form.productIds,
       };
       const res = await fetch(isEdit ? `/api/promotions/${initial!.id}` : '/api/promotions', {
         method: isEdit ? 'PATCH' : 'POST',
@@ -123,21 +123,45 @@ export function PromotionForm({
         </div>
 
         <div className="mt-4">
-          <Label htmlFor="targetProduct">Applies to</Label>
-          <select
-            id="targetProduct"
-            value={form.productId}
-            onChange={(e) => setForm({ ...form, productId: e.target.value })}
-            className="w-full border border-ink-900/15 bg-cream-50 px-3 h-11 text-sm"
+          <Label htmlFor="targetProducts">Applies to</Label>
+          <div
+            id="targetProducts"
+            className="border border-ink-900/15 bg-cream-50 max-h-56 overflow-y-auto divide-y divide-ink-900/10"
           >
-            <option value="">Store-wide (any order)</option>
+            <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-cream-100">
+              <input
+                type="checkbox"
+                checked={form.productIds.length === 0}
+                onChange={() => setForm({ ...form, productIds: [] })}
+                className="h-4 w-4 accent-gold-500"
+              />
+              <span className="text-sm text-ink-900">Store-wide (any order)</span>
+            </label>
             {products.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+              <label
+                key={p.id}
+                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-cream-100"
+              >
+                <input
+                  type="checkbox"
+                  checked={form.productIds.includes(p.id)}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      productIds: e.target.checked
+                        ? [...form.productIds, p.id]
+                        : form.productIds.filter((id) => id !== p.id),
+                    })
+                  }
+                  className="h-4 w-4 accent-gold-500"
+                />
+                <span className="text-sm text-ink-900">{p.name}</span>
+              </label>
             ))}
-          </select>
+          </div>
           <p className="text-xs text-ink-500 mt-2">
-            {form.productId
-              ? "This code only works if the chosen product is in the customer's basket, and the discount only applies to that product's line — not the rest of the order."
+            {form.productIds.length > 0
+              ? "This code only works if one of the selected products is in the customer's basket, and the discount only applies to those products' lines — not the rest of the order."
               : 'Applies to the whole order (minus meat packs, which already have bundled pricing).'}
           </p>
         </div>

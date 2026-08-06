@@ -16,7 +16,7 @@ const PatchSchema = z.object({
   maxRedemptions: z.number().int().min(1).nullable().optional(),
   startsAt: z.string().datetime().nullable().optional(),
   endsAt: z.string().datetime().nullable().optional(),
-  productId: z.string().uuid().nullable().optional(),
+  productIds: z.array(z.string().uuid()).optional(),
 });
 
 export async function PATCH(

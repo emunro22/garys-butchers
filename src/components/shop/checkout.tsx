@@ -41,10 +41,11 @@ type Promo = {
   type: 'percent_off' | 'amount_off' | 'free_delivery';
   value: number;
   description?: string | null;
-  // Set when this code only applies to one product — the basket must
-  // contain it, and the discount is calculated on just that product's line.
-  productId?: string | null;
-  productName?: string | null;
+  // Set when this code only applies to specific products — the basket must
+  // contain at least one, and the discount is calculated on just those
+  // products' lines.
+  productIds?: string[] | null;
+  productNames?: string[] | null;
 } | null;
 
 export function Checkout() {
@@ -207,13 +208,13 @@ export function Checkout() {
     [items]
   );
 
-  // A product-targeted code only discounts that product's own line total —
-  // 0 if it's no longer in the basket, in which case the code silently
-  // stops applying rather than blocking checkout.
+  // A product-targeted code only discounts the targeted products' own line
+  // totals — 0 if none are still in the basket, in which case the code
+  // silently stops applying rather than blocking checkout.
   const promoTargetSubtotal = useMemo(() => {
-    if (!promo?.productId) return null;
+    if (!promo?.productIds || promo.productIds.length === 0) return null;
     return items.reduce(
-      (sum, i) => (i.productId === promo.productId ? sum + i.priceInPence * i.quantity : sum),
+      (sum, i) => (promo.productIds!.includes(i.productId) ? sum + i.priceInPence * i.quantity : sum),
       0
     );
   }, [items, promo]);
@@ -225,7 +226,7 @@ export function Checkout() {
     let discount = 0;
     let dFee = deliveryFee;
     if (promo) {
-      const applicableSubtotal = promo.productId ? (promoTargetSubtotal ?? 0) : discountableSubtotal;
+      const applicableSubtotal = promo.productIds && promo.productIds.length > 0 ? (promoTargetSubtotal ?? 0) : discountableSubtotal;
       if (promo.type === 'percent_off') {
         discount = Math.round((applicableSubtotal * promo.value) / 100);
       } else if (promo.type === 'amount_off') {
@@ -948,10 +949,13 @@ export function Checkout() {
                   {promo.description && (
                     <p className="text-xs text-ink-500 truncate">{promo.description}</p>
                   )}
-                  {promo.productId && (promoTargetSubtotal ?? 0) === 0 && (
+                  {promo.productIds && promo.productIds.length > 0 && (promoTargetSubtotal ?? 0) === 0 && (
                     <p className="text-xs text-butcher-500 mt-0.5">
-                      Only applies to {promo.productName ?? 'a specific product'} — add it to your
-                      basket for this discount to apply.
+                      Only applies to{' '}
+                      {promo.productNames && promo.productNames.length > 0
+                        ? promo.productNames.join(', ')
+                        : 'specific products'}{' '}
+                      — add one to your basket for this discount to apply.
                     </p>
                   )}
                 </div>

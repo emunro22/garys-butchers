@@ -315,17 +315,18 @@ export async function POST(req: NextRequest) {
         const singleUseOk =
           !shopSettings.promotions.singleUsePerCustomer ||
           !(await hasCustomerUsedPromotion(data.customer.email, promo.code));
-        // Product-targeted codes only apply if that exact product is in the
-        // basket, and only discount that product's own line total — never
-        // trust the client for this, always resolved from lineItems above.
-        const targetLineTotal = promo.productId
+        // Product-targeted codes only apply if at least one of the targeted
+        // products is in the basket, and only discount those products' own
+        // line totals — never trust the client for this, always resolved
+        // from lineItems above.
+        const targetLineTotal = promo.productIds.length > 0
           ? lineItems
-              .filter((i) => i.productId === promo.productId)
+              .filter((i) => promo.productIds.includes(i.productId))
               .reduce((sum, i) => sum + i.priceInPence * i.quantity, 0)
           : null;
-        const productOk = !promo.productId || (targetLineTotal !== null && targetLineTotal > 0);
+        const productOk = promo.productIds.length === 0 || (targetLineTotal !== null && targetLineTotal > 0);
         if (startsOk && endsOk && redemptionsOk && minOk && singleUseOk && productOk) {
-          const applicableSubtotal = promo.productId ? targetLineTotal! : discountableSubtotal;
+          const applicableSubtotal = promo.productIds.length > 0 ? targetLineTotal! : discountableSubtotal;
           if (promo.type === 'percent_off') {
             discount = Math.round((applicableSubtotal * promo.value) / 100);
           } else if (promo.type === 'amount_off') {

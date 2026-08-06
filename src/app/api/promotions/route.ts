@@ -16,7 +16,7 @@ const Schema = z.object({
   startsAt: z.string().datetime().nullable().optional(),
   endsAt: z.string().datetime().nullable().optional(),
   isActive: z.boolean().optional(),
-  productId: z.string().uuid().nullable().optional(),
+  productIds: z.array(z.string().uuid()).optional(),
 });
 
 export async function GET() {
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         startsAt: d.startsAt ? new Date(d.startsAt) : null,
         endsAt: d.endsAt ? new Date(d.endsAt) : null,
         isActive: d.isActive ?? true,
-        productId: d.productId ?? null,
+        productIds: d.productIds ?? [],
       })
       .returning();
     return NextResponse.json({ promotion: created });

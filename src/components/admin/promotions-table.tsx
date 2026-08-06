@@ -93,8 +93,10 @@ export function PromotionsTable({
               <td className="px-5 py-3 text-ink-700 max-w-sm truncate">
                 {p.description ?? '—'}
               </td>
-              <td className="px-5 py-3 text-ink-700 max-w-[160px] truncate">
-                {p.productId ? (productNameById.get(p.productId) ?? 'Deleted product') : (
+              <td className="px-5 py-3 text-ink-700 max-w-[220px] truncate" title={p.productIds.map((id) => productNameById.get(id) ?? 'Deleted product').join(', ')}>
+                {p.productIds.length > 0 ? (
+                  p.productIds.map((id) => productNameById.get(id) ?? 'Deleted product').join(', ')
+                ) : (
                   <span className="text-ink-500">Store-wide</span>
                 )}
               </td>

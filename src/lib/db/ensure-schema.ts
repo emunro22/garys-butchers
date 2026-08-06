@@ -79,6 +79,15 @@ export async function ensureProductsSchema() {
 export async function ensurePromotionsSchema() {
   try {
     await sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS product_id uuid REFERENCES products(id) ON DELETE SET NULL`;
+    await sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS product_ids jsonb NOT NULL DEFAULT '[]'::jsonb`;
+    // One-off backfill from the old single-product column into the new
+    // multi-product array, clearing product_id once migrated so this is a
+    // no-op on every call after the first.
+    await sql`
+      UPDATE promotions
+      SET product_ids = jsonb_build_array(product_id), product_id = NULL
+      WHERE product_id IS NOT NULL
+    `;
   } catch { /* already exists */ }
 }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { promotions, products } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { getShopSettings } from '@/lib/settings';
 import { hasCustomerUsedPromotion } from '@/lib/promotions';
 import { ensurePromotionsSchema } from '@/lib/db/ensure-schema';
@@ -62,21 +62,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let productName: string | null = null;
-    if (promo.productId) {
-      const [product] = await db
+    let productNames: string[] = [];
+    if (promo.productIds.length > 0) {
+      const matchingProducts = await db
         .select({ id: products.id, name: products.name })
         .from(products)
-        .where(eq(products.id, promo.productId))
-        .limit(1);
-      productName = product?.name ?? null;
-      const inBasket = (items ?? []).some((i) => i.productId === promo.productId);
+        .where(inArray(products.id, promo.productIds));
+      productNames = matchingProducts.map((p) => p.name);
+      const inBasket = (items ?? []).some((i) => promo.productIds.includes(i.productId));
       if (!inBasket) {
         return NextResponse.json(
           {
-            error: productName
-              ? `This code only applies to "${productName}" — add it to your basket to use it.`
-              : 'This code only applies to a specific product that is no longer available.',
+            error: productNames.length > 0
+              ? `This code only applies to ${productNames.map((n) => `"${n}"`).join(', ')} — add one to your basket to use it.`
+              : 'This code only applies to specific products that are no longer available.',
           },
           { status: 400 }
         );
@@ -103,8 +102,8 @@ export async function POST(req: NextRequest) {
         type: promo.type,
         value: promo.value,
         description: promo.description,
-        productId: promo.productId,
-        productName,
+        productIds: promo.productIds,
+        productNames,
       },
     });
   } catch (err) {
