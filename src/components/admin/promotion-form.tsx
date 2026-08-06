@@ -38,6 +38,10 @@ export function PromotionForm({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState('');
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(productSearch.trim().toLowerCase())
+  );
 
   function priceToPence(v: string) {
     const n = Number(v);
@@ -124,20 +128,26 @@ export function PromotionForm({
 
         <div className="mt-4">
           <Label htmlFor="targetProducts">Applies to</Label>
-          <div
+          <Input
             id="targetProducts"
-            className="border border-ink-900/15 bg-cream-50 max-h-56 overflow-y-auto divide-y divide-ink-900/10"
-          >
-            <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-cream-100">
-              <input
-                type="checkbox"
-                checked={form.productIds.length === 0}
-                onChange={() => setForm({ ...form, productIds: [] })}
-                className="h-4 w-4 accent-gold-500"
-              />
-              <span className="text-sm text-ink-900">Store-wide (any order)</span>
-            </label>
-            {products.map((p) => (
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            placeholder="Search products…"
+            className="mb-2"
+          />
+          <div className="border border-ink-900/15 bg-cream-50 max-h-56 overflow-y-auto divide-y divide-ink-900/10">
+            {!productSearch && (
+              <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-cream-100">
+                <input
+                  type="checkbox"
+                  checked={form.productIds.length === 0}
+                  onChange={() => setForm({ ...form, productIds: [] })}
+                  className="h-4 w-4 accent-gold-500"
+                />
+                <span className="text-sm text-ink-900">Store-wide (any order)</span>
+              </label>
+            )}
+            {filteredProducts.map((p) => (
               <label
                 key={p.id}
                 className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-cream-100"
@@ -158,10 +168,13 @@ export function PromotionForm({
                 <span className="text-sm text-ink-900">{p.name}</span>
               </label>
             ))}
+            {productSearch && filteredProducts.length === 0 && (
+              <p className="px-3 py-2 text-sm text-ink-500">No products match "{productSearch}"</p>
+            )}
           </div>
           <p className="text-xs text-ink-500 mt-2">
             {form.productIds.length > 0
-              ? "This code only works if one of the selected products is in the customer's basket, and the discount only applies to those products' lines — not the rest of the order."
+              ? `${form.productIds.length} product${form.productIds.length === 1 ? '' : 's'} selected — this code only works if one of them is in the customer's basket, and the discount only applies to those products' lines — not the rest of the order.`
               : 'Applies to the whole order (minus meat packs, which already have bundled pricing).'}
           </p>
         </div>
