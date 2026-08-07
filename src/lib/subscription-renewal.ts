@@ -2,7 +2,7 @@ import { and, eq, gte, lt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders, subscriptions } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
-import { findBlock, getDateKey, getWeekday, londonDateTime, type SlotBlock } from '@/lib/slots';
+import { blocksForWeekday, findBlock, getDateKey, getWeekday, londonDateTime, type SlotBlock } from '@/lib/slots';
 import { activeOrderFilter } from '@/lib/order-status';
 import { markOrderPaid } from '@/lib/order-payment';
 
@@ -75,6 +75,9 @@ export async function findNextRenewalSlot(sub: SubscriptionRow): Promise<Date | 
     const candidate = new Date(candidateStart.getTime() + offset * 24 * 60 * 60 * 1000);
     const weekday = getWeekday(candidate);
     if (group.closedDays.includes(weekday)) continue;
+    // Skip days where the subscriber's preferred block falls outside that
+    // day's offered hours (e.g. an afternoon block on an early-closing Saturday).
+    if (!blocksForWeekday(group, weekday).some((b) => b.id === block.id)) continue;
 
     const dateKey = getDateKey(candidate);
     const [cy, cm, cd] = dateKey.split('-').map(Number);

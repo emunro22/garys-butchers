@@ -58,6 +58,9 @@ export const DEFAULT_SETTINGS = {
       { id: 'afternoon', startMinutes: 900, endMinutes: 1080, capacity: 8 },
     ] as SlotBlock[],
     closedDays: [0] as number[],
+    // Shop closes early on Saturdays (7:30–14:00) — no delivery slots starting
+    // at or after 3pm that day.
+    saturdayCutoffMinutes: 900 as number | null,
   } satisfies SlotGroupSettings,
   sameDay: {
     // A single window, not a slot the customer picks between — same-day
@@ -87,6 +90,9 @@ export const DEFAULT_SETTINGS = {
       { id: 'p17', startMinutes: 1020, endMinutes: 1080, capacity: 20 },
     ] as SlotBlock[],
     closedDays: [0] as number[],
+    // Shop closes early on Saturdays (7:30–14:00) — no pickup slots starting
+    // at or after 2pm that day.
+    saturdayCutoffMinutes: 840 as number | null,
   } satisfies SlotGroupSettings,
 };
 
@@ -98,12 +104,18 @@ function migrateSlotGroup(
   value: unknown,
   defaults: SlotGroupSettings,
   legacyKeyOrder: string[]
-): SlotGroupSettings {
+): SlotGroupSettings & { saturdayCutoffMinutes: number | null } {
   if (value && typeof value === 'object' && Array.isArray((value as SlotGroupSettings).blocks)) {
     const v = value as SlotGroupSettings;
     return {
       blocks: v.blocks.length ? v.blocks : defaults.blocks,
       closedDays: Array.isArray(v.closedDays) ? v.closedDays : defaults.closedDays,
+      // undefined (field predates this setting) falls back to the default
+      // cutoff; null (admin explicitly turned it off) is kept as-is.
+      saturdayCutoffMinutes:
+        v.saturdayCutoffMinutes === null || typeof v.saturdayCutoffMinutes === 'number'
+          ? v.saturdayCutoffMinutes
+          : defaults.saturdayCutoffMinutes ?? null,
     };
   }
   const legacyCapacity = (value as { capacity?: Record<string, number> } | undefined)?.capacity;
@@ -114,9 +126,10 @@ function migrateSlotGroup(
         capacity: legacyCapacity[legacyKeyOrder[i]] ?? block.capacity,
       })),
       closedDays: defaults.closedDays,
+      saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null,
     };
   }
-  return defaults;
+  return { ...defaults, saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null };
 }
 
 export async function getShopSettings(): Promise<AppSettings> {
@@ -128,10 +141,18 @@ export async function getShopSettings(): Promise<AppSettings> {
     promotions: { ...DEFAULT_SETTINGS.promotions },
     referrals: { ...DEFAULT_SETTINGS.referrals },
     seasonal: { ...DEFAULT_SETTINGS.seasonal },
-    deliverySlots: { blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks], closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays] },
+    deliverySlots: {
+      blocks: [...DEFAULT_SETTINGS.deliverySlots.blocks],
+      closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays],
+      saturdayCutoffMinutes: DEFAULT_SETTINGS.deliverySlots.saturdayCutoffMinutes,
+    },
     sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
     sameDayFee: { ...DEFAULT_SETTINGS.sameDayFee },
-    pickupSlots: { blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks], closedDays: [...DEFAULT_SETTINGS.pickupSlots.closedDays] },
+    pickupSlots: {
+      blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks],
+      closedDays: [...DEFAULT_SETTINGS.pickupSlots.closedDays],
+      saturdayCutoffMinutes: DEFAULT_SETTINGS.pickupSlots.saturdayCutoffMinutes,
+    },
   };
   try {
     const rows = await db.select().from(settings);

@@ -15,7 +15,7 @@ import {
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
 import { hasCustomerUsedPromotion } from '@/lib/promotions';
-import { bucketKey, findBlock, getDateKey, getWeekday, isPastCutoff, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
+import { blocksForWeekday, bucketKey, findBlock, getDateKey, getWeekday, isPastCutoff, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
@@ -366,7 +366,10 @@ export async function POST(req: NextRequest) {
     // type except 'premium', which never reaches these two branches.
     if (data.fulfilment === 'delivery' && !isSameDaySlot && slotDate) {
       const { deliverySlots } = shopSettings;
-      const block = deliverySlots.closedDays.includes(getWeekday(slotDate)) ? null : findBlock(deliverySlots.blocks, slotDate);
+      const deliveryWeekday = getWeekday(slotDate);
+      const block = deliverySlots.closedDays.includes(deliveryWeekday)
+        ? null
+        : findBlock(blocksForWeekday(deliverySlots, deliveryWeekday), slotDate);
       if (!block) {
         return NextResponse.json({ error: 'That delivery slot is no longer valid' }, { status: 400 });
       }
@@ -382,7 +385,10 @@ export async function POST(req: NextRequest) {
 
     if (data.fulfilment === 'pickup' && slotDate) {
       const { pickupSlots } = shopSettings;
-      const block = pickupSlots.closedDays.includes(getWeekday(slotDate)) ? null : findBlock(pickupSlots.blocks, slotDate);
+      const pickupWeekday = getWeekday(slotDate);
+      const block = pickupSlots.closedDays.includes(pickupWeekday)
+        ? null
+        : findBlock(blocksForWeekday(pickupSlots, pickupWeekday), slotDate);
       if (!block) {
         return NextResponse.json({ error: 'That pickup slot is no longer valid' }, { status: 400 });
       }

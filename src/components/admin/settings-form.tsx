@@ -156,6 +156,33 @@ function SlotBlocksEditor({
           ))}
         </div>
       </div>
+      <div>
+        <label className="flex items-center gap-1.5 text-xs text-ink-700 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={group.saturdayCutoffMinutes != null}
+            onChange={(e) =>
+              onChange({
+                ...group,
+                saturdayCutoffMinutes: e.target.checked ? group.saturdayCutoffMinutes ?? 840 : null,
+              })
+            }
+            className="h-3.5 w-3.5"
+          />
+          Close earlier on Saturdays
+        </label>
+        {group.saturdayCutoffMinutes != null && (
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            <Input
+              type="time"
+              value={minutesToTime(group.saturdayCutoffMinutes)}
+              onChange={(e) => onChange({ ...group, saturdayCutoffMinutes: timeToMinutes(e.target.value) })}
+              className="w-32"
+            />
+            <span className="text-xs text-ink-500">no slots starting at or after this time on Saturdays</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

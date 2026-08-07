@@ -48,6 +48,10 @@ export type SlotBlock = {
 export type SlotGroupSettings = {
   blocks: SlotBlock[];
   closedDays: number[]; // 0 = Sunday ... 6 = Saturday
+  // Optional early-closing cutoff applied only on Saturdays — blocks starting
+  // at or after this time aren't offered/valid that day. null/undefined means
+  // Saturdays use the same blocks as every other open day.
+  saturdayCutoffMinutes?: number | null;
 };
 
 export type GeneratedSlot = {
@@ -118,6 +122,16 @@ function sortedBlocks(blocks: SlotBlock[]) {
   return [...blocks].sort((a, b) => a.startMinutes - b.startMinutes);
 }
 
+/** Blocks actually offered on a given weekday — trims anything starting at or
+ *  after the group's Saturday cutoff (if set) when that weekday is Saturday. */
+export function blocksForWeekday(group: SlotGroupSettings, weekday: number): SlotBlock[] {
+  const blocks = sortedBlocks(group.blocks);
+  if (weekday === 6 && typeof group.saturdayCutoffMinutes === 'number') {
+    return blocks.filter((b) => b.startMinutes < group.saturdayCutoffMinutes!);
+  }
+  return blocks;
+}
+
 /**
  * Next `days` eligible days (skipping closedDays), one slot per block.
  * `minNoticeDays` pushes the baseline (normally "tomorrow") out further —
@@ -125,7 +139,6 @@ function sortedBlocks(blocks: SlotBlock[]) {
  * the earliest bookable day becomes the day after tomorrow.
  */
 export function generateSlots(group: SlotGroupSettings, days: number, minNoticeDays = 0): GeneratedSlot[] {
-  const blocks = sortedBlocks(group.blocks);
   const out: GeneratedSlot[] = [];
   let { year, month, day } = londonParts(new Date());
   day += minNoticeDays;
@@ -147,7 +160,7 @@ export function generateSlots(group: SlotGroupSettings, days: number, minNoticeD
       timeZone: 'UTC',
     });
     const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    for (const block of blocks) {
+    for (const block of blocksForWeekday(group, weekday)) {
       const iso = londonDateTime(year, month, day, block.startMinutes);
       out.push({
         value: iso.toISOString(),
@@ -172,7 +185,7 @@ export function generateTodaySlots(group: SlotGroupSettings, now: Date = new Dat
   const dateKey = getDateKey(now);
   const nowMinutes = minutesOfDay(now);
   const out: GeneratedSlot[] = [];
-  for (const block of sortedBlocks(group.blocks)) {
+  for (const block of blocksForWeekday(group, weekday)) {
     const endsAt = block.endMinutes > block.startMinutes ? block.endMinutes : block.startMinutes;
     if (nowMinutes >= endsAt) continue;
     const iso = londonDateTime(year, month, day, block.startMinutes);
