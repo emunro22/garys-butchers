@@ -1,10 +1,46 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { orders, promotions, referrals, users } from '@/lib/db/schema';
 import { ensureOrdersSchema, ensureUsersSchema, ensureReferralsSchema } from '@/lib/db/ensure-schema';
 import { sendOrderConfirmation, sendShopNotification } from '@/lib/email';
+import { stripe } from '@/lib/stripe';
 
 type OrderRow = typeof orders.$inferSelect;
+
+/** Every still-open (unpaid) order for this email, newest first — used at
+ *  checkout time to detect "the customer already has one of these in
+ *  flight" before creating another. */
+export async function getPendingOrdersForEmail(email: string): Promise<OrderRow[]> {
+  await ensureOrdersSchema();
+  return db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.customerEmail, email), eq(orders.status, 'pending')))
+    .orderBy(desc(orders.createdAt));
+}
+
+/**
+ * Cancels a stale pending order (and best-effort cancels its PaymentIntent)
+ * so a customer starting a genuinely new checkout attempt doesn't leave the
+ * old one sitting around as unpaid clutter. Same conditional-UPDATE idiom as
+ * markOrderPaid — only actually cancels if it's still 'pending', so this is
+ * safe to call even if the order has just been paid/cancelled by something
+ * else in the meantime.
+ */
+export async function supersedeOrder(orderId: string): Promise<boolean> {
+  await ensureOrdersSchema();
+  const [won] = await db
+    .update(orders)
+    .set({ status: 'cancelled', updatedAt: new Date() })
+    .where(and(eq(orders.id, orderId), eq(orders.status, 'pending')))
+    .returning({ id: orders.id, stripePaymentIntentId: orders.stripePaymentIntentId });
+
+  if (!won) return false;
+  if (won.stripePaymentIntentId) {
+    await stripe.paymentIntents.cancel(won.stripePaymentIntentId).catch(() => {});
+  }
+  return true;
+}
 
 /**
  * Marks an order paid, assigning it its (only-ever-assigned-here) order

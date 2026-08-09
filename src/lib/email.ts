@@ -364,7 +364,12 @@ export async function sendShopNotification(payload: OrderEmailPayload) {
   });
 }
 
-export async function sendCheckoutRetryEmail(opts: {
+// Sent by the abandoned-checkout reminder cron when a customer starts
+// checkout, gets a PaymentIntent, but never completes payment — gives them a
+// one-click link straight back to the payment step (no need to re-enter
+// their cart/address), rather than leaving them assuming it went through.
+export async function sendAbandonedCheckoutEmail(opts: {
+  orderId: string;
   customerName: string;
   customerEmail: string;
   items?: Array<{ name: string; quantity: number; priceInPence: number }>;
@@ -380,21 +385,23 @@ export async function sendCheckoutRetryEmail(opts: {
     )
     .join('');
 
+  const resumeUrl = `${SITE_URL}/checkout?resume=${opts.orderId}`;
+
   const bodyHtml = `
     <p style="margin:0 0 20px;font-size:14px;color:#4a443a;line-height:1.7">
-      We noticed your recent order didn't go through — <strong>no payment was taken</strong>,
-      so nothing has been charged to your card. Sorry for the hassle!
+      Looks like you didn't quite finish checking out — <strong>no payment has been taken</strong>,
+      so nothing's been charged to your card yet. Your order's still waiting for you below.
     </p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       ${itemsHtml ?? ''}
       <tr>
-        <td style="padding:12px 0 0;font-weight:600;color:#1a1815">${itemsHtml ? 'Total' : 'Attempted total'}</td>
+        <td style="padding:12px 0 0;font-weight:600;color:#1a1815">Total</td>
         <td style="padding:12px 0 0;text-align:right;font-weight:600;color:#1a1815">${fmt(opts.totalInPence)}</td>
       </tr>
     </table>
     <div style="text-align:center;margin-top:28px">
-      <a href="${SITE_URL}/shop" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600">
-        Place your order again
+      <a href="${resumeUrl}" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600">
+        Resume checkout
       </a>
     </div>
     <p style="margin-top:24px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #f0ebe3;padding-top:18px">
@@ -404,10 +411,10 @@ export async function sendCheckoutRetryEmail(opts: {
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: opts.customerEmail,
-    subject: "Your order didn't go through — nothing was charged",
+    subject: "You're almost done — complete your order",
     html: renderEmailLayout({
       eyebrow: 'Order not completed',
-      title: `Sorry${opts.customerName ? `, ${opts.customerName.split(' ')[0]}` : ''} — let's try that again.`,
+      title: `${opts.customerName ? `${opts.customerName.split(' ')[0]}, ` : ''}you're one step from finishing.`,
       bodyHtml,
     }),
     attachments: await getLogoAttachment(),

@@ -19,7 +19,8 @@ import { blocksForWeekday, bucketKey, findBlock, getDateKey, getWeekday, isPastC
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
-import { markOrderPaid } from '@/lib/order-payment';
+import { markOrderPaid, getPendingOrdersForEmail, supersedeOrder } from '@/lib/order-payment';
+import { computeCartSignature } from '@/lib/cart-signature';
 
 // Stripe won't create a PaymentIntent below this amount for GBP — a promo
 // code that fully (or near-fully) covers the order needs to skip Stripe.
@@ -402,6 +403,64 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Recognise "the customer already has this exact attempt in flight"
+    // (reload, browser back, closing and reopening the tab) so retrying
+    // doesn't create a duplicate order + Stripe PaymentIntent. Any other
+    // pending order for this email is stale (they've moved on to a
+    // different cart/slot/address) and gets superseded/cancelled here.
+    const resolvedDeliveryAddress =
+      data.fulfilment !== 'pickup' ? data.deliveryAddress ?? null : null;
+    const cartSignature = computeCartSignature({
+      items: data.items.map((i, idx) => ({
+        productId: i.productId,
+        variantLabel: i.variantLabel ?? null,
+        marinadeLabel: i.marinadeLabel ?? null,
+        quantity: i.quantity,
+        priceInPence: lineItems[idx].priceInPence,
+      })),
+      total,
+      fulfilment: data.fulfilment,
+      slot: data.slot ?? null,
+      deliveryAddress: resolvedDeliveryAddress,
+      promotionCode: appliedPromoCode,
+    });
+
+    const existingPending = await getPendingOrdersForEmail(data.customer.email);
+    const matching = existingPending.find((o) => o.cartSignature === cartSignature);
+    await Promise.all(
+      existingPending.filter((o) => o.id !== matching?.id).map((o) => supersedeOrder(o.id))
+    );
+
+    if (matching?.stripePaymentIntentId) {
+      const intent = await stripe.paymentIntents.retrieve(matching.stripePaymentIntentId);
+      if (intent.status === 'succeeded') {
+        // Payment actually went through already (webhook lag) — treat this
+        // resubmission as a success rather than charging again.
+        const paidOrder = await markOrderPaid(matching.id);
+        return NextResponse.json({
+          orderId: matching.id,
+          orderNumber: paidOrder?.orderNumber ?? null,
+          clientSecret: null,
+          total: matching.totalInPence,
+        });
+      }
+      if (['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(intent.status)) {
+        return NextResponse.json({
+          orderId: matching.id,
+          clientSecret: intent.client_secret,
+          total: matching.totalInPence,
+        });
+      }
+      if (intent.status === 'processing') {
+        return NextResponse.json(
+          { error: 'Your previous payment for this order is still processing — please wait a moment and check your email before trying again.' },
+          { status: 409 }
+        );
+      }
+      // canceled or any other terminal state — not reusable, start fresh below.
+      await supersedeOrder(matching.id);
+    }
+
     // Insert order with status 'pending'
     const [order] = await db
       .insert(orders)
@@ -411,8 +470,7 @@ export async function POST(req: NextRequest) {
         customerEmail: data.customer.email,
         customerPhone: data.customer.phone,
         fulfilment: data.fulfilment,
-        deliveryAddress:
-          data.fulfilment !== 'pickup' ? data.deliveryAddress ?? null : null,
+        deliveryAddress: resolvedDeliveryAddress,
         pickupSlot: data.fulfilment === 'pickup' ? slotDate : null,
         deliverySlot: data.fulfilment === 'delivery' ? slotDate : null,
         notes: data.notes,
@@ -423,6 +481,7 @@ export async function POST(req: NextRequest) {
         totalInPence: total,
         promotionCode: appliedPromoCode,
         referralCreditRedeemed,
+        cartSignature,
         status: 'pending',
       })
       .returning();

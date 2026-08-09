@@ -150,6 +150,87 @@ export function Checkout() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  // "Resume checkout" support — either a same-session reload (sessionStorage
+  // has a still-matching in-flight order) or a click from the
+  // abandoned-checkout reminder email (?resume=<orderId> in the URL, works
+  // cross-device since it's keyed purely on the order id server-side).
+  const [resumeState, setResumeState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [resumedTotalInPence, setResumedTotalInPence] = useState<number | null>(null);
+
+  function cartFingerprint() {
+    return JSON.stringify({
+      items: items
+        .map((i) => [i.productId, i.variantLabel ?? '', i.marinadeLabel ?? '', i.quantity])
+        .sort(),
+      fulfilment,
+      slot: form.slot,
+      line1: form.line1,
+      postcode: form.postcode,
+    });
+  }
+
+  // Cross-device resume link from the abandoned-checkout reminder email.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const resumeOrderId = new URLSearchParams(window.location.search).get('resume');
+    if (!resumeOrderId) return;
+    setResumeState('loading');
+    fetch(`/api/checkout/resume?orderId=${encodeURIComponent(resumeOrderId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === 'resumable') {
+          setOrderId(data.orderId);
+          setClientSecret(data.clientSecret);
+          setResumedTotalInPence(data.totalInPence);
+          setResumeState('ready');
+        } else if (data.status === 'already_paid') {
+          router.replace(`/checkout/success?order=${data.orderId}`);
+        } else {
+          setResumeError(data.error ?? 'This checkout link has expired.');
+          setResumeState('error');
+        }
+      })
+      .catch(() => {
+        setResumeError('Could not resume this order. Please start a new one.');
+        setResumeState('error');
+      });
+    // Only ever meant to run once, against whatever ?resume= was on the URL
+    // when the page first loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Same-session fast resume — e.g. a reload right after reaching the
+  // payment step. Purely a UX shortcut to skip the network round-trip; the
+  // server-side dedup in POST /api/checkout is the actual safety net, so if
+  // this heuristic ever misfires the worst case is just a normal resubmit.
+  useEffect(() => {
+    if (typeof window === 'undefined' || resumeState !== 'idle' || clientSecret) return;
+    if (!useCart.persist?.hasHydrated?.()) return;
+    try {
+      const raw = sessionStorage.getItem('garys_checkout_v1');
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { orderId: string; clientSecret: string; signature: string; savedAt: number };
+      // Ignore anything older than the payment step would realistically still be valid for.
+      if (Date.now() - saved.savedAt > 20 * 60 * 1000) {
+        sessionStorage.removeItem('garys_checkout_v1');
+        return;
+      }
+      if (saved.signature === cartFingerprint()) {
+        setOrderId(saved.orderId);
+        setClientSecret(saved.clientSecret);
+      } else {
+        sessionStorage.removeItem('garys_checkout_v1');
+      }
+    } catch {
+      // sessionStorage unavailable (private browsing, quota) — fall through
+      // to the normal form, no different from a first-time visit.
+    }
+    // Re-runs once cart hydration flips true; deliberately not depending on
+    // the cart/form fields themselves, or it'd refire on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length, resumeState, clientSecret]);
+
   const subtotal = cartSubtotal(items);
   const belowDeliveryMinimum = fulfilment !== 'pickup' && subtotal < MINIMUM_DELIVERY_ORDER_PENCE;
 
@@ -526,6 +607,20 @@ export function Checkout() {
       }
       setClientSecret(data.clientSecret);
       setOrderId(data.orderId);
+      try {
+        sessionStorage.setItem(
+          'garys_checkout_v1',
+          JSON.stringify({
+            orderId: data.orderId,
+            clientSecret: data.clientSecret,
+            signature: cartFingerprint(),
+            savedAt: Date.now(),
+          })
+        );
+      } catch {
+        // private browsing / quota — the server-side dedup in
+        // POST /api/checkout is the real safety net regardless.
+      }
     } catch (e) {
       // Network failure or unexpected client-side error — never show raw detail.
       console.error('checkout submit error', e);
@@ -533,6 +628,27 @@ export function Checkout() {
     } finally {
       setCreating(false);
     }
+  }
+
+  if (resumeState === 'loading') {
+    return (
+      <div className="text-center py-20">
+        <p className="font-display text-2xl text-ink-900">Loading your order…</p>
+      </div>
+    );
+  }
+
+  if (resumeState === 'error') {
+    return (
+      <div className="text-center py-20">
+        <p className="font-display text-3xl text-ink-900">
+          {resumeError ?? 'This checkout link has expired.'}
+        </p>
+        <Link href="/shop" className="inline-block mt-6">
+          <Button variant="primary">Back to shop</Button>
+        </Link>
+      </div>
+    );
   }
 
   if (items.length === 0 && !clientSecret) {
@@ -567,8 +683,13 @@ export function Checkout() {
       >
         <PaymentForm
           orderId={orderId!}
-          totalInPence={totals.total}
+          totalInPence={resumedTotalInPence ?? totals.total}
           onSuccess={() => {
+            try {
+              sessionStorage.removeItem('garys_checkout_v1');
+            } catch {
+              // ignore
+            }
             clear();
             router.push(`/checkout/success?order=${orderId}`);
           }}

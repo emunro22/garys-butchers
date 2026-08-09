@@ -232,6 +232,14 @@ export const orders = pgTable(
     // (decremented on the user) in markOrderPaid once payment actually succeeds.
     referralCreditRedeemed: boolean('referral_credit_redeemed').default(false).notNull(),
     stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 200 }),
+    // Fingerprint of the cart/fulfilment/slot/address/promo at checkout time —
+    // lets a retried submission (reload, back button) recognise "this is the
+    // same attempt" and reuse the pending order/PaymentIntent instead of
+    // creating a duplicate. See computeCartSignature in lib/cart-signature.ts.
+    cartSignature: varchar('cart_signature', { length: 64 }),
+    // Set once the abandoned-checkout reminder email has been sent for this
+    // order, so the reminder cron never sends it twice.
+    abandonedReminderSentAt: timestamp('abandoned_reminder_sent_at', { withTimezone: true }),
     // Set only for orders auto-created by a subscription renewal (see
     // src/lib/subscription-renewal.ts) — null for every normal checkout order.
     subscriptionId: uuid('subscription_id'),
@@ -249,6 +257,7 @@ export const orders = pgTable(
   (t) => ({
     statusIdx: index('orders_status_idx').on(t.status),
     emailIdx: index('orders_email_idx').on(t.customerEmail),
+    emailStatusIdx: index('orders_email_status_idx').on(t.customerEmail, t.status),
     stripeInvoiceIdx: uniqueIndex('orders_stripe_invoice_idx').on(t.stripeInvoiceId),
   })
 );
