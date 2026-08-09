@@ -46,6 +46,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [reprinting, setReprinting] = useState<string | null>(null);
+  const [reconciling, setReconciling] = useState(false);
   const [emailTarget, setEmailTarget] = useState<Order | null>(null);
   const [shippingTarget, setShippingTarget] = useState<Order | null>(null);
   const [premiumRates, setPremiumRates] = useState<PremiumDeliveryRates | null>(null);
@@ -146,8 +147,49 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
     }
   }
 
+  async function reconcileOrders() {
+    setReconciling(true);
+    try {
+      const res = await fetch('/api/admin/orders/reconcile', { method: 'POST' });
+      if (!res.ok) throw new Error('Reconcile failed');
+      const data = await res.json();
+      if (!data.fixed?.length) {
+        alert(`Checked ${data.checked} cancelled order(s) with a payment on file — none needed fixing.`);
+      } else {
+        alert(
+          `Fixed ${data.fixed.length} order(s) that were charged but never numbered:\n\n` +
+            data.fixed
+              .map((f: { orderNumber: number; customerName: string; customerEmail: string }) =>
+                `#${String(f.orderNumber).padStart(5, '0')} — ${f.customerName} (${f.customerEmail})`
+              )
+              .join('\n')
+        );
+        router.refresh();
+      }
+    } catch {
+      alert('Could not check for uncredited payments');
+    } finally {
+      setReconciling(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {/* One-off sweep: finds orders that were cancelled but whose Stripe
+          payment actually succeeded (e.g. a declined-then-retried card before
+          the payment_intent.payment_failed handler was fixed to stop
+          cancelling orders prematurely) and repairs them — assigns the order
+          number and sends the confirmation email that never went out. */}
+      <div className="flex justify-end">
+        <button
+          onClick={reconcileOrders}
+          disabled={reconciling}
+          className="text-xs uppercase tracking-[0.16em] px-3 py-1.5 border border-ink-900/15 hover:border-ink-900 disabled:opacity-40"
+        >
+          {reconciling ? 'Checking…' : 'Check for uncredited payments'}
+        </button>
+      </div>
+
       {/* Status filter pills */}
       <div className="flex flex-wrap gap-2">
         <button

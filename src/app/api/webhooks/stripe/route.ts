@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
-import { orders, subscriptions, users } from '@/lib/db/schema';
+import { subscriptions, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { markOrderPaid } from '@/lib/order-payment';
 import { ensureSubscriptionsSchema } from '@/lib/db/ensure-schema';
@@ -39,14 +39,17 @@ export async function POST(req: NextRequest) {
 
       await markOrderPaid(orderId);
     } else if (event.type === 'payment_intent.payment_failed') {
+      // Deliberately a no-op beyond logging: a failed attempt does NOT mean
+      // this PaymentIntent is dead — the checkout page lets the customer
+      // retry with a different card on the same PaymentIntent/order, and a
+      // later payment_intent.succeeded needs the order to still be 'pending'
+      // for markOrderPaid's conditional UPDATE to take effect. Cancelling
+      // here on the first decline orphans any successful retry (charged in
+      // Stripe, but never gets an order number or confirmation email). If
+      // the customer never retries, the expire-pending-orders cron cleans
+      // this order up properly after PENDING_ORDER_TTL_MINUTES.
       const intent = event.data.object as Stripe.PaymentIntent;
-      const orderId = intent.metadata?.orderId;
-      if (orderId) {
-        await db
-          .update(orders)
-          .set({ status: 'cancelled', updatedAt: new Date() })
-          .where(eq(orders.id, orderId));
-      }
+      console.log(`payment_intent.payment_failed for order ${intent.metadata?.orderId ?? '(no orderId)'} — leaving pending, customer may retry`);
     } else if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode === 'subscription') {

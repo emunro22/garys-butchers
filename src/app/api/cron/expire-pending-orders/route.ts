@@ -27,31 +27,44 @@ export async function GET(req: NextRequest) {
   let cancelled = 0;
   let reconciledPaid = 0;
   for (const order of stale) {
-    if (order.stripePaymentIntentId) {
-      try {
-        const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
-        if (intent.status === 'succeeded') {
-          // Payment actually went through but the webhook never landed — reconcile
-          // rather than cancel, so the slot stays correctly booked.
-          await markOrderPaid(order.id);
-          reconciledPaid++;
-          continue;
-        }
-        if (intent.status === 'processing') {
-          continue;
-        }
-        if (intent.status !== 'canceled') {
-          await stripe.paymentIntents.cancel(order.stripePaymentIntentId).catch(() => {});
-        }
-      } catch (err) {
-        console.error(`cron: failed to check PaymentIntent for order ${order.id}`, err);
-      }
+    if (!order.stripePaymentIntentId) {
+      await db
+        .update(orders)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(orders.id, order.id));
+      cancelled++;
+      continue;
     }
-    await db
-      .update(orders)
-      .set({ status: 'cancelled', updatedAt: new Date() })
-      .where(eq(orders.id, order.id));
-    cancelled++;
+
+    try {
+      const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+      if (intent.status === 'succeeded') {
+        // Payment actually went through but the webhook never landed — reconcile
+        // rather than cancel, so the slot stays correctly booked.
+        await markOrderPaid(order.id);
+        reconciledPaid++;
+        continue;
+      }
+      if (intent.status === 'processing' || intent.status === 'requires_action') {
+        // Still potentially resolvable (e.g. mid-3D-Secure, or an async
+        // payment method) — leave it pending, re-check on the next run
+        // rather than guessing it's dead.
+        continue;
+      }
+      if (intent.status !== 'canceled') {
+        await stripe.paymentIntents.cancel(order.stripePaymentIntentId).catch(() => {});
+      }
+      await db
+        .update(orders)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(orders.id, order.id));
+      cancelled++;
+    } catch (err) {
+      // Couldn't confirm the real Stripe status (transient API error) —
+      // leave it pending and retry next run, rather than cancelling an
+      // order whose payment might have actually succeeded.
+      console.error(`cron: failed to check PaymentIntent for order ${order.id}`, err);
+    }
   }
 
   return NextResponse.json({ checked: stale.length, cancelled, reconciledPaid });
