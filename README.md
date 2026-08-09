@@ -67,6 +67,9 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
 
 # Site URL (for OG metadata, links in emails)
 NEXT_PUBLIC_SITE_URL="https://garysbutchersandfishmongers.co.uk"
+
+# Receipt printing (shared secret with print-agent/ — see that folder's README)
+PRINT_AGENT_SECRET="..."    # openssl rand -base64 32
 ```
 
 ### 4. Generate the admin password hash
@@ -130,6 +133,11 @@ Use Stripe's test cards (e.g. `4242 4242 4242 4242`, any future expiry, any 3-di
 - New orders arrive at `/admin/orders` with status `paid`
 - Mark them `preparing` → `ready` → `completed` as you work through them
 - Email notifications go to `ADMIN_EMAIL` (the same address used to log into the admin portal) for every paid order
+
+### Receipt printing
+- Every paid order (pickup, delivery, or premium) automatically prints a receipt — items, address/slot, and a thank-you line — to the Epson TM-m30III at the shop.
+- Printing is handled by a small always-on program on a shop PC, `print-agent/` — see [`print-agent/README.md`](print-agent/README.md) for setup.
+- To print an order again (e.g. it came out faulty, or the printer was out of paper), click the print icon next to it in `/admin/orders` — that's a "reprint" and the agent picks it up on its next poll.
 
 ## Project structure
 

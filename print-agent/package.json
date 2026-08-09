@@ -1,0 +1,15 @@
+{
+  "name": "garys-print-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Polls the Gary's Butchers website for newly paid orders and prints receipts to the Epson TM-m30III on the shop network.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test-print": "node test-print.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-thermal-printer": "^4.4.4"
+  }
+}

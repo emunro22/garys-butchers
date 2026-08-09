@@ -21,9 +21,16 @@ const StatusSchema = z
     // recalculates deliveryInPence/totalInPence on an already-placed order.
     weightGrams: z.number().int().min(0).nullable().optional(),
     courierName: z.string().max(60).nullable().optional(),
+    // Clearing this back to null is a "reprint" — it puts the order back
+    // into the print-agent's queue (see GET /api/print-queue).
+    printedAt: z.literal(null).optional(),
   })
   .refine(
-    (v) => v.status !== undefined || v.weightGrams !== undefined || v.courierName !== undefined,
+    (v) =>
+      v.status !== undefined ||
+      v.weightGrams !== undefined ||
+      v.courierName !== undefined ||
+      v.printedAt !== undefined,
     { message: 'Nothing to update' }
   );
 
@@ -82,6 +89,7 @@ export async function PATCH(req: NextRequest) {
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
     if (parsed.data.weightGrams !== undefined) updates.weightGrams = parsed.data.weightGrams;
     if (parsed.data.courierName !== undefined) updates.courierName = parsed.data.courierName;
+    if (parsed.data.printedAt !== undefined) updates.printedAt = parsed.data.printedAt;
 
     const [updated] = await db
       .update(orders)

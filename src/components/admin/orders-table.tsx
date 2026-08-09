@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronRight, Trash2, Mail, Truck, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Mail, Truck, Printer, X } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
@@ -45,6 +45,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [reprinting, setReprinting] = useState<string | null>(null);
   const [emailTarget, setEmailTarget] = useState<Order | null>(null);
   const [shippingTarget, setShippingTarget] = useState<Order | null>(null);
   const [premiumRates, setPremiumRates] = useState<PremiumDeliveryRates | null>(null);
@@ -105,6 +106,24 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
       alert('Could not delete order');
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function reprintOrder(id: string) {
+    setReprinting(id);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, printedAt: null }),
+      });
+      if (!res.ok) throw new Error('Reprint failed');
+      const data = await res.json();
+      setOrders((arr) => arr.map((o) => (o.id === id ? data.order : o)));
+    } catch {
+      alert('Could not queue reprint');
+    } finally {
+      setReprinting(null);
     }
   }
 
@@ -272,6 +291,17 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
                             title="Send shipping update"
                           >
                             <Truck className="h-4 w-4" />
+                          </button>
+                        )}
+                        {o.orderNumber != null && (
+                          <button
+                            onClick={() => reprintOrder(o.id)}
+                            disabled={reprinting === o.id}
+                            className="p-1.5 text-ink-400 hover:text-ink-900 hover:bg-ink-900/5 disabled:opacity-40"
+                            aria-label={o.printedAt ? 'Reprint receipt' : 'Print receipt'}
+                            title={o.printedAt ? 'Reprint receipt' : 'Print receipt'}
+                          >
+                            <Printer className="h-4 w-4" />
                           </button>
                         )}
                         <button
