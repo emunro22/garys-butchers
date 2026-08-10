@@ -29,7 +29,6 @@ export function Header({ categories }: { categories: { name: string; slug: strin
     { label: 'Shop all', href: '/shop' },
     ...curated.map((c) => ({ label: c.name, href: `/shop/${c.slug}` })),
     { label: 'Meat packs', href: '/shop/meat-packs' },
-    { label: 'Offers', href: '/shop/offers' },
   ];
 
   const allCategoryLinks = categories
@@ -40,7 +39,6 @@ export function Header({ categories }: { categories: { name: string; slug: strin
     { label: 'Shop all', href: '/shop' },
     ...allCategoryLinks,
     { label: 'Meat packs', href: '/shop/meat-packs' },
-    { label: 'Offers', href: '/shop/offers' },
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];
