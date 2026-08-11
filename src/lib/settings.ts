@@ -68,6 +68,9 @@ export const DEFAULT_SETTINGS = {
     // order shares one block and one combined capacity.
     blocks: [{ id: 'fiveEight', startMinutes: 1020, endMinutes: 1200, capacity: 20 }] as SlotBlock[],
     closedDays: [0] as number[],
+    // Same-day can't be ordered before the shop opens (7:30am) — matches the
+    // published hours on the about/contact pages.
+    opensAtMinutes: 450 as number,
   } satisfies SlotGroupSettings,
   // Optional rush-delivery surcharge, added on top of the normal
   // distance-based delivery fee (see delivery above) — same-day orders are
@@ -116,6 +119,7 @@ function migrateSlotGroup(
         v.saturdayCutoffMinutes === null || typeof v.saturdayCutoffMinutes === 'number'
           ? v.saturdayCutoffMinutes
           : defaults.saturdayCutoffMinutes ?? null,
+      opensAtMinutes: typeof v.opensAtMinutes === 'number' ? v.opensAtMinutes : defaults.opensAtMinutes,
     };
   }
   const legacyCapacity = (value as { capacity?: Record<string, number> } | undefined)?.capacity;
@@ -127,6 +131,7 @@ function migrateSlotGroup(
       })),
       closedDays: defaults.closedDays,
       saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null,
+      opensAtMinutes: defaults.opensAtMinutes,
     };
   }
   return { ...defaults, saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null };
@@ -146,7 +151,11 @@ export async function getShopSettings(): Promise<AppSettings> {
       closedDays: [...DEFAULT_SETTINGS.deliverySlots.closedDays],
       saturdayCutoffMinutes: DEFAULT_SETTINGS.deliverySlots.saturdayCutoffMinutes,
     },
-    sameDay: { blocks: [...DEFAULT_SETTINGS.sameDay.blocks], closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays] },
+    sameDay: {
+      blocks: [...DEFAULT_SETTINGS.sameDay.blocks],
+      closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays],
+      opensAtMinutes: DEFAULT_SETTINGS.sameDay.opensAtMinutes,
+    },
     sameDayFee: { ...DEFAULT_SETTINGS.sameDayFee },
     pickupSlots: {
       blocks: [...DEFAULT_SETTINGS.pickupSlots.blocks],
@@ -181,11 +190,14 @@ export async function getShopSettings(): Promise<AppSettings> {
           'afternoon',
         ]);
       } else if (row.key === 'sameDay') {
-        result.sameDay = migrateSlotGroup(row.value, DEFAULT_SETTINGS.sameDay, [
+        const migrated = migrateSlotGroup(row.value, DEFAULT_SETTINGS.sameDay, [
           'nineEleven',
           'elevenOne',
           'oneThree',
         ]);
+        // opensAtMinutes is optional on the shared SlotGroupSettings type (only
+        // sameDay uses it), but always defined on sameDay's own defaults.
+        result.sameDay = { ...migrated, opensAtMinutes: migrated.opensAtMinutes ?? DEFAULT_SETTINGS.sameDay.opensAtMinutes };
       } else if (row.key === 'sameDayFee') {
         result.sameDayFee = { ...DEFAULT_SETTINGS.sameDayFee, ...(row.value as AppSettings['sameDayFee']) };
       } else if (row.key === 'pickupSlots') {

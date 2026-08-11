@@ -52,6 +52,10 @@ export type SlotGroupSettings = {
   // at or after this time aren't offered/valid that day. null/undefined means
   // Saturdays use the same blocks as every other open day.
   saturdayCutoffMinutes?: number | null;
+  // Optional floor on same-day booking (used by generateTodaySlots) — before
+  // this time today, no "today" slots are offered at all, e.g. so same-day
+  // delivery can't be ordered overnight before the shop opens.
+  opensAtMinutes?: number;
 };
 
 export type GeneratedSlot = {
@@ -184,6 +188,7 @@ export function generateTodaySlots(group: SlotGroupSettings, now: Date = new Dat
   const { year, month, day } = londonParts(now);
   const dateKey = getDateKey(now);
   const nowMinutes = minutesOfDay(now);
+  if (typeof group.opensAtMinutes === 'number' && nowMinutes < group.opensAtMinutes) return [];
   const out: GeneratedSlot[] = [];
   for (const block of blocksForWeekday(group, weekday)) {
     const endsAt = block.endMinutes > block.startMinutes ? block.endMinutes : block.startMinutes;

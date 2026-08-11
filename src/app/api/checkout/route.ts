@@ -15,7 +15,7 @@ import {
 import { getShopSettings } from '@/lib/settings';
 import { getCustomerSession } from '@/lib/auth';
 import { hasCustomerUsedPromotion } from '@/lib/promotions';
-import { blocksForWeekday, bucketKey, findBlock, getDateKey, getWeekday, isPastCutoff, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
+import { blocksForWeekday, bucketKey, findBlock, formatClock, getDateKey, getWeekday, isPastCutoff, isToday, londonDateTime, minutesOfDay } from '@/lib/slots';
 import { getDeliveryBucketCounts } from '@/lib/delivery-availability';
 import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
@@ -233,6 +233,16 @@ export async function POST(req: NextRequest) {
       if (!isToday(slotDate, now) || nowMinutes >= endsAt || shopSettings.sameDay.closedDays.includes(getWeekday(now))) {
         return NextResponse.json(
           { error: 'That same-day slot has passed — please choose another time.' },
+          { status: 400 }
+        );
+      }
+      if (typeof shopSettings.sameDay.opensAtMinutes === 'number' && nowMinutes < shopSettings.sameDay.opensAtMinutes) {
+        return NextResponse.json(
+          {
+            error: `Same-day delivery isn't available yet — come back at ${formatClock(
+              shopSettings.sameDay.opensAtMinutes
+            )} to place your order.`,
+          },
           { status: 400 }
         );
       }

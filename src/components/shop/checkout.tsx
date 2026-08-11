@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input, Textarea, Label } from '@/components/ui/input';
 import { Truck, Store, Zap, Tag, Check, Package, Gift } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
-import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, formatClock, type SlotGroupSettings } from '@/lib/slots';
+import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, formatClock, minutesOfDay, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
 
 // ---- Stripe loader ----
@@ -391,11 +391,17 @@ export function Checkout() {
     [items]
   );
   const sameDayEligible = maxNoticeDays === 0;
+  // Same-day can't be ordered before the shop opens — e.g. an order placed at
+  // 12:23am shouldn't be offered a 5-8pm same-day window for that day.
+  const sameDayNotYetOpen =
+    typeof sameDayGroup?.opensAtMinutes === 'number' && minutesOfDay(new Date()) < sameDayGroup.opensAtMinutes;
   const sameDayDisabledReason =
     !sameDayEligible
       ? 'An item in your basket needs advance notice'
       : sameDayGroup === null
       ? 'Checking today’s availability…'
+      : sameDayNotYetOpen
+      ? `Come back at ${formatClock(sameDayGroup.opensAtMinutes!)} to place a same-day delivery order`
       : sameDaySlotsList.length === 0
       ? 'Same-day delivery has finished for today'
       : sameDaySlotFull
