@@ -5,6 +5,9 @@ const resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'orders@garysbutchersandfishmongers.co.uk';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://garysbutchersandfishmongers.co.uk';
+// Where customer replies to order/account emails should land — not necessarily the same
+// mailbox as ADMIN_EMAIL (which is also the admin portal login).
+const REPLY_TO = process.env.REPLY_TO_EMAIL || 'garysbutchers-orders@outlook.com';
 
 // Most mail clients (Gmail, Outlook, etc.) hide remote <img> sources behind a
 // "display images" click-through by default, which made the logo look
@@ -345,6 +348,7 @@ export async function sendOrderConfirmation(payload: OrderEmailPayload) {
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: payload.customerEmail,
+    replyTo: REPLY_TO,
     subject: `Order confirmed — #${String(payload.orderNumber).padStart(5, '0')}`,
     html: renderCustomerHtml(payload),
     attachments: await getLogoAttachment(),
@@ -411,6 +415,7 @@ export async function sendAbandonedCheckoutEmail(opts: {
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: opts.customerEmail,
+    replyTo: REPLY_TO,
     subject: "You're almost done — complete your order",
     html: renderEmailLayout({
       eyebrow: 'Order not completed',
@@ -463,6 +468,7 @@ export async function sendContactConfirmation(opts: { name: string; message: str
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: opts.email,
+    replyTo: REPLY_TO,
     subject: "Thanks for your enquiry — Gary's Butchers & Fishmongers",
     html: renderEmailLayout({
       eyebrow: 'Enquiry received',
@@ -557,7 +563,7 @@ export async function sendCustomerMessage(opts: {
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: opts.customerEmail,
-    replyTo: process.env.ADMIN_EMAIL || FROM,
+    replyTo: REPLY_TO,
     subject: opts.subject,
     html: renderEmailLayout({
       eyebrow: "A message from Gary's Butchers",

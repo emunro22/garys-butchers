@@ -56,6 +56,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 # Resend
 RESEND_API_KEY="re_..."
 RESEND_FROM_EMAIL="orders@yourdomain.co.uk"
+REPLY_TO_EMAIL="garysbutchers-orders@outlook.com" # where customer replies to order/account emails go
 
 # Admin auth
 AUTH_SECRET="..."           # openssl rand -base64 32
