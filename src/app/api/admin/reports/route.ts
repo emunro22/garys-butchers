@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSession } from '@/lib/auth';
-import { buildSignupsReport, buildProductSalesReport } from '@/lib/reports';
+import { buildSignupsReport, buildProductSalesReport, buildOrdersScheduleReport } from '@/lib/reports';
 import { sendReportEmail } from '@/lib/email';
 
 const ReportSchema = z.object({
-  type: z.enum(['signups', 'product-sales']),
+  type: z.enum(['signups', 'product-sales', 'orders-schedule']),
   days: z.number().int().min(1).max(365),
 });
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         csvContent: report.csv,
       });
       return NextResponse.json({ ok: true, total: report.total });
-    } else {
+    } else if (type === 'product-sales') {
       const report = await buildProductSalesReport(days);
       await sendReportEmail({
         title: `Product sales — last ${dayLabel}`,
@@ -40,6 +40,15 @@ export async function POST(req: NextRequest) {
         csvContent: report.csv,
       });
       return NextResponse.json({ ok: true, totalOrders: report.totalOrders });
+    } else {
+      const report = await buildOrdersScheduleReport(days);
+      await sendReportEmail({
+        title: `Orders schedule — last ${dayLabel}`,
+        summaryHtml: `<p style="margin:0;font-size:14px;color:#4a443a;line-height:1.6"><strong>${report.total}</strong> order${report.total === 1 ? '' : 's'}, grouped by pickup / delivery / same-day delivery / premium and sorted for the day's run. Full breakdown attached as a CSV file.</p>`,
+        filename: report.filename,
+        csvContent: report.csv,
+      });
+      return NextResponse.json({ ok: true, total: report.total });
     }
   } catch (err) {
     console.error('report error', err);

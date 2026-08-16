@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, ShoppingBasket, Mail } from 'lucide-react';
+import { Users, ShoppingBasket, Mail, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
 
@@ -13,7 +13,7 @@ const REPORT_RECIPIENTS = [
   'euanmunroo@gmail.com',
 ];
 
-type ReportType = 'signups' | 'product-sales';
+type ReportType = 'signups' | 'product-sales' | 'orders-schedule';
 type SendState = { status: 'idle' | 'sending' | 'sent' | 'error'; message?: string };
 
 export function ReportsForm() {
@@ -21,6 +21,7 @@ export function ReportsForm() {
   const [state, setState] = useState<Record<ReportType, SendState>>({
     signups: { status: 'idle' },
     'product-sales': { status: 'idle' },
+    'orders-schedule': { status: 'idle' },
   });
 
   async function runReport(type: ReportType) {
@@ -101,6 +102,16 @@ export function ReportsForm() {
         days={days}
         state={state['product-sales']}
         onRun={() => runReport('product-sales')}
+      />
+
+      {/* Orders schedule report */}
+      <ReportCard
+        icon={Truck}
+        title="Orders schedule report"
+        description={`Every order in the last ${days} day${days === 1 ? '' : 's'}, grouped into pickup / delivery / same-day delivery / premium and sorted the way you'd work through the day: pickups by timeslot, deliveries by timeslot then postcode then distance from the shop.`}
+        days={days}
+        state={state['orders-schedule']}
+        onRun={() => runReport('orders-schedule')}
       />
 
       <div className="flex items-start gap-3 text-xs text-ink-500 bg-cream-100 border border-ink-900/10 px-4 py-3">
