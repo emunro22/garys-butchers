@@ -7,7 +7,7 @@ import { AnalyticsTracker } from '@/components/layout/analytics-tracker';
 import { SeasonalThemeProvider } from '@/components/seasonal/seasonal-theme-context';
 import { SeasonalBanner } from '@/components/seasonal/seasonal-banner';
 import { SeasonalEffects } from '@/components/seasonal/seasonal-effects';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { eq, asc } from 'drizzle-orm';
@@ -17,7 +17,7 @@ export const revalidate = 60;
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   let cats: { name: string; slug: string }[] = [];
   try {
-    cats = await db
+    cats = await catalogDb
       .select({ name: categories.name, slug: categories.slug })
       .from(categories)
       .where(eq(categories.isActive, true))

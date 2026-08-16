@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { asc } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -14,8 +14,8 @@ export default async function AdminProductsPage() {
   await ensureProductsSchema();
 
   const [allProducts, allCategories] = await Promise.all([
-    db.select().from(products).orderBy(asc(products.name)),
-    db.select().from(categories).orderBy(asc(categories.sortOrder)),
+    catalogDb.select().from(products).orderBy(asc(products.name)),
+    catalogDb.select().from(categories).orderBy(asc(categories.sortOrder)),
   ]);
 
   return (

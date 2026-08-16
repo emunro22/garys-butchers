@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     const categoryId = url.searchParams.get('categoryId');
     const isPack = url.searchParams.get('isPack');
 
-    const all = await db.select().from(products).orderBy(asc(products.name));
+    const all = await catalogDb.select().from(products).orderBy(asc(products.name));
     const filtered = all.filter((p) => {
       if (categoryId && p.categoryId !== categoryId) return false;
       if (isPack === 'true' && !p.isPack) return false;
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data;
     const slug = (data.slug ?? slugify(data.name)).toLowerCase();
-    const [created] = await db
+    const [created] = await catalogDb
       .insert(products)
       .values({
         categoryId: data.categoryId ?? null,

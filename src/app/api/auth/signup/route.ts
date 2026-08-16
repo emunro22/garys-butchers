@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users, referrals } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword, generateVerificationCode } from '@/lib/auth';
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // A bad/unknown code should never block signup — just skip attribution.
     let referrerUserId: string | null = null;
     if (referralCode) {
-      const [referrer] = await db
+      const [referrer] = await ordersDb
         .select({ id: users.id })
         .from(users)
         .where(eq(users.referralCode, referralCode.toUpperCase().trim()))
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       referrerUserId = referrer?.id ?? null;
     }
 
-    const existing = await db
+    const existing = await ordersDb
       .select({ id: users.id, emailVerified: users.emailVerified, referredByUserId: users.referredByUserId })
       .from(users)
       .where(eq(users.email, normalizedEmail))
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
           : null;
       const code = generateVerificationCode();
       const passwordHash = await hashPassword(password);
-      await db
+      await ordersDb
         .update(users)
         .set({
           name,
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     const code = generateVerificationCode();
     const passwordHash = await hashPassword(password);
 
-    const [created] = await db
+    const [created] = await ordersDb
       .insert(users)
       .values({
         name,
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
 async function recordPendingReferral(referrerUserId: string, referredUserId: string) {
   await ensureReferralsSchema();
-  await db
+  await ordersDb
     .insert(referrals)
     .values({ referrerUserId, referredUserId, status: 'pending' })
     .onConflictDoNothing({ target: referrals.referredUserId });

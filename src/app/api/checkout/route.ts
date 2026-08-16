@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
-import { orders, products, promotions, users } from '@/lib/db/schema';
+import { catalogDb, ordersDb } from '@/lib/db';
+import { orders, users } from '@/lib/db/schema-orders';
+import { products, promotions } from '@/lib/db/schema-catalog';
 import { ensureOrdersSchema, ensureUsersSchema, ensureProductsSchema, ensurePromotionsSchema } from '@/lib/db/ensure-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
       const eligible =
         customerSession?.userId &&
         (
-          await db
+          await ordersDb
             .select({ premiumDeliveryEligible: users.premiumDeliveryEligible })
             .from(users)
             .where(eq(users.id, customerSession.userId))
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
 
     // Pull canonical prices from DB so client-side prices can't be tampered with.
     const ids = data.items.map((i) => i.productId);
-    const dbProducts = await db
+    const dbProducts = await catalogDb
       .select()
       .from(products)
       .where(inArray(products.id, ids));
@@ -311,7 +312,7 @@ export async function POST(req: NextRequest) {
     let appliedPromoCode: string | null = null;
 
     if (data.promotionCode) {
-      const [promo] = await db
+      const [promo] = await catalogDb
         .select()
         .from(promotions)
         .where(eq(promotions.code, data.promotionCode.toUpperCase()))
@@ -355,7 +356,7 @@ export async function POST(req: NextRequest) {
     // an unspent credit, one credit per order regardless of how many they have.
     let referralCreditRedeemed = false;
     if (customerSession && shopSettings.referrals.enabled) {
-      const [buyer] = await db
+      const [buyer] = await ordersDb
         .select({ referralCreditsAvailable: users.referralCreditsAvailable })
         .from(users)
         .where(eq(users.id, customerSession.userId))
@@ -472,7 +473,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert order with status 'pending'
-    const [order] = await db
+    const [order] = await ordersDb
       .insert(orders)
       .values({
         userId: customerSession?.userId ?? null,
@@ -525,7 +526,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Persist the PI id on the order
-    await db
+    await ordersDb
       .update(orders)
       .set({ stripePaymentIntentId: intent.id, updatedAt: new Date() })
       .where(eq(orders.id, order.id));

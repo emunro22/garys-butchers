@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { sql } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -18,7 +18,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const rows = await db
+    const rows = await ordersDb
       .select({
         email: orders.customerEmail,
         name: sql<string>`max(${orders.customerName})`,

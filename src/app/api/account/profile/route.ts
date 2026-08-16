@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCustomerSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
@@ -14,7 +14,7 @@ export async function GET() {
 
   await ensureUsersSchema();
 
-  const [user] = await db
+  const [user] = await ordersDb
     .select({
       id: users.id,
       name: users.name,
@@ -71,7 +71,7 @@ export async function PUT(req: NextRequest) {
     if (parsed.data.phone !== undefined) updates.phone = parsed.data.phone || null;
     if (parsed.data.defaultAddress !== undefined) updates.defaultAddress = parsed.data.defaultAddress;
 
-    await db.update(users).set(updates).where(eq(users.id, session.userId));
+    await ordersDb.update(users).set(updates).where(eq(users.id, session.userId));
 
     return NextResponse.json({ ok: true });
   } catch (err) {

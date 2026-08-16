@@ -1,5 +1,6 @@
-import { db } from '@/lib/db';
-import { users, orders, products, categories, analyticsEvents } from '@/lib/db/schema';
+import { catalogDb, ordersDb } from '@/lib/db';
+import { users, orders } from '@/lib/db/schema-orders';
+import { products, categories, analyticsEvents } from '@/lib/db/schema-catalog';
 import { and, eq, gte, sql, desc } from 'drizzle-orm';
 import { activeOrderFilter } from '@/lib/order-status';
 
@@ -74,28 +75,28 @@ export async function getOverviewStats(range: ResolvedRange) {
     [clickCount],
     [visitorRow],
   ] = await Promise.all([
-    db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.role, 'customer')),
-    db
+    ordersDb.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.role, 'customer')),
+    ordersDb
       .select({ count: sql<number>`count(*)::int` })
       .from(users)
       .where(and(eq(users.role, 'customer'), gte(users.createdAt, since))),
-    db
+    ordersDb
       .select({ count: sql<number>`count(*)::int` })
       .from(orders)
       .where(and(activeOrderFilter(), gte(orders.createdAt, since))),
-    db
+    ordersDb
       .select({ total: sql<number>`coalesce(sum(${orders.totalInPence}), 0)::int` })
       .from(orders)
       .where(and(activeOrderFilter(), gte(orders.createdAt, since))),
-    db
+    catalogDb
       .select({ count: sql<number>`count(*)::int` })
       .from(analyticsEvents)
       .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since))),
-    db
+    catalogDb
       .select({ count: sql<number>`count(*)::int` })
       .from(analyticsEvents)
       .where(and(eq(analyticsEvents.type, 'click'), gte(analyticsEvents.createdAt, since))),
-    db
+    catalogDb
       .select({ count: sql<number>`count(distinct ${analyticsEvents.sessionId})::int` })
       .from(analyticsEvents)
       .where(gte(analyticsEvents.createdAt, since)),
@@ -105,7 +106,7 @@ export async function getOverviewStats(range: ResolvedRange) {
   const revenue = revenueRow?.total ?? 0;
 
   // Repeat customers = distinct customer emails with more than one real order in this window.
-  const repeatRows = await db
+  const repeatRows = await ordersDb
     .select({ email: orders.customerEmail, count: sql<number>`count(*)::int` })
     .from(orders)
     .where(and(activeOrderFilter(), gte(orders.createdAt, since)))
@@ -130,7 +131,7 @@ export async function getOverviewStats(range: ResolvedRange) {
 
 export async function getSignupTrend(range: ResolvedRange) {
   const { since, bucketMinutes } = range;
-  const rows = await db
+  const rows = await ordersDb
     .select({ bucket: bucketExpr(users.createdAt, bucketMinutes), count: sql<number>`count(*)::int` })
     .from(users)
     .where(and(eq(users.role, 'customer'), gte(users.createdAt, since)))
@@ -140,7 +141,7 @@ export async function getSignupTrend(range: ResolvedRange) {
 
 export async function getOrderTrend(range: ResolvedRange) {
   const { since, bucketMinutes } = range;
-  const rows = await db
+  const rows = await ordersDb
     .select({ bucket: bucketExpr(orders.createdAt, bucketMinutes), count: sql<number>`count(*)::int` })
     .from(orders)
     .where(and(activeOrderFilter(), gte(orders.createdAt, since)))
@@ -151,14 +152,14 @@ export async function getOrderTrend(range: ResolvedRange) {
 export async function getHottestItemsByCategory(range: ResolvedRange) {
   const { since } = range;
   const [activeOrders, productRows, categoryRows] = await Promise.all([
-    db
+    ordersDb
       .select({ items: orders.items })
       .from(orders)
       .where(and(activeOrderFilter(), gte(orders.createdAt, since))),
-    db
+    catalogDb
       .select({ id: products.id, name: products.name, categoryId: products.categoryId })
       .from(products),
-    db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(categories.sortOrder),
+    catalogDb.select({ id: categories.id, name: categories.name }).from(categories).orderBy(categories.sortOrder),
   ]);
 
   const productById = new Map(productRows.map((p) => [p.id, p]));
@@ -220,14 +221,14 @@ export async function getHottestItemsByCategory(range: ResolvedRange) {
 export async function getEngagementStats(range: ResolvedRange) {
   const { since } = range;
   const [topPages, topClicks] = await Promise.all([
-    db
+    catalogDb
       .select({ path: analyticsEvents.path, count: sql<number>`count(*)::int` })
       .from(analyticsEvents)
       .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since)))
       .groupBy(analyticsEvents.path)
       .orderBy(desc(sql`count(*)`))
       .limit(8),
-    db
+    catalogDb
       .select({ label: analyticsEvents.label, count: sql<number>`count(*)::int` })
       .from(analyticsEvents)
       .where(and(eq(analyticsEvents.type, 'click'), gte(analyticsEvents.createdAt, since)))
@@ -247,7 +248,7 @@ export async function getEngagementStats(range: ResolvedRange) {
 export async function getLocationStats(range: ResolvedRange) {
   const { since } = range;
   const [byCity, byFulfilment] = await Promise.all([
-    db
+    ordersDb
       .select({
         city: sql<string>`coalesce(${orders.deliveryAddress}->>'city', 'Unknown')`,
         orderCount: sql<number>`count(*)::int`,
@@ -257,7 +258,7 @@ export async function getLocationStats(range: ResolvedRange) {
       .where(and(activeOrderFilter(), eq(orders.fulfilment, 'delivery'), gte(orders.createdAt, since)))
       .groupBy(sql`1`)
       .orderBy(desc(sql`count(*)`)),
-    db
+    ordersDb
       .select({ fulfilment: orders.fulfilment, count: sql<number>`count(*)::int` })
       .from(orders)
       .where(and(activeOrderFilter(), gte(orders.createdAt, since)))

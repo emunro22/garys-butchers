@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
@@ -24,7 +24,7 @@ export async function POST() {
   try {
     await ensureOrdersSchema();
 
-    const candidates = await db
+    const candidates = await ordersDb
       .select()
       .from(orders)
       .where(
@@ -42,7 +42,7 @@ export async function POST() {
         const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId!);
         if (intent.status !== 'succeeded') continue;
 
-        const [unCancelled] = await db
+        const [unCancelled] = await ordersDb
           .update(orders)
           .set({ status: 'pending', updatedAt: new Date() })
           .where(and(eq(orders.id, order.id), eq(orders.status, 'cancelled')))

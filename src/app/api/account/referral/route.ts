@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCustomerSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { referrals, users } from '@/lib/db/schema';
 import { ensureUsersSchema, ensureReferralsSchema } from '@/lib/db/ensure-schema';
 import { eq, desc } from 'drizzle-orm';
@@ -17,12 +17,12 @@ export async function GET() {
 
   const [code, [me], history] = await Promise.all([
     getOrCreateReferralCode(session.userId),
-    db
+    ordersDb
       .select({ referralCreditsAvailable: users.referralCreditsAvailable })
       .from(users)
       .where(eq(users.id, session.userId))
       .limit(1),
-    db
+    ordersDb
       .select({
         id: referrals.id,
         status: referrals.status,

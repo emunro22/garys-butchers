@@ -1,9 +1,9 @@
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, isNotNull, desc } from 'drizzle-orm';
 
 export async function getCategoryImageMap(): Promise<Record<string, string>> {
-  const rows = await db
+  const rows = await catalogDb
     .select({ categoryId: products.categoryId, imageUrl: products.imageUrl })
     .from(products)
     .where(and(eq(products.isActive, true), isNotNull(products.categoryId), isNotNull(products.imageUrl)))

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -21,7 +21,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const [c] = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+    const [c] = await catalogDb.select().from(categories).where(eq(categories.id, id)).limit(1);
     if (!c) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ category: c });
   } catch (err) {
@@ -51,7 +51,7 @@ export async function PATCH(
     const update: Record<string, unknown> = { ...data, updatedAt: new Date() };
     if (data.name && !data.slug) update.slug = slugify(data.name);
 
-    const [updated] = await db
+    const [updated] = await catalogDb
       .update(categories)
       .set(update)
       .where(eq(categories.id, id))
@@ -72,7 +72,7 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   try {
-    const [{ count }] = await db
+    const [{ count }] = await catalogDb
       .select({ count: sql<number>`count(*)::int` })
       .from(products)
       .where(eq(products.categoryId, id));
@@ -84,7 +84,7 @@ export async function DELETE(
         { status: 409 }
       );
     }
-    await db.delete(categories).where(eq(categories.id, id));
+    await catalogDb.delete(categories).where(eq(categories.id, id));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('category DELETE error', err);

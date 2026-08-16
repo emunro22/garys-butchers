@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { deals } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { DealForm } from '@/components/admin/deal-form';
@@ -12,7 +12,7 @@ export default async function EditDealPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [deal] = await db.select().from(deals).where(eq(deals.id, id)).limit(1);
+  const [deal] = await catalogDb.select().from(deals).where(eq(deals.id, id)).limit(1);
   if (!deal) notFound();
 
   return (

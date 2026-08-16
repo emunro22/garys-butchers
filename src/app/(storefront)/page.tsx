@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products, reviews, categories } from '@/lib/db/schema';
 import { eq, and, desc, asc, count } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -19,23 +19,23 @@ async function getHomepageData() {
   try {
     await ensureProductsSchema();
     const [packsRes, packCountRes, reviewsRes, catsRes, categoryImages] = await Promise.all([
-      db
+      catalogDb
         .select()
         .from(products)
         .where(eq(products.isPack, true))
         .orderBy(desc(products.isFeatured))
         .limit(6),
-      db
+      catalogDb
         .select({ value: count() })
         .from(products)
         .where(and(eq(products.isPack, true), eq(products.isActive, true))),
-      db
+      catalogDb
         .select()
         .from(reviews)
         .where(eq(reviews.isFeatured, true))
         .orderBy(desc(reviews.publishedAt))
         .limit(6),
-      db
+      catalogDb
         .select()
         .from(categories)
         .where(eq(categories.isActive, true))

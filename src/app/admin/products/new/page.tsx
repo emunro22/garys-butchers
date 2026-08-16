@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { asc } from 'drizzle-orm';
 import { ProductForm } from '@/components/admin/product-form';
@@ -7,7 +7,7 @@ import { ProductForm } from '@/components/admin/product-form';
 export const dynamic = 'force-dynamic';
 
 export default async function NewProductPage() {
-  const allCategories = await db
+  const allCategories = await catalogDb
     .select()
     .from(categories)
     .orderBy(asc(categories.sortOrder));

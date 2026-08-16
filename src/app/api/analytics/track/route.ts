@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { analyticsEvents } from '@/lib/db/schema';
 
 const TrackSchema = z.object({
@@ -13,7 +13,7 @@ const TrackSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = TrackSchema.parse(await req.json());
-    await db.insert(analyticsEvents).values({
+    await catalogDb.insert(analyticsEvents).values({
       type: body.type,
       path: body.path,
       label: body.label,

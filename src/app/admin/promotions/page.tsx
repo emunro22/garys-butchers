@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { promotions, products } from '@/lib/db/schema';
 import { desc, asc } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPromotionsPage() {
   await ensurePromotionsSchema();
   const [all, allProducts] = await Promise.all([
-    db.select().from(promotions).orderBy(desc(promotions.createdAt)),
-    db.select({ id: products.id, name: products.name }).from(products).orderBy(asc(products.name)),
+    catalogDb.select().from(promotions).orderBy(desc(promotions.createdAt)),
+    catalogDb.select({ id: products.id, name: products.name }).from(products).orderBy(asc(products.name)),
   ]);
 
   return (

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { CategoryForm } from '@/components/admin/category-form';
@@ -13,7 +13,7 @@ export default async function EditCategoryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [category] = await db
+  const [category] = await catalogDb
     .select()
     .from(categories)
     .where(eq(categories.id, id))

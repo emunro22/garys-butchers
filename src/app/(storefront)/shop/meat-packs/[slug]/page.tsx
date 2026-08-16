@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, ne, asc } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -20,7 +20,7 @@ export async function generateMetadata({
   const { slug } = await params;
   try {
     await ensureProductsSchema();
-    const [p] = await db
+    const [p] = await catalogDb
       .select()
       .from(products)
       .where(and(eq(products.slug, slug), eq(products.isPack, true)))
@@ -47,13 +47,13 @@ export default async function MeatPackPage({
 
   try {
     await ensureProductsSchema();
-    [pack] = await db
+    [pack] = await catalogDb
       .select()
       .from(products)
       .where(and(eq(products.slug, slug), eq(products.isPack, true)))
       .limit(1);
     if (!pack) notFound();
-    otherPacks = await db
+    otherPacks = await catalogDb
       .select()
       .from(products)
       .where(

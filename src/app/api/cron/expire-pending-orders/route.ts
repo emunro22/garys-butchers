@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, lt } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   const staleCutoff = new Date(Date.now() - PENDING_ORDER_TTL_MINUTES * 60 * 1000);
 
-  const stale = await db
+  const stale = await ordersDb
     .select()
     .from(orders)
     .where(and(eq(orders.status, 'pending'), lt(orders.createdAt, staleCutoff)));
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   let reconciledPaid = 0;
   for (const order of stale) {
     if (!order.stripePaymentIntentId) {
-      await db
+      await ordersDb
         .update(orders)
         .set({ status: 'cancelled', updatedAt: new Date() })
         .where(eq(orders.id, order.id));
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       if (intent.status !== 'canceled') {
         await stripe.paymentIntents.cancel(order.stripePaymentIntentId).catch(() => {});
       }
-      await db
+      await ordersDb
         .update(orders)
         .set({ status: 'cancelled', updatedAt: new Date() })
         .where(eq(orders.id, order.id));

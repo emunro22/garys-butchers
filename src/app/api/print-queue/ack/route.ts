@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { and, eq, isNull } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     await ensureOrdersSchema();
 
-    const [acked] = await db
+    const [acked] = await ordersDb
       .update(orders)
       .set({ printedAt: new Date() })
       .where(and(eq(orders.id, parsed.data.orderId), isNull(orders.printedAt)))

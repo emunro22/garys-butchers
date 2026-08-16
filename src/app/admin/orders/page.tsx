@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { desc, ne } from 'drizzle-orm';
@@ -13,7 +13,7 @@ export default async function AdminOrdersPage() {
   // orders until they're paid, so they never show up here at all. They
   // either become 'paid' via the webhook, or get auto-cancelled by the
   // expire-pending-orders cron if the checkout was abandoned.
-  const all = await db
+  const all = await ordersDb
     .select()
     .from(orders)
     .where(ne(orders.status, 'pending'))

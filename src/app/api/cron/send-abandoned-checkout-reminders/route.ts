@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, gt, isNull, lt } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { PENDING_ORDER_TTL_MINUTES } from '@/lib/order-status';
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   // haven't had a reminder sent yet. The upper bound (ttlCutoff) hands off
   // to the existing expire-pending-orders cron once an order is too old to
   // usefully resume.
-  const candidates = await db
+  const candidates = await ordersDb
     .select()
     .from(orders)
     .where(
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     // Claim before sending — a conditional UPDATE that only one overlapping
     // cron run can win, so a slow previous run can never cause a double-send.
-    const [claimed] = await db
+    const [claimed] = await ordersDb
       .update(orders)
       .set({ abandonedReminderSentAt: new Date() })
       .where(

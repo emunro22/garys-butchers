@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     await ensureOrdersSchema();
 
-    const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    const [order] = await ordersDb.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     if (!order) {
       return NextResponse.json({ status: 'expired', error: 'Order not found.' }, { status: 404 });
     }

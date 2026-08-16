@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { deals } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -24,7 +24,7 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const all = await db.select().from(deals).orderBy(desc(deals.createdAt));
+    const all = await catalogDb.select().from(deals).orderBy(desc(deals.createdAt));
     return NextResponse.json({ deals: all });
   } catch (err) {
     console.error('deals GET error', err);
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       );
     }
     const d = parsed.data;
-    const [created] = await db
+    const [created] = await catalogDb
       .insert(deals)
       .values({
         title: d.title,

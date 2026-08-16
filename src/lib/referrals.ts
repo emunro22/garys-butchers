@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq, isNull, and } from 'drizzle-orm';
 
@@ -16,7 +16,7 @@ function generateReferralCode(): string {
 
 /** Returns this user's referral code, generating and persisting one on first use. */
 export async function getOrCreateReferralCode(userId: string): Promise<string> {
-  const [user] = await db.select({ referralCode: users.referralCode }).from(users).where(eq(users.id, userId)).limit(1);
+  const [user] = await ordersDb.select({ referralCode: users.referralCode }).from(users).where(eq(users.id, userId)).limit(1);
   if (user?.referralCode) return user.referralCode;
 
   // Collisions are extremely unlikely (8 chars from a 33-char alphabet) but
@@ -24,7 +24,7 @@ export async function getOrCreateReferralCode(userId: string): Promise<string> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateReferralCode();
     try {
-      const [updated] = await db
+      const [updated] = await ordersDb
         .update(users)
         .set({ referralCode: code })
         .where(and(eq(users.id, userId), isNull(users.referralCode)))
@@ -34,7 +34,7 @@ export async function getOrCreateReferralCode(userId: string): Promise<string> {
       // Unique constraint collision with another user's code — retry with a new one.
     }
     // Someone else set it concurrently — re-check current value.
-    const [recheck] = await db.select({ referralCode: users.referralCode }).from(users).where(eq(users.id, userId)).limit(1);
+    const [recheck] = await ordersDb.select({ referralCode: users.referralCode }).from(users).where(eq(users.id, userId)).limit(1);
     if (recheck?.referralCode) return recheck.referralCode;
   }
   throw new Error('Could not generate a unique referral code');

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { and, eq, asc, desc, ilike } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -20,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { category } = await params;
   try {
-    const [cat] = await db
+    const [cat] = await catalogDb
       .select()
       .from(categories)
       .where(eq(categories.slug, category))
@@ -66,9 +66,9 @@ export default async function CategoryPage({
 
   try {
     await ensureProductsSchema();
-    [cat] = await db.select().from(categories).where(eq(categories.slug, category)).limit(1);
+    [cat] = await catalogDb.select().from(categories).where(eq(categories.slug, category)).limit(1);
     if (!cat) notFound();
-    items = await db
+    items = await catalogDb
       .select()
       .from(products)
       .where(
@@ -79,7 +79,7 @@ export default async function CategoryPage({
         )
       )
       .orderBy(...sortOrderBy(sort));
-    allCats = await db
+    allCats = await catalogDb
       .select()
       .from(categories)
       .where(eq(categories.isActive, true))

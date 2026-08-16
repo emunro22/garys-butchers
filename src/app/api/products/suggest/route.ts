@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, or, ilike, asc } from 'drizzle-orm';
 
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const term = `%${q}%`;
-    const results = await db
+    const results = await catalogDb
       .select({
         id: products.id,
         name: products.name,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { signSession, setSessionCookie, verifyAdminLogin, comparePassword, signCustomerSession, setCustomerSessionCookie } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     // Try database users with admin role
     const normalizedEmail = email.toLowerCase().trim();
     await ensureUsersSchema();
-    const [user] = await db
+    const [user] = await ordersDb
       .select()
       .from(users)
       .where(eq(users.email, normalizedEmail))

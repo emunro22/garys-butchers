@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { subscriptions, users } from '@/lib/db/schema';
 import { ensureSubscriptionsSchema, ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { desc, eq } from 'drizzle-orm';
@@ -25,7 +25,7 @@ export default async function AdminSubscriptionsPage() {
   await ensureUsersSchema();
   await ensureSubscriptionsSchema();
 
-  const rows = await db
+  const rows = await ordersDb
     .select({
       id: subscriptions.id,
       status: subscriptions.status,

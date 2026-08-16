@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
-import { orders, products, promotions } from '@/lib/db/schema';
+import { catalogDb, ordersDb } from '@/lib/db';
+import { orders } from '@/lib/db/schema-orders';
+import { products, promotions } from '@/lib/db/schema-catalog';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { desc, eq, notInArray, sql } from 'drizzle-orm';
 import { formatPrice } from '@/lib/utils';
@@ -13,29 +14,29 @@ async function loadStats() {
   try {
     await ensureOrdersSchema();
 
-    const [productCount] = await db
+    const [productCount] = await catalogDb
       .select({ count: sql<number>`count(*)::int` })
       .from(products);
-    const [paidCount] = await db
+    const [paidCount] = await ordersDb
       .select({ count: sql<number>`count(*)::int` })
       .from(orders)
       .where(eq(orders.status, 'paid'));
-    const [pendingCount] = await db
+    const [pendingCount] = await ordersDb
       .select({ count: sql<number>`count(*)::int` })
       .from(orders)
       .where(eq(orders.status, 'pending'));
-    const [revenueRow] = await db
+    const [revenueRow] = await ordersDb
       .select({ total: sql<number>`coalesce(sum(${orders.totalInPence}), 0)::int` })
       .from(orders)
       .where(eq(orders.status, 'paid'));
-    const [activePromos] = await db
+    const [activePromos] = await catalogDb
       .select({ count: sql<number>`count(*)::int` })
       .from(promotions)
       .where(eq(promotions.isActive, true));
     // Only orders that actually went through — a checkout that never
     // completed payment (pending) or was abandoned (cancelled) isn't a
     // real order and shouldn't show up next to genuine sales.
-    const recent = await db
+    const recent = await ordersDb
       .select()
       .from(orders)
       .where(notInArray(orders.status, ['pending', 'cancelled']))

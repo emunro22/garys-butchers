@@ -9,7 +9,7 @@
 
 import { config } from 'dotenv';
 config({ path: '.env.local' });
-import { db } from './index';
+import { catalogDb } from './index';
 import { products, categories } from './schema';
 import { eq } from 'drizzle-orm';
 import { ensureProductsSchema } from './ensure-schema';
@@ -97,10 +97,10 @@ async function main() {
   console.log('📸  Assigning stock images to all products…');
 
   await ensureProductsSchema();
-  const allCats = await db.select().from(categories);
+  const allCats = await catalogDb.select().from(categories);
   const slugById = new Map(allCats.map((c) => [c.id, c.slug]));
 
-  const allProducts = await db.select().from(products);
+  const allProducts = await catalogDb.select().from(products);
   console.log(`  Found ${allProducts.length} products.`);
 
   let updated = 0;
@@ -114,7 +114,7 @@ async function main() {
       skipped++;
       continue;
     }
-    await db
+    await catalogDb
       .update(products)
       .set({ imageUrl, updatedAt: new Date() })
       .where(eq(products.id, product.id));

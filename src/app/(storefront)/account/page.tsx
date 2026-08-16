@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getCustomerSession } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { orders, products, users } from '@/lib/db/schema';
+import { catalogDb, ordersDb } from '@/lib/db';
+import { orders, users } from '@/lib/db/schema-orders';
+import { products } from '@/lib/db/schema-catalog';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { eq, desc, or, notInArray, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
@@ -13,7 +14,7 @@ export default async function AccountPage() {
   const session = await getCustomerSession();
   if (!session) redirect('/account/login');
 
-  const [user] = await db
+  const [user] = await ordersDb
     .select({
       id: users.id,
       name: users.name,
@@ -30,7 +31,7 @@ export default async function AccountPage() {
 
   await ensureOrdersSchema();
 
-  const userOrders = await db
+  const userOrders = await ordersDb
     .select()
     .from(orders)
     .where(
@@ -57,7 +58,7 @@ export default async function AccountPage() {
   }> = [];
 
   if (orderedProductIds.length > 0) {
-    recommendations = await db
+    recommendations = await catalogDb
       .select({
         id: products.id,
         name: products.name,
@@ -76,7 +77,7 @@ export default async function AccountPage() {
       .orderBy(sql`random()`)
       .limit(4);
   } else {
-    recommendations = await db
+    recommendations = await catalogDb
       .select({
         id: products.id,
         name: products.name,

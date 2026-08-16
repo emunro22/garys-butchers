@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
@@ -24,7 +24,7 @@ export default async function CheckoutSuccessPage({
   if (orderId) {
     try {
       await ensureOrdersSchema();
-      [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+      [order] = await ordersDb.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     } catch {
       // ignore — show generic success
     }

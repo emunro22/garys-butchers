@@ -7,7 +7,7 @@
 
 import { config } from 'dotenv';
 config({ path: '.env.local' });
-import { db } from './index';
+import { catalogDb } from './index';
 import { categories, products, promotions, reviews } from './schema';
 
 const slug = (s: string) =>
@@ -697,7 +697,7 @@ async function main() {
   console.log('🌱  Seeding database…');
 
   console.log('  • Categories');
-  const insertedCategories = await db
+  const insertedCategories = await catalogDb
     .insert(categories)
     .values(seedCategories)
     .returning();
@@ -717,7 +717,7 @@ async function main() {
     isPack: false,
     imageUrl: CATEGORY_IMAGES[p.category] ?? null,
   }));
-  await db.insert(products).values(productRows);
+  await catalogDb.insert(products).values(productRows);
 
   console.log('  • Meat packs');
   const packRows = meatPacks.map((p) => ({
@@ -732,13 +732,13 @@ async function main() {
     isPack: true,
     imageUrl: CATEGORY_IMAGES['meat-packs'] ?? null,
   }));
-  await db.insert(products).values(packRows);
+  await catalogDb.insert(products).values(packRows);
 
   console.log('  • Promotions');
-  await db.insert(promotions).values(seedPromotions);
+  await catalogDb.insert(promotions).values(seedPromotions);
 
   console.log('  • Reviews');
-  await db.insert(reviews).values(seedReviews);
+  await catalogDb.insert(reviews).values(seedReviews);
 
   console.log('✅  Done.');
   process.exit(0);

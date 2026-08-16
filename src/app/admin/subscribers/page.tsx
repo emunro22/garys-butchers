@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { subscribers } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { SubscribersView } from '@/components/admin/subscribers-view';
@@ -6,7 +6,7 @@ import { SubscribersView } from '@/components/admin/subscribers-view';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminSubscribersPage() {
-  const all = await db
+  const all = await ordersDb
     .select()
     .from(subscribers)
     .orderBy(desc(subscribers.subscribedAt));

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
-import { products, subscriptions, users } from '@/lib/db/schema';
+import { catalogDb, ordersDb } from '@/lib/db';
+import { subscriptions, users } from '@/lib/db/schema-orders';
+import { products } from '@/lib/db/schema-catalog';
 import { ensureUsersSchema, ensureProductsSchema, ensureSubscriptionsSchema } from '@/lib/db/ensure-schema';
 import { eq, inArray, desc } from 'drizzle-orm';
 import { getCustomerSession } from '@/lib/auth';
@@ -24,7 +25,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
   await ensureSubscriptionsSchema();
-  const mine = await db
+  const mine = await ordersDb
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.userId, session.userId))
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     // Prices and eligibility are always taken from the current product
     // record, never trusted from the client.
     const productIds = data.items.map((i) => i.productId);
-    const dbProducts = await db
+    const dbProducts = await catalogDb
       .select({ id: products.id, name: products.name, priceInPence: products.priceInPence, isSubscribable: products.isSubscribable, isActive: products.isActive })
       .from(products)
       .where(inArray(products.id, productIds));
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Add a few more items to your subscription' }, { status: 400 });
     }
 
-    const [customer] = await db
+    const [customer] = await ordersDb
       .select({ id: users.id, email: users.email, name: users.name, stripeCustomerId: users.stripeCustomerId })
       .from(users)
       .where(eq(users.id, session.userId))
@@ -92,10 +93,10 @@ export async function POST(req: NextRequest) {
     if (!stripeCustomerId) {
       const stripeCustomer = await stripe.customers.create({ email: customer.email, name: customer.name });
       stripeCustomerId = stripeCustomer.id;
-      await db.update(users).set({ stripeCustomerId }).where(eq(users.id, customer.id));
+      await ordersDb.update(users).set({ stripeCustomerId }).where(eq(users.id, customer.id));
     }
 
-    const [draft] = await db
+    const [draft] = await ordersDb
       .insert(subscriptions)
       .values({
         userId: customer.id,

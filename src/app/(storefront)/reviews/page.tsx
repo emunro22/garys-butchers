@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { reviews } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { Star } from 'lucide-react';
@@ -17,7 +17,7 @@ export const revalidate = 300;
 export default async function ReviewsPage() {
   let allReviews: any[] = [];
   try {
-    allReviews = await db.select().from(reviews).orderBy(desc(reviews.publishedAt));
+    allReviews = await catalogDb.select().from(reviews).orderBy(desc(reviews.publishedAt));
   } catch {
     // empty fallback
   }

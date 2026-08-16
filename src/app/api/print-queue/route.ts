@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { and, asc, isNotNull, isNull } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   try {
     await ensureOrdersSchema();
 
-    const queue = await db
+    const queue = await ordersDb
       .select()
       .from(orders)
       .where(and(isNotNull(orders.orderNumber), isNull(orders.printedAt)))

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
 import { getSession } from '@/lib/auth';
 import { getShopSettings } from '@/lib/settings';
@@ -112,7 +112,7 @@ export async function PATCH(req: NextRequest) {
     const data = parsed.data;
 
     if (data.shop) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'shop', value: data.shop, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -122,7 +122,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.delivery) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'delivery', value: data.delivery, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -132,7 +132,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.premiumDelivery) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'premiumDelivery', value: data.premiumDelivery, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -142,7 +142,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.banner) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'banner', value: data.banner, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -152,7 +152,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.promotions) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'promotions', value: data.promotions, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -162,7 +162,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.referrals) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'referrals', value: data.referrals, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -172,7 +172,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.seasonal) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'seasonal', value: data.seasonal, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -182,7 +182,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.deliverySlots) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'deliverySlots', value: data.deliverySlots, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -192,7 +192,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.sameDay) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'sameDay', value: data.sameDay, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -202,7 +202,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.sameDayFee) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'sameDayFee', value: data.sameDayFee, updatedAt: new Date() })
         .onConflictDoUpdate({
@@ -212,7 +212,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (data.pickupSlots) {
-      await db
+      await catalogDb
         .insert(settings)
         .values({ key: 'pickupSlots', value: data.pickupSlots, updatedAt: new Date() })
         .onConflictDoUpdate({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateVerificationCode } from '@/lib/auth';
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = parsed.data.email.toLowerCase().trim();
 
-    const [user] = await db
+    const [user] = await ordersDb
       .select({ id: users.id, name: users.name, emailVerified: users.emailVerified })
       .from(users)
       .where(eq(users.email, normalizedEmail))
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     const code = generateVerificationCode();
-    await db
+    await ordersDb
       .update(users)
       .set({
         resetCode: code,

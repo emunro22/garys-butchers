@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest) {
       updates.premiumDeliveryEligible = parsed.data.premiumDeliveryEligible;
     }
 
-    await db
+    await ordersDb
       .update(users)
       .set(updates)
       .where(eq(users.id, parsed.data.userId));
@@ -66,7 +66,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const [target] = await db
+    const [target] = await ordersDb
       .select({ email: users.email })
       .from(users)
       .where(eq(users.id, parsed.data.userId))
@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     }
 
-    await db.delete(users).where(eq(users.id, parsed.data.userId));
+    await ordersDb.delete(users).where(eq(users.id, parsed.data.userId));
 
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -1,5 +1,5 @@
 import { and, eq, gte, lt } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders, subscriptions } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { blocksForWeekday, findBlock, getDateKey, getWeekday, londonDateTime, type SlotBlock } from '@/lib/slots';
@@ -21,7 +21,7 @@ async function countBookingsForBlock(
   blockId: string
 ): Promise<number> {
   const col = fulfilment === 'delivery' ? orders.deliverySlot : orders.pickupSlot;
-  const rows = await db
+  const rows = await ordersDb
     .select({ slot: col })
     .from(orders)
     .where(and(eq(orders.fulfilment, fulfilment), gte(col, dayStart), lt(col, dayEnd), activeOrderFilter()));
@@ -99,13 +99,13 @@ export async function findNextRenewalSlot(sub: SubscriptionRow): Promise<Date | 
  * delivery into a no-op instead of a duplicate order.
  */
 export async function createRenewalOrder(sub: SubscriptionRow, stripeInvoiceId: string, customerEmail: string, customerName: string) {
-  const [existing] = await db.select({ id: orders.id }).from(orders).where(eq(orders.stripeInvoiceId, stripeInvoiceId)).limit(1);
+  const [existing] = await ordersDb.select({ id: orders.id }).from(orders).where(eq(orders.stripeInvoiceId, stripeInvoiceId)).limit(1);
   if (existing) return existing;
 
   const slot = await findNextRenewalSlot(sub);
   const subtotal = sub.subtotalInPence;
 
-  const [order] = await db
+  const [order] = await ordersDb
     .insert(orders)
     .values({
       userId: sub.userId,

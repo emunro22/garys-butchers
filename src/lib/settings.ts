@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { settings } from '@/lib/db/schema';
 import type { SlotBlock, SlotGroupSettings } from '@/lib/slots';
 
@@ -164,7 +164,7 @@ export async function getShopSettings(): Promise<AppSettings> {
     },
   };
   try {
-    const rows = await db.select().from(settings);
+    const rows = await catalogDb.select().from(settings);
     for (const row of rows) {
       if (row.key === 'shop') {
         result.shop = { ...DEFAULT_SETTINGS.shop, ...(row.value as AppSettings['shop']) };

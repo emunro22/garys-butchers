@@ -1,5 +1,5 @@
 import { and, eq, gte, lt } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { findBlock, getDateKey, londonDateTime } from '@/lib/slots';
@@ -12,7 +12,7 @@ export async function getSameDayBucketCounts(): Promise<Record<string, number>> 
   const dayStart = londonDateTime(y, m, d, 0);
   const dayEnd = londonDateTime(y, m, d + 1, 0);
 
-  const rows = await db
+  const rows = await ordersDb
     .select({ deliverySlot: orders.deliverySlot })
     .from(orders)
     .where(

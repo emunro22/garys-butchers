@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -46,7 +46,7 @@ export async function GET(
   const { id } = await params;
   try {
     await ensureProductsSchema();
-    const [p] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+    const [p] = await catalogDb.select().from(products).where(eq(products.id, id)).limit(1);
     if (!p) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ product: p });
   } catch (err) {
@@ -77,7 +77,7 @@ export async function PATCH(
     const update: Record<string, unknown> = { ...data, updatedAt: new Date() };
     if (data.name && !data.slug) update.slug = slugify(data.name);
 
-    const [updated] = await db
+    const [updated] = await catalogDb
       .update(products)
       .set(update)
       .where(eq(products.id, id))
@@ -101,7 +101,7 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   try {
-    await db.delete(products).where(eq(products.id, id));
+    await catalogDb.delete(products).where(eq(products.id, id));
     revalidatePath('/', 'layout');
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { deals } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
@@ -9,7 +9,7 @@ import { DealsTable } from '@/components/admin/deals-table';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDealsPage() {
-  const all = await db.select().from(deals).orderBy(desc(deals.createdAt));
+  const all = await catalogDb.select().from(deals).orderBy(desc(deals.createdAt));
   const published = all.filter((d) => d.status === 'published').length;
 
   return (

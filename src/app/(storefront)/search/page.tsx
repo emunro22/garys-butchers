@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, or, ilike } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -26,7 +26,7 @@ export default async function SearchPage({
     try {
       await ensureProductsSchema();
       const term = `%${query}%`;
-      results = await db
+      results = await catalogDb
         .select()
         .from(products)
         .where(

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { asc, sql } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
@@ -9,8 +9,8 @@ import { CategoriesTable } from '@/components/admin/categories-table';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCategoriesPage() {
-  const cats = await db.select().from(categories).orderBy(asc(categories.sortOrder));
-  const counts = await db
+  const cats = await catalogDb.select().from(categories).orderBy(asc(categories.sortOrder));
+  const counts = await catalogDb
     .select({
       categoryId: products.categoryId,
       count: sql<number>`count(*)::int`,

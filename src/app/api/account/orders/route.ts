@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCustomerSession } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { and, eq, desc, ne, or } from 'drizzle-orm';
@@ -15,7 +15,7 @@ export async function GET() {
 
   // 'pending' orders haven't had payment confirmed yet — not a real order
   // from the customer's point of view either.
-  const userOrders = await db
+  const userOrders = await ordersDb
     .select()
     .from(orders)
     .where(

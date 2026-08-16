@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { desc, eq } from 'drizzle-orm';
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
-    const all = await db.select().from(orders).orderBy(desc(orders.createdAt));
+    const all = await ordersDb.select().from(orders).orderBy(desc(orders.createdAt));
     const filtered = status ? all.filter((o) => o.status === status) : all;
     return NextResponse.json({ orders: filtered });
   } catch (err) {
@@ -61,7 +61,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
     await ensureOrdersSchema();
-    const [deleted] = await db
+    const [deleted] = await ordersDb
       .delete(orders)
       .where(eq(orders.id, parsed.data.id))
       .returning();
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest) {
     if (parsed.data.courierName !== undefined) updates.courierName = parsed.data.courierName;
     if (parsed.data.printedAt !== undefined) updates.printedAt = parsed.data.printedAt;
 
-    const [updated] = await db
+    const [updated] = await ordersDb
       .update(orders)
       .set(updates)
       .where(eq(orders.id, parsed.data.id))

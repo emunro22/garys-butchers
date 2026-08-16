@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { subscribers } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -18,7 +18,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const all = await db
+    const all = await ordersDb
       .select()
       .from(subscribers)
       .orderBy(desc(subscribers.subscribedAt));

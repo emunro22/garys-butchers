@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { promotions } from '@/lib/db/schema';
 import { desc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -24,7 +24,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     await ensurePromotionsSchema();
-    const all = await db.select().from(promotions).orderBy(desc(promotions.createdAt));
+    const all = await catalogDb.select().from(promotions).orderBy(desc(promotions.createdAt));
     return NextResponse.json({ promotions: all });
   } catch (err) {
     console.error('promotions GET error', err);
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const [created] = await db
+    const [created] = await catalogDb
       .insert(promotions)
       .values({
         code: d.code.toUpperCase(),

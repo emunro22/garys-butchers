@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { promotions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -55,7 +55,7 @@ export async function PATCH(
       update.endsAt = parsed.data.endsAt ? new Date(parsed.data.endsAt) : null;
     }
 
-    const [updated] = await db
+    const [updated] = await catalogDb
       .update(promotions)
       .set(update)
       .where(eq(promotions.id, id))
@@ -77,7 +77,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    await db.delete(promotions).where(eq(promotions.id, id));
+    await catalogDb.delete(promotions).where(eq(promotions.id, id));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('promotion DELETE error', err);

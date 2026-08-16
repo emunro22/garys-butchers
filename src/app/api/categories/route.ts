@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
 import { asc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -17,7 +17,7 @@ const CategorySchema = z.object({
 
 export async function GET() {
   try {
-    const all = await db.select().from(categories).orderBy(asc(categories.sortOrder));
+    const all = await catalogDb.select().from(categories).orderBy(asc(categories.sortOrder));
     return NextResponse.json({ categories: all });
   } catch (err) {
     console.error('categories GET error', err);
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
     const d = parsed.data;
     const slug = (d.slug ?? slugify(d.name)).toLowerCase();
-    const [created] = await db
+    const [created] = await catalogDb
       .insert(categories)
       .values({
         name: d.name,

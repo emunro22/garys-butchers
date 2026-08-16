@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { asc } from 'drizzle-orm';
 import { PromotionForm } from '@/components/admin/promotion-form';
@@ -7,7 +7,7 @@ import { PromotionForm } from '@/components/admin/promotion-form';
 export const dynamic = 'force-dynamic';
 
 export default async function NewPromotionPage() {
-  const allProducts = await db
+  const allProducts = await catalogDb
     .select({ id: products.id, name: products.name })
     .from(products)
     .orderBy(asc(products.name));

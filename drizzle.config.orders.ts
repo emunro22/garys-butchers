@@ -6,11 +6,11 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 export default {
-  schema: './src/lib/db/schema-catalog.ts',
-  out: './drizzle/catalog',
+  schema: './src/lib/db/schema-orders.ts',
+  out: './drizzle/orders',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.POSTGRES_URL!,
+    url: process.env.ORDERS_DATABASE_URL!,
   },
   verbose: true,
   strict: true,

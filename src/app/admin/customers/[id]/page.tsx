@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users, orders } from '@/lib/db/schema';
 import { ensureOrdersSchema, ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { and, eq, desc, ne, or } from 'drizzle-orm';
@@ -25,7 +25,7 @@ export default async function AdminCustomerDetailPage({
 
   // Try to find as a registered user first
   const [user] = isUuid
-    ? await db
+    ? await ordersDb
         .select()
         .from(users)
         .where(eq(users.id, id))
@@ -34,7 +34,7 @@ export default async function AdminCustomerDetailPage({
 
   if (user) {
     // 'pending' orders never completed payment — not real order history.
-    const customerOrders = await db
+    const customerOrders = await ordersDb
       .select()
       .from(orders)
       .where(
@@ -89,7 +89,7 @@ export default async function AdminCustomerDetailPage({
     notFound();
   }
 
-  const customerOrders = await db
+  const customerOrders = await ordersDb
     .select()
     .from(orders)
     .where(and(eq(orders.customerEmail, email), ne(orders.status, 'pending')))

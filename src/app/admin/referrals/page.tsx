@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { referrals, users } from '@/lib/db/schema';
 import { ensureReferralsSchema, ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { desc, eq } from 'drizzle-orm';
@@ -14,7 +14,7 @@ export default async function AdminReferralsPage() {
   const referrer = alias(users, 'referrer');
   const referred = alias(users, 'referred');
 
-  const rows = await db
+  const rows = await ordersDb
     .select({
       id: referrals.id,
       status: referrals.status,

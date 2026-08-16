@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { eq } from 'drizzle-orm';
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     await ensureUsersSchema();
 
-    const [user] = await db
+    const [user] = await ordersDb
       .select()
       .from(users)
       .where(eq(users.email, normalizedEmail))
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hashPassword(newPassword);
-    await db
+    await ordersDb
       .update(users)
       .set({
         passwordHash,

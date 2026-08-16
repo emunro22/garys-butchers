@@ -1,5 +1,5 @@
 import { and, eq, gte, lt } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { getShopSettings } from '@/lib/settings';
 import { bucketKey, findBlock, getDateKey } from '@/lib/slots';
@@ -11,7 +11,7 @@ export async function getDeliveryBucketCounts() {
   const horizon = new Date(now);
   horizon.setDate(horizon.getDate() + 8);
 
-  const rows = await db
+  const rows = await ordersDb
     .select({ deliverySlot: orders.deliverySlot })
     .from(orders)
     .where(

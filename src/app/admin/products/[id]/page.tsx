@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -16,9 +16,9 @@ export default async function EditProductPage({
   await ensureProductsSchema();
 
   const { id } = await params;
-  const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  const [product] = await catalogDb.select().from(products).where(eq(products.id, id)).limit(1);
   if (!product) notFound();
-  const allCategories = await db
+  const allCategories = await catalogDb
     .select()
     .from(categories)
     .orderBy(asc(categories.sortOrder));

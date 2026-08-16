@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres';
+import { ordersClient } from './index';
 
 // This repo has no committed migrations folder — schema changes are applied
 // live via guarded, idempotent statements like these instead of a migration
@@ -14,33 +15,37 @@ import { sql } from '@vercel/postgres';
 // Each function is idempotent and cheap once the column/value exists, so
 // it's safe to call on every request rather than trying to call it exactly
 // once somewhere central.
+//
+// `sql` (from @vercel/postgres) targets the catalog DB (POSTGRES_URL);
+// `ordersClient` (postgres-js) targets the orders DB (ORDERS_DATABASE_URL)
+// — users/orders/referrals/subscriptions live there since the DB split.
 
 export async function ensureUsersSchema() {
   try {
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code varchar(12)`;
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_user_id uuid REFERENCES users(id) ON DELETE SET NULL`;
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_credits_available integer NOT NULL DEFAULT 0`;
+    await ordersClient`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_delivery_eligible boolean NOT NULL DEFAULT false`;
+    await ordersClient`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code varchar(12)`;
+    await ordersClient`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_user_id uuid REFERENCES users(id) ON DELETE SET NULL`;
+    await ordersClient`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_credits_available integer NOT NULL DEFAULT 0`;
     // Postgres unique indexes allow any number of NULLs, so this is safe
     // ahead of referral codes being backfilled lazily per-user.
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS users_referral_code_idx ON users (referral_code)`;
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id varchar(200)`;
+    await ordersClient`CREATE UNIQUE INDEX IF NOT EXISTS users_referral_code_idx ON users (referral_code)`;
+    await ordersClient`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id varchar(200)`;
   } catch { /* already exists */ }
 }
 
 export async function ensureOrdersSchema() {
   try {
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS weight_grams integer`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name varchar(60)`;
-    await sql`ALTER TYPE fulfilment ADD VALUE IF NOT EXISTS 'premium'`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS printed_at timestamptz`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS referral_credit_redeemed boolean NOT NULL DEFAULT false`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS subscription_id uuid`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_invoice_id varchar(200)`;
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS orders_stripe_invoice_idx ON orders (stripe_invoice_id)`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cart_signature varchar(64)`;
-    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS abandoned_reminder_sent_at timestamptz`;
-    await sql`CREATE INDEX IF NOT EXISTS orders_email_status_idx ON orders (customer_email, status)`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS weight_grams integer`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name varchar(60)`;
+    await ordersClient`ALTER TYPE fulfilment ADD VALUE IF NOT EXISTS 'premium'`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS printed_at timestamptz`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS referral_credit_redeemed boolean NOT NULL DEFAULT false`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS subscription_id uuid`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_invoice_id varchar(200)`;
+    await ordersClient`CREATE UNIQUE INDEX IF NOT EXISTS orders_stripe_invoice_idx ON orders (stripe_invoice_id)`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cart_signature varchar(64)`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS abandoned_reminder_sent_at timestamptz`;
+    await ordersClient`CREATE INDEX IF NOT EXISTS orders_email_status_idx ON orders (customer_email, status)`;
   } catch { /* already exists */ }
 }
 
@@ -49,7 +54,7 @@ export async function ensureOrdersSchema() {
 // routes that actually touch it.
 export async function ensureReferralsSchema() {
   try {
-    await sql`
+    await ordersClient`
       CREATE TABLE IF NOT EXISTS referrals (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         referrer_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -60,7 +65,7 @@ export async function ensureReferralsSchema() {
         rewarded_at timestamptz
       )
     `;
-    await sql`CREATE INDEX IF NOT EXISTS referrals_referrer_idx ON referrals (referrer_user_id)`;
+    await ordersClient`CREATE INDEX IF NOT EXISTS referrals_referrer_idx ON referrals (referrer_user_id)`;
   } catch { /* already exists */ }
 }
 
@@ -97,7 +102,7 @@ export async function ensurePromotionsSchema() {
 // Brand-new table — only needs to be called from the routes that touch it.
 export async function ensureSubscriptionsSchema() {
   try {
-    await sql`
+    await ordersClient`
       CREATE TABLE IF NOT EXISTS subscriptions (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -115,7 +120,7 @@ export async function ensureSubscriptionsSchema() {
         cancelled_at timestamptz
       )
     `;
-    await sql`CREATE INDEX IF NOT EXISTS subscriptions_user_idx ON subscriptions (user_id)`;
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_stripe_sub_idx ON subscriptions (stripe_subscription_id)`;
+    await ordersClient`CREATE INDEX IF NOT EXISTS subscriptions_user_idx ON subscriptions (user_id)`;
+    await ordersClient`CREATE UNIQUE INDEX IF NOT EXISTS subscriptions_stripe_sub_idx ON subscriptions (stripe_subscription_id)`;
   } catch { /* already exists */ }
 }

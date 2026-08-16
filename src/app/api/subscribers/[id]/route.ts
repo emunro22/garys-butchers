@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { subscribers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
@@ -22,7 +22,7 @@ export async function PATCH(
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
-    const [updated] = await db
+    const [updated] = await ordersDb
       .update(subscribers)
       .set({
         isActive: parsed.data.isActive,
@@ -46,7 +46,7 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   try {
-    await db.delete(subscribers).where(eq(subscribers.id, id));
+    await ordersDb.delete(subscribers).where(eq(subscribers.id, id));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('subscriber DELETE error', err);

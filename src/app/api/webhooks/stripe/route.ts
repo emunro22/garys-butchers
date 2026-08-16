@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { subscriptions, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { markOrderPaid } from '@/lib/order-payment';
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         const stripeCustomerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
         if (subscriptionId && stripeSubscriptionId) {
           await ensureSubscriptionsSchema();
-          await db
+          await ordersDb
             .update(subscriptions)
             .set({
               status: 'active',
@@ -76,13 +76,13 @@ export async function POST(req: NextRequest) {
         typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
       if (stripeSubscriptionId) {
         await ensureSubscriptionsSchema();
-        const [sub] = await db
+        const [sub] = await ordersDb
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
           .limit(1);
         if (sub && sub.status !== 'cancelled') {
-          const [buyer] = await db
+          const [buyer] = await ordersDb
             .select({ email: users.email, name: users.name })
             .from(users)
             .where(eq(users.id, sub.userId))
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     } else if (event.type === 'customer.subscription.deleted') {
       const sub = event.data.object as Stripe.Subscription;
       await ensureSubscriptionsSchema();
-      await db
+      await ordersDb
         .update(subscriptions)
         .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
         .where(eq(subscriptions.stripeSubscriptionId, sub.id));
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
       if (stripeSubscriptionId) {
         await ensureSubscriptionsSchema();
-        await db
+        await ordersDb
           .update(subscriptions)
           .set({ status: 'past_due', updatedAt: new Date() })
           .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));

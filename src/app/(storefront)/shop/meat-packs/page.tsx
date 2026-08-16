@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { and, eq, asc, desc, ilike } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -44,7 +44,7 @@ export default async function MeatPacksPage({
 
   try {
     await ensureProductsSchema();
-    packs = await db
+    packs = await catalogDb
       .select()
       .from(products)
       .where(
@@ -55,7 +55,7 @@ export default async function MeatPacksPage({
         )
       )
       .orderBy(...sortOrderBy(sort));
-    allCats = await db
+    allCats = await catalogDb
       .select()
       .from(categories)
       .where(eq(categories.isActive, true))

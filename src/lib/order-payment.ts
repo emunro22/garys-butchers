@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { orders, promotions, referrals, users } from '@/lib/db/schema';
+import { catalogDb, ordersDb } from '@/lib/db';
+import { orders, referrals, users } from '@/lib/db/schema-orders';
+import { promotions } from '@/lib/db/schema-catalog';
 import { ensureOrdersSchema, ensureUsersSchema, ensureReferralsSchema } from '@/lib/db/ensure-schema';
 import { sendOrderConfirmation, sendShopNotification } from '@/lib/email';
 import { stripe } from '@/lib/stripe';
@@ -12,7 +13,7 @@ type OrderRow = typeof orders.$inferSelect;
  *  flight" before creating another. */
 export async function getPendingOrdersForEmail(email: string): Promise<OrderRow[]> {
   await ensureOrdersSchema();
-  return db
+  return ordersDb
     .select()
     .from(orders)
     .where(and(eq(orders.customerEmail, email), eq(orders.status, 'pending')))
@@ -29,7 +30,7 @@ export async function getPendingOrdersForEmail(email: string): Promise<OrderRow[
  */
 export async function supersedeOrder(orderId: string): Promise<boolean> {
   await ensureOrdersSchema();
-  const [won] = await db
+  const [won] = await ordersDb
     .update(orders)
     .set({ status: 'cancelled', updatedAt: new Date() })
     .where(and(eq(orders.id, orderId), eq(orders.status, 'pending')))
@@ -60,7 +61,7 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
   // column here breaks ALL payments, not just premium-delivery ones.
   await ensureOrdersSchema();
 
-  const [won] = await db
+  const [won] = await ordersDb
     .update(orders)
     .set({
       status: 'paid',
@@ -71,7 +72,7 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
     .returning();
 
   if (!won) {
-    const [existing] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    const [existing] = await ordersDb.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     return existing ?? null;
   }
 
@@ -81,12 +82,12 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
   // shipping-update email (see the admin orders screen) tells the customer
   // once it's actually on its way.
   if (won.fulfilment === 'premium') {
-    await db.update(orders).set({ status: 'preparing', updatedAt: new Date() }).where(eq(orders.id, orderId));
+    await ordersDb.update(orders).set({ status: 'preparing', updatedAt: new Date() }).where(eq(orders.id, orderId));
     won.status = 'preparing';
   }
 
   if (won.promotionCode) {
-    await db
+    await catalogDb
       .update(promotions)
       .set({ redemptionCount: sql`${promotions.redemptionCount} + 1` })
       .where(eq(promotions.code, won.promotionCode));
@@ -99,7 +100,7 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
     // that payment has actually succeeded (never at checkout time, in case the
     // payment fails).
     if (won.referralCreditRedeemed) {
-      await db
+      await ordersDb
         .update(users)
         .set({ referralCreditsAvailable: sql`GREATEST(${users.referralCreditsAvailable} - 1, 0)` })
         .where(eq(users.id, won.userId));
@@ -110,14 +111,14 @@ export async function markOrderPaid(orderId: string): Promise<OrderRow | null> {
     // 'pending') both answers that and claims the reward atomically — a
     // second paid order for the same buyer will match zero rows here.
     await ensureReferralsSchema();
-    const [rewarded] = await db
+    const [rewarded] = await ordersDb
       .update(referrals)
       .set({ status: 'rewarded', qualifyingOrderId: won.id, rewardedAt: new Date() })
       .where(and(eq(referrals.referredUserId, won.userId), eq(referrals.status, 'pending')))
       .returning({ referrerUserId: referrals.referrerUserId });
 
     if (rewarded) {
-      await db
+      await ordersDb
         .update(users)
         .set({ referralCreditsAvailable: sql`${users.referralCreditsAvailable} + 1` })
         .where(eq(users.id, rewarded.referrerUserId));

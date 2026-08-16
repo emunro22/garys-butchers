@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -21,12 +21,12 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function ShopPage() {
-  let cats: Awaited<ReturnType<typeof db.select>> extends never ? never : any[] = [];
+  let cats: Awaited<ReturnType<typeof catalogDb.select>> extends never ? never : any[] = [];
   let bestsellers: any[] = [];
   try {
     await ensureProductsSchema();
     const [catsRes, categoryImages] = await Promise.all([
-      db
+      catalogDb
         .select()
         .from(categories)
         .where(eq(categories.isActive, true))
@@ -34,7 +34,7 @@ export default async function ShopPage() {
       getCategoryImageMap(),
     ]);
     cats = catsRes.map((c) => ({ ...c, imageUrl: c.imageUrl ?? categoryImages[c.id] ?? null }));
-    bestsellers = await db
+    bestsellers = await catalogDb
       .select()
       .from(products)
       .where(and(eq(products.isFeatured, true), eq(products.isActive, true)))

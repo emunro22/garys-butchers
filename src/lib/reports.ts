@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { users, orders } from '@/lib/db/schema';
 import { ensureUsersSchema } from '@/lib/db/ensure-schema';
 import { gte, and, notInArray } from 'drizzle-orm';
@@ -17,7 +17,7 @@ function periodLabel(days: number, since: Date): string {
 export async function buildSignupsReport(days: number) {
   const since = cutoffDate(days);
   await ensureUsersSchema();
-  const rows = await db.select().from(users).where(gte(users.createdAt, since));
+  const rows = await ordersDb.select().from(users).where(gte(users.createdAt, since));
   const sorted = [...rows].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
 
   const csvRows: Array<Array<string | number>> = [
@@ -44,7 +44,7 @@ export async function buildSignupsReport(days: number) {
 
 export async function buildProductSalesReport(days: number) {
   const since = cutoffDate(days);
-  const rows = await db
+  const rows = await ordersDb
     .select({ items: orders.items })
     .from(orders)
     .where(and(gte(orders.createdAt, since), notInArray(orders.status, ['pending', 'cancelled', 'refunded'])));

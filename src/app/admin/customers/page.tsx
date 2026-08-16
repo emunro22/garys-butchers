@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders, users } from '@/lib/db/schema';
 import { sql, eq } from 'drizzle-orm';
 import { CustomersView } from '@/components/admin/customers-view';
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminCustomersPage() {
   // Get all registered users
-  const registeredUsers = await db
+  const registeredUsers = await ordersDb
     .select({
       id: users.id,
       email: users.email,
@@ -21,7 +21,7 @@ export default async function AdminCustomersPage() {
     .orderBy(sql`${users.createdAt} desc`);
 
   // Get order stats grouped by email (includes guest orders)
-  const orderStats = await db
+  const orderStats = await ordersDb
     .select({
       email: orders.customerEmail,
       name: sql<string>`max(${orders.customerName})`,

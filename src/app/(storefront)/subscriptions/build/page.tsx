@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { and, eq, asc } from 'drizzle-orm';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function BuildSubscriptionPage() {
   await ensureProductsSchema();
 
-  const eligibleProducts = await db
+  const eligibleProducts = await catalogDb
     .select({
       id: products.id,
       name: products.name,

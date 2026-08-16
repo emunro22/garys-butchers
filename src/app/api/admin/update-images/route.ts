@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -81,10 +81,10 @@ export async function POST(_req: NextRequest) {
 
   try {
     await ensureProductsSchema();
-    const allCats = await db.select().from(categories);
+    const allCats = await catalogDb.select().from(categories);
     const slugById = new Map(allCats.map((c) => [c.id, c.slug]));
 
-    const allProducts = await db.select().from(products);
+    const allProducts = await catalogDb.select().from(products);
     const results: string[] = [];
     let updated = 0;
     let skipped = 0;
@@ -96,7 +96,7 @@ export async function POST(_req: NextRequest) {
         skipped++;
         continue;
       }
-      await db
+      await catalogDb
         .update(products)
         .set({ imageUrl, updatedAt: new Date() })
         .where(eq(products.id, product.id));

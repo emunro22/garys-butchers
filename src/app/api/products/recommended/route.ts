@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { products } from '@/lib/db/schema';
 import { and, eq, inArray, desc } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   try {
     await ensureProductsSchema();
-    const results = await db
+    const results = await catalogDb
       .select()
       .from(products)
       .where(and(inArray(products.categoryId, categoryIds), eq(products.isActive, true)))

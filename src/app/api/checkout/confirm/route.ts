@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { orders } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     await ensureOrdersSchema();
 
-    const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    const [order] = await ordersDb.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       await markOrderPaid(orderId);
     }
 
-    const [finalOrder] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    const [finalOrder] = await ordersDb.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     return NextResponse.json({
       status: finalOrder?.status ?? null,
       orderNumber: finalOrder?.orderNumber ?? null,

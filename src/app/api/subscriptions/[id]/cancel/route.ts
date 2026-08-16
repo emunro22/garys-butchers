@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { ordersDb } from '@/lib/db';
 import { subscriptions } from '@/lib/db/schema';
 import { ensureSubscriptionsSchema } from '@/lib/db/ensure-schema';
 import { eq, and } from 'drizzle-orm';
@@ -13,7 +13,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   try {
     await ensureSubscriptionsSchema();
-    const [sub] = await db
+    const [sub] = await ordersDb
       .select()
       .from(subscriptions)
       .where(and(eq(subscriptions.id, id), eq(subscriptions.userId, session.userId)))
@@ -27,7 +27,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     // The webhook (customer.subscription.deleted) will also land and set the
     // same fields — this just makes the cancellation feel instant rather
     // than waiting on a round trip to Stripe and back.
-    await db
+    await ordersDb
       .update(subscriptions)
       .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
       .where(eq(subscriptions.id, id));

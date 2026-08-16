@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { promotions, products } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { getShopSettings } from '@/lib/settings';
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
     const { code, subtotalInPence, email, items } = parsed.data;
-    const [promo] = await db
+    const [promo] = await catalogDb
       .select()
       .from(promotions)
       .where(eq(promotions.code, code.toUpperCase()))
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     let productNames: string[] = [];
     if (promo.productIds.length > 0) {
-      const matchingProducts = await db
+      const matchingProducts = await catalogDb
         .select({ id: products.id, name: products.name })
         .from(products)
         .where(inArray(products.id, promo.productIds));

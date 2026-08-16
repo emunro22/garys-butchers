@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { catalogDb } from '@/lib/db';
 import { deals, products } from '@/lib/db/schema';
 import { and, eq, or, isNull, gte, inArray } from 'drizzle-orm';
 import { ensureProductsSchema } from '@/lib/db/ensure-schema';
@@ -9,7 +9,7 @@ export async function SeasonalDeals({ compact = false }: { compact?: boolean }) 
   try {
     await ensureProductsSchema();
     const now = new Date();
-    activeDeals = await db
+    activeDeals = await catalogDb
       .select()
       .from(deals)
       .where(
@@ -33,7 +33,7 @@ export async function SeasonalDeals({ compact = false }: { compact?: boolean }) 
   const productMap = new Map<string, typeof products.$inferSelect>();
   if (allProductIds.length > 0) {
     try {
-      const rows = await db
+      const rows = await catalogDb
         .select()
         .from(products)
         .where(inArray(products.id, allProductIds));
