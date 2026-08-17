@@ -247,6 +247,15 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      if (
+        typeof shopSettings.sameDay.orderCutoffMinutes === 'number' &&
+        nowMinutes >= shopSettings.sameDay.orderCutoffMinutes
+      ) {
+        return NextResponse.json(
+          { error: 'Same-day delivery has finished for today — please choose another fulfilment option.' },
+          { status: 400 }
+        );
+      }
       const counts = await getSameDayBucketCounts();
       if ((counts[sameDayBlock.id] ?? 0) >= sameDayBlock.capacity) {
         return NextResponse.json(

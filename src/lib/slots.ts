@@ -56,6 +56,13 @@ export type SlotGroupSettings = {
   // this time today, no "today" slots are offered at all, e.g. so same-day
   // delivery can't be ordered overnight before the shop opens.
   opensAtMinutes?: number;
+  // Optional daily ceiling on same-day booking (used by generateTodaySlots) —
+  // at or after this time today, no "today" slots are offered, regardless of
+  // when the delivery window itself starts/ends. Distinct from a block's own
+  // end time: e.g. same-day delivery arrives 5-8pm, but orders for it must
+  // stop at 2pm to leave time to prep/fulfil them. null means no such
+  // cutoff (a block's own end time is the only limit).
+  orderCutoffMinutes?: number | null;
 };
 
 export type GeneratedSlot = {
@@ -189,6 +196,7 @@ export function generateTodaySlots(group: SlotGroupSettings, now: Date = new Dat
   const dateKey = getDateKey(now);
   const nowMinutes = minutesOfDay(now);
   if (typeof group.opensAtMinutes === 'number' && nowMinutes < group.opensAtMinutes) return [];
+  if (typeof group.orderCutoffMinutes === 'number' && nowMinutes >= group.orderCutoffMinutes) return [];
   const out: GeneratedSlot[] = [];
   for (const block of blocksForWeekday(group, weekday)) {
     const endsAt = block.endMinutes > block.startMinutes ? block.endMinutes : block.startMinutes;

@@ -75,6 +75,7 @@ const SlotGroupSchema = z.object({
   blocks: z.array(SlotBlockSchema).max(48),
   closedDays: z.array(z.number().int().min(0).max(6)),
   saturdayCutoffMinutes: z.number().int().min(0).max(1439).nullish(),
+  orderCutoffMinutes: z.number().int().min(0).max(1439).nullish(),
 });
 
 const SameDayFeeSchema = z.object({

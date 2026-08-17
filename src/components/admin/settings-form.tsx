@@ -60,9 +60,11 @@ function newBlockId() {
 function SlotBlocksEditor({
   group,
   onChange,
+  showOrderCutoff,
 }: {
   group: SlotGroupSettings;
   onChange: (next: SlotGroupSettings) => void;
+  showOrderCutoff?: boolean;
 }) {
   function updateBlock(id: string, patch: Partial<SlotBlock>) {
     onChange({ ...group, blocks: group.blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
@@ -183,6 +185,38 @@ function SlotBlocksEditor({
           </div>
         )}
       </div>
+      {showOrderCutoff && (
+        <div>
+          <label className="flex items-center gap-1.5 text-xs text-ink-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={group.orderCutoffMinutes != null}
+              onChange={(e) =>
+                onChange({
+                  ...group,
+                  orderCutoffMinutes: e.target.checked ? group.orderCutoffMinutes ?? 840 : null,
+                })
+              }
+              className="h-3.5 w-3.5"
+            />
+            Stop taking orders before the delivery window starts
+          </label>
+          {group.orderCutoffMinutes != null && (
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              <Input
+                type="time"
+                value={minutesToTime(group.orderCutoffMinutes)}
+                onChange={(e) => onChange({ ...group, orderCutoffMinutes: timeToMinutes(e.target.value) })}
+                className="w-32"
+              />
+              <span className="text-xs text-ink-500">
+                no same-day orders accepted at or after this time, even though the delivery window itself is
+                later
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -661,7 +695,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
             e.g. delete anything after 5pm so same-day deliveries stop being offered past then.
           </p>
         </div>
-        <SlotBlocksEditor group={sameDay} onChange={setSameDay} />
+        <SlotBlocksEditor group={sameDay} onChange={setSameDay} showOrderCutoff />
       </section>
 
       {/* Same-day delivery fee */}

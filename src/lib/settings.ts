@@ -71,6 +71,9 @@ export const DEFAULT_SETTINGS = {
     // Same-day can't be ordered before the shop opens (7:30am) — matches the
     // published hours on the about/contact pages.
     opensAtMinutes: 450 as number,
+    // Same-day orders stop being taken at 2pm, well before the 5-8pm delivery
+    // window itself, to leave enough time to prep and run the round.
+    orderCutoffMinutes: 840 as number | null,
   } satisfies SlotGroupSettings,
   // Optional rush-delivery surcharge, added on top of the normal
   // distance-based delivery fee (see delivery above) — same-day orders are
@@ -107,7 +110,7 @@ function migrateSlotGroup(
   value: unknown,
   defaults: SlotGroupSettings,
   legacyKeyOrder: string[]
-): SlotGroupSettings & { saturdayCutoffMinutes: number | null } {
+): SlotGroupSettings & { saturdayCutoffMinutes: number | null; orderCutoffMinutes: number | null } {
   if (value && typeof value === 'object' && Array.isArray((value as SlotGroupSettings).blocks)) {
     const v = value as SlotGroupSettings;
     return {
@@ -119,6 +122,10 @@ function migrateSlotGroup(
         v.saturdayCutoffMinutes === null || typeof v.saturdayCutoffMinutes === 'number'
           ? v.saturdayCutoffMinutes
           : defaults.saturdayCutoffMinutes ?? null,
+      orderCutoffMinutes:
+        v.orderCutoffMinutes === null || typeof v.orderCutoffMinutes === 'number'
+          ? v.orderCutoffMinutes
+          : defaults.orderCutoffMinutes ?? null,
       opensAtMinutes: typeof v.opensAtMinutes === 'number' ? v.opensAtMinutes : defaults.opensAtMinutes,
     };
   }
@@ -131,10 +138,15 @@ function migrateSlotGroup(
       })),
       closedDays: defaults.closedDays,
       saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null,
+      orderCutoffMinutes: defaults.orderCutoffMinutes ?? null,
       opensAtMinutes: defaults.opensAtMinutes,
     };
   }
-  return { ...defaults, saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null };
+  return {
+    ...defaults,
+    saturdayCutoffMinutes: defaults.saturdayCutoffMinutes ?? null,
+    orderCutoffMinutes: defaults.orderCutoffMinutes ?? null,
+  };
 }
 
 export async function getShopSettings(): Promise<AppSettings> {
@@ -155,6 +167,7 @@ export async function getShopSettings(): Promise<AppSettings> {
       blocks: [...DEFAULT_SETTINGS.sameDay.blocks],
       closedDays: [...DEFAULT_SETTINGS.sameDay.closedDays],
       opensAtMinutes: DEFAULT_SETTINGS.sameDay.opensAtMinutes,
+      orderCutoffMinutes: DEFAULT_SETTINGS.sameDay.orderCutoffMinutes,
     },
     sameDayFee: { ...DEFAULT_SETTINGS.sameDayFee },
     pickupSlots: {
