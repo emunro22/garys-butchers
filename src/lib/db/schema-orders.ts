@@ -131,6 +131,9 @@ export const orders = pgTable(
     // Set once the abandoned-checkout reminder email has been sent for this
     // order, so the reminder cron never sends it twice.
     abandonedReminderSentAt: timestamp('abandoned_reminder_sent_at', { withTimezone: true }),
+    // Set once the post-fulfilment "leave us a review" email has been sent
+    // for this order, so the 8pm review cron never sends it twice.
+    reviewEmailSentAt: timestamp('review_email_sent_at', { withTimezone: true }),
     // Set only for orders auto-created by a subscription renewal (see
     // src/lib/subscription-renewal.ts) — null for every normal checkout order.
     subscriptionId: uuid('subscription_id'),

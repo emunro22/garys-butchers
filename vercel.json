@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/send-abandoned-checkout-reminders",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/send-review-request-emails",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

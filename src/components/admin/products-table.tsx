@@ -9,6 +9,19 @@ import { Input } from '@/components/ui/input';
 import { formatPrice } from '@/lib/utils';
 import type { Product, Category } from '@/lib/db/schema';
 
+type Variant = { label: string; priceInPence: number; compareAtPriceInPence?: number };
+
+// Variant products are priced per size, not by the base priceInPence field
+// (see product-form.tsx) — show the cheapest size's price instead, same rule
+// product-card.tsx uses on the storefront, so this list doesn't show a
+// stale/zeroed base price for them.
+function displayPrice(p: Product): { price: number; fromVariant: boolean } {
+  const variants = (p.variants as Variant[] | undefined) ?? [];
+  if (variants.length === 0) return { price: p.priceInPence, fromVariant: false };
+  const cheapest = variants.reduce((min, v) => (v.priceInPence < min.priceInPence ? v : min), variants[0]);
+  return { price: cheapest.priceInPence, fromVariant: true };
+}
+
 export function ProductsTable({
   products,
   categories,
@@ -122,7 +135,8 @@ export function ProductsTable({
                   {p.isPack && ' · Pack'}
                 </p>
                 <p className="text-sm font-medium text-ink-900 tabular shrink-0">
-                  {formatPrice(p.priceInPence)}
+                  {displayPrice(p).fromVariant && 'From '}
+                  {formatPrice(displayPrice(p).price)}
                 </p>
               </div>
               <div className="flex gap-2 mt-2">
@@ -201,7 +215,8 @@ export function ProductsTable({
                   </span>
                 </td>
                 <td className="px-5 py-3 text-right tabular">
-                  {formatPrice(p.priceInPence)}
+                  {displayPrice(p).fromVariant && 'From '}
+                  {formatPrice(displayPrice(p).price)}
                 </td>
                 <td className="px-5 py-3 text-center">
                   <span

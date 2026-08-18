@@ -45,6 +45,7 @@ export async function ensureOrdersSchema() {
     await ordersClient`CREATE UNIQUE INDEX IF NOT EXISTS orders_stripe_invoice_idx ON orders (stripe_invoice_id)`;
     await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS cart_signature varchar(64)`;
     await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS abandoned_reminder_sent_at timestamptz`;
+    await ordersClient`ALTER TABLE orders ADD COLUMN IF NOT EXISTS review_email_sent_at timestamptz`;
     await ordersClient`CREATE INDEX IF NOT EXISTS orders_email_status_idx ON orders (customer_email, status)`;
   } catch { /* already exists */ }
 }

@@ -96,6 +96,10 @@ export function ProductForm({
   const [variants, setVariants] = useState<Variant[]>(
     (initial?.variants as Variant[] | undefined) ?? []
   );
+  // Once a product has size variants, pricing is entirely per-variant — the
+  // base price/weight fields below are hidden rather than left to conflict
+  // with the per-size prices.
+  const hasVariants = variants.length > 0;
   const [newSize, setNewSize] = useState('7oz');
   const [customSize, setCustomSize] = useState('');
   const [newPrice, setNewPrice] = useState('');
@@ -226,18 +230,28 @@ export function ProductForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (currentPriceInPence <= 0) {
+    if (!hasVariants && currentPriceInPence <= 0) {
       setError('Enter a current price');
       return;
     }
     setSubmitting(true);
     try {
+      // Once size variants exist, pricing is entirely per-variant — the base
+      // price/weight fields are hidden from the admin, so derive the base
+      // priceInPence/compareAtPriceInPence from the cheapest variant instead
+      // (same "cheapest variant" rule product-card.tsx uses to display a
+      // "from £X" price). Keeps the base price non-zero for anything that
+      // still reads it directly and isn't variant-aware (deals, subscriptions,
+      // the admin product list, price sort).
+      const cheapestVariant = hasVariants
+        ? variants.reduce((min, v) => (v.priceInPence < min.priceInPence ? v : min), variants[0])
+        : null;
       const payload = {
         categoryId: form.categoryId || null,
         name: form.name,
         description: form.description || null,
-        priceInPence: hasDiscount ? discountedPriceInPence : currentPriceInPence,
-        compareAtPriceInPence: hasDiscount ? currentPriceInPence : null,
+        priceInPence: cheapestVariant ? cheapestVariant.priceInPence : (hasDiscount ? discountedPriceInPence : currentPriceInPence),
+        compareAtPriceInPence: cheapestVariant ? (cheapestVariant.compareAtPriceInPence ?? null) : (hasDiscount ? currentPriceInPence : null),
         imageUrl: form.imageUrl || null,
         weightLabel: form.weightLabel || null,
         badge: form.badge || null,
@@ -417,59 +431,68 @@ export function ProductForm({
       {/* Price */}
       <section>
         <h2 className="font-display text-xl text-ink-900 mb-4">Price</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="price">Current price (£)</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={currentPriceInput}
-              onChange={(e) => setCurrentPriceInput(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="discountedPrice">Discounted price (£)</Label>
-            <Input
-              id="discountedPrice"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Leave blank for no discount"
-              value={discountedPriceInput}
-              onChange={(e) => setDiscountedPriceInput(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="mt-4 max-w-xs">
-          <Label htmlFor="weight">Weight label</Label>
-          <Input
-            id="weight"
-            placeholder="approx 500g"
-            value={form.weightLabel ?? ''}
-            onChange={(e) => setForm({ ...form, weightLabel: e.target.value })}
-          />
-        </div>
-        {discountedPriceInput.trim() && (
-          hasDiscount ? (
-            <div className="mt-4 flex items-center gap-3 border border-ink-900/10 bg-cream-50 px-4 py-3">
-              <span className="text-sm text-ink-400 line-through tabular">
-                {formatPrice(currentPriceInPence)}
-              </span>
-              <span className="text-base font-medium text-ink-900 tabular">
-                {formatPrice(discountedPriceInPence)}
-              </span>
-              <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
-                Save {percentOff(discountedPriceInPence, currentPriceInPence)}%
-              </span>
+        {hasVariants ? (
+          <p className="text-sm text-ink-500 bg-cream-100 border border-ink-900/10 px-4 py-3">
+            This product has size variants, so it&apos;s priced per size — set prices in the
+            Size variants section below instead.
+          </p>
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="price">Current price (£)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={currentPriceInput}
+                  onChange={(e) => setCurrentPriceInput(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="discountedPrice">Discounted price (£)</Label>
+                <Input
+                  id="discountedPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Leave blank for no discount"
+                  value={discountedPriceInput}
+                  onChange={(e) => setDiscountedPriceInput(e.target.value)}
+                />
+              </div>
             </div>
-          ) : (
-            <p className="mt-3 text-xs text-butcher-500">
-              Discounted price should be lower than the current price for the saving to show on the shop.
-            </p>
-          )
+            <div className="mt-4 max-w-xs">
+              <Label htmlFor="weight">Weight label</Label>
+              <Input
+                id="weight"
+                placeholder="approx 500g"
+                value={form.weightLabel ?? ''}
+                onChange={(e) => setForm({ ...form, weightLabel: e.target.value })}
+              />
+            </div>
+            {discountedPriceInput.trim() && (
+              hasDiscount ? (
+                <div className="mt-4 flex items-center gap-3 border border-ink-900/10 bg-cream-50 px-4 py-3">
+                  <span className="text-sm text-ink-400 line-through tabular">
+                    {formatPrice(currentPriceInPence)}
+                  </span>
+                  <span className="text-base font-medium text-ink-900 tabular">
+                    {formatPrice(discountedPriceInPence)}
+                  </span>
+                  <span className="text-xs uppercase tracking-[0.15em] font-semibold text-butcher-500 bg-butcher-500/10 px-2 py-1">
+                    Save {percentOff(discountedPriceInPence, currentPriceInPence)}%
+                  </span>
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-butcher-500">
+                  Discounted price should be lower than the current price for the saving to show on the shop.
+                </p>
+              )
+            )}
+          </>
         )}
       </section>
 

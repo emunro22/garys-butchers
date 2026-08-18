@@ -15,7 +15,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/lib/db/seed.ts",
     "db:images": "tsx src/lib/db/update-images.ts",
-    "db:migrate-orders-data": "tsx scripts/migrate-orders-data.ts"
+    "db:migrate-orders-data": "tsx scripts/migrate-orders-data.ts",
+    "db:send-review-backfill": "tsx scripts/send-review-request-backfill.ts"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^3.0.0",

@@ -426,6 +426,44 @@ export async function sendAbandonedCheckoutEmail(opts: {
   });
 }
 
+// Sent by the review-request cron at 8pm UK time on the day an order was
+// fulfilled (same-day/regular delivery or collection) — a nudge to leave a
+// Google review while the order's still fresh in mind.
+const REVIEW_URL = 'https://g.page/r/CWCqyTOWJ3tMEBM/review';
+
+export async function sendReviewRequestEmail(opts: {
+  orderNumber: number;
+  customerName: string;
+  customerEmail: string;
+}) {
+  const bodyHtml = `
+    <p style="margin:0 0 20px;font-size:14px;color:#4a443a;line-height:1.7">
+      We hope you enjoyed your order today. If you've got a spare minute, a quick review
+      helps a local independent business more than you'd think — and we'd really appreciate it.
+    </p>
+    <div style="text-align:center;margin-top:8px">
+      <a href="${REVIEW_URL}" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600">
+        Leave us a review
+      </a>
+    </div>
+    <p style="margin-top:28px;color:#4a443a;font-size:13px;line-height:1.7;border-top:1px solid #f0ebe3;padding-top:18px">
+      Thank you for supporting a local independent business.
+    </p>`;
+
+  await resend.emails.send({
+    from: `Gary's Butchers <${FROM}>`,
+    to: opts.customerEmail,
+    replyTo: REPLY_TO,
+    subject: 'How did we do?',
+    html: renderEmailLayout({
+      eyebrow: `Order #${String(opts.orderNumber).padStart(5, '0')}`,
+      title: `Thanks for your order, ${opts.customerName.split(' ')[0]}.`,
+      bodyHtml,
+    }),
+    attachments: await getLogoAttachment(),
+  });
+}
+
 export async function sendContactMessage(opts: {
   name: string;
   email: string;
