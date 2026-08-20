@@ -9,13 +9,14 @@ import { activeOrderFilter } from '@/lib/order-status';
 // scoped to whichever of these is selected, with the trend chart's bucket
 // size adapting so it never renders more than ~30 points.
 
+// Capped at 1 week — analytics_events is pruned on a rolling 7-day window
+// (see /api/cron/prune-analytics-events), so nothing older ever exists to show.
 export const TIME_RANGES = [
   { key: '1h', label: '1 hour', hours: 1, bucketMinutes: 5 },
   { key: '3h', label: '3 hours', hours: 3, bucketMinutes: 15 },
   { key: '12h', label: '12 hours', hours: 12, bucketMinutes: 60 },
   { key: '1d', label: '1 day', hours: 24, bucketMinutes: 60 },
   { key: '1w', label: '1 week', hours: 24 * 7, bucketMinutes: 60 * 24 },
-  { key: '1m', label: '1 month', hours: 24 * 30, bucketMinutes: 60 * 24 },
 ] as const;
 
 export type RangeKey = (typeof TIME_RANGES)[number]['key'];
@@ -72,7 +73,6 @@ export async function getOverviewStats(range: ResolvedRange) {
     [orderCount],
     [revenueRow],
     [pageviewCount],
-    [clickCount],
     [visitorRow],
   ] = await Promise.all([
     ordersDb.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.role, 'customer')),
@@ -93,10 +93,6 @@ export async function getOverviewStats(range: ResolvedRange) {
       .from(analyticsEvents)
       .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since))),
     catalogDb
-      .select({ count: sql<number>`count(*)::int` })
-      .from(analyticsEvents)
-      .where(and(eq(analyticsEvents.type, 'click'), gte(analyticsEvents.createdAt, since))),
-    catalogDb
       .select({ count: sql<number>`count(distinct ${analyticsEvents.sessionId})::int` })
       .from(analyticsEvents)
       .where(gte(analyticsEvents.createdAt, since)),
@@ -105,15 +101,6 @@ export async function getOverviewStats(range: ResolvedRange) {
   const totalOrders = orderCount?.count ?? 0;
   const revenue = revenueRow?.total ?? 0;
 
-  // Repeat customers = distinct customer emails with more than one real order in this window.
-  const repeatRows = await ordersDb
-    .select({ email: orders.customerEmail, count: sql<number>`count(*)::int` })
-    .from(orders)
-    .where(and(activeOrderFilter(), gte(orders.createdAt, since)))
-    .groupBy(orders.customerEmail);
-  const buyers = repeatRows.length;
-  const repeatBuyers = repeatRows.filter((r) => r.count > 1).length;
-
   return {
     totalCustomersEver: totalCustomersEver?.count ?? 0,
     newCustomers: newCustomers?.count ?? 0,
@@ -121,11 +108,7 @@ export async function getOverviewStats(range: ResolvedRange) {
     totalRevenueInPence: revenue,
     avgOrderValueInPence: totalOrders > 0 ? Math.round(revenue / totalOrders) : 0,
     totalPageviews: pageviewCount?.count ?? 0,
-    totalClicks: clickCount?.count ?? 0,
     uniqueVisitors: visitorRow?.count ?? 0,
-    buyers,
-    repeatBuyers,
-    repeatBuyerRate: buyers > 0 ? Math.round((repeatBuyers / buyers) * 100) : 0,
   };
 }
 
@@ -220,28 +203,16 @@ export async function getHottestItemsByCategory(range: ResolvedRange) {
 
 export async function getEngagementStats(range: ResolvedRange) {
   const { since } = range;
-  const [topPages, topClicks] = await Promise.all([
-    catalogDb
-      .select({ path: analyticsEvents.path, count: sql<number>`count(*)::int` })
-      .from(analyticsEvents)
-      .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since)))
-      .groupBy(analyticsEvents.path)
-      .orderBy(desc(sql`count(*)`))
-      .limit(8),
-    catalogDb
-      .select({ label: analyticsEvents.label, count: sql<number>`count(*)::int` })
-      .from(analyticsEvents)
-      .where(and(eq(analyticsEvents.type, 'click'), gte(analyticsEvents.createdAt, since)))
-      .groupBy(analyticsEvents.label)
-      .orderBy(desc(sql`count(*)`))
-      .limit(8),
-  ]);
+  const topPages = await catalogDb
+    .select({ path: analyticsEvents.path, count: sql<number>`count(*)::int` })
+    .from(analyticsEvents)
+    .where(and(eq(analyticsEvents.type, 'pageview'), gte(analyticsEvents.createdAt, since)))
+    .groupBy(analyticsEvents.path)
+    .orderBy(desc(sql`count(*)`))
+    .limit(8);
 
   return {
     topPages: topPages.map((p) => ({ path: p.path, count: p.count })),
-    topClicks: topClicks
-      .filter((c) => c.label)
-      .map((c) => ({ label: c.label as string, count: c.count })),
   };
 }
 

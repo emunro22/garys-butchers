@@ -12,16 +12,7 @@ import {
 import { formatPrice } from '@/lib/utils';
 import { StatCard } from '@/components/admin/stat-card';
 import { BarList, TrendChart, dateLabel, timeLabel } from '@/components/admin/analytics-charts';
-import {
-  Users,
-  ClipboardList,
-  Banknote,
-  Receipt,
-  Repeat,
-  MousePointerClick,
-  Eye,
-  UserCheck,
-} from 'lucide-react';
+import { Users, ClipboardList, Banknote, Receipt, Eye, UserCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -153,12 +144,6 @@ export default async function AdminAnalyticsPage({
           icon={<Receipt className="h-5 w-5" />}
         />
         <StatCard
-          label="Repeat buyer rate"
-          value={`${overview.repeatBuyerRate}%`}
-          sublabel={`${overview.repeatBuyers} of ${overview.buyers} buyers`}
-          icon={<Repeat className="h-5 w-5" />}
-        />
-        <StatCard
           label="Unique visitors"
           value={String(overview.uniqueVisitors)}
           icon={<UserCheck className="h-5 w-5" />}
@@ -167,11 +152,6 @@ export default async function AdminAnalyticsPage({
           label="Page views"
           value={String(overview.totalPageviews)}
           icon={<Eye className="h-5 w-5" />}
-        />
-        <StatCard
-          label="Clicks"
-          value={String(overview.totalClicks)}
-          icon={<MousePointerClick className="h-5 w-5" />}
         />
       </div>
 
@@ -207,22 +187,13 @@ export default async function AdminAnalyticsPage({
       </div>
 
       {/* Website engagement */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Section title="Most viewed pages">
-          <BarList
-            items={engagement.topPages.map((p) => ({ label: p.path, value: p.count }))}
-            valueFormatter={(v) => `${v} views`}
-            emptyLabel="No page views in this period"
-          />
-        </Section>
-        <Section title="Most clicked">
-          <BarList
-            items={engagement.topClicks.map((c) => ({ label: c.label, value: c.count }))}
-            valueFormatter={(v) => `${v} clicks`}
-            emptyLabel="No clicks in this period"
-          />
-        </Section>
-      </div>
+      <Section title="Most viewed pages">
+        <BarList
+          items={engagement.topPages.map((p) => ({ label: p.path, value: p.count }))}
+          valueFormatter={(v) => `${v} views`}
+          emptyLabel="No page views in this period"
+        />
+      </Section>
 
       {/* Geography */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

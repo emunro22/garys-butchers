@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { track } from '@vercel/analytics';
 
 const SESSION_KEY = 'gb_session_id';
 
@@ -19,9 +18,26 @@ function getSessionId(): string {
   }
 }
 
-function send(type: 'pageview' | 'click', path: string, label?: string) {
-  const payload = JSON.stringify({ type, path, label, sessionId: getSessionId() });
+const url = '/api/analytics/track';
+
+// Pageviews are queued and flushed together on a timer (or once the queue
+// gets large, or the tab is hidden) instead of one DB write per navigation.
+const FLUSH_INTERVAL_MS = 8000;
+const MAX_QUEUE_SIZE = 20;
+
+let queue: Array<{ type: 'pageview'; path: string; sessionId: string }> = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flush() {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  if (queue.length === 0) return;
+  const batch = queue;
+  queue = [];
   try {
+    const payload = JSON.stringify(batch);
     const blob = new Blob([payload], { type: 'application/json' });
     if (!navigator.sendBeacon(url, blob)) {
       fetch(url, { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true });
@@ -31,33 +47,29 @@ function send(type: 'pageview' | 'click', path: string, label?: string) {
   }
 }
 
-const url = '/api/analytics/track';
+function send(path: string) {
+  queue.push({ type: 'pageview', path, sessionId: getSessionId() });
+  if (queue.length >= MAX_QUEUE_SIZE) {
+    flush();
+    return;
+  }
+  if (!flushTimer) {
+    flushTimer = setTimeout(flush, FLUSH_INTERVAL_MS);
+  }
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
+  });
+}
 
 export function AnalyticsTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname) send('pageview', pathname);
+    if (pathname) send(pathname);
   }, [pathname]);
-
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      const target = (e.target as HTMLElement)?.closest('a, button');
-      if (!target) return;
-      const label =
-        target.getAttribute('aria-label') ||
-        target.textContent?.trim().replace(/\s+/g, ' ').slice(0, 100) ||
-        target.tagName.toLowerCase();
-      const path = window.location.pathname;
-      // Same @vercel/analytics library the pageview tracker uses, so clicks
-      // also show up as custom events in the Vercel Analytics dashboard —
-      // mirrored into our own table below so /admin/analytics can query it.
-      track('click', { label, path });
-      send('click', path, label);
-    }
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
-  }, []);
 
   return null;
 }
