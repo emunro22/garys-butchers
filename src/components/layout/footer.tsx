@@ -22,6 +22,7 @@ const cols = [
       { label: 'Pickup & delivery', href: '/faq#delivery' },
       { label: 'Frequently asked', href: '/faq' },
       { label: 'Reviews', href: '/reviews' },
+      { label: 'Recipes', href: '/recipes' },
       { label: 'Contact us', href: '/contact' },
     ],
   },

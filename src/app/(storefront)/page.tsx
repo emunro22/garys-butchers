@@ -12,6 +12,7 @@ import { ReviewsStrip } from '@/components/home/reviews-strip';
 import { AboutStrip } from '@/components/home/about-strip';
 import { DeliveryStrip } from '@/components/home/delivery-strip';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
+import { LocalAreas } from '@/components/home/local-areas';
 
 export const revalidate = 60;
 
@@ -59,6 +60,7 @@ export default async function HomePage() {
       <RecommendedForYou />
       <ReviewsStrip />
       <DeliveryStrip />
+      <LocalAreas />
       <SeasonalDeals />
       {packs.length > 0 && <FeaturedPacks packs={packs} packCount={packCount} />}
       <AboutStrip />

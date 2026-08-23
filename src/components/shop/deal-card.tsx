@@ -68,7 +68,7 @@ export function DealCard({ title, description, badgeText, imageUrl, category, en
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
-            alt=""
+            alt={title}
             className="w-full h-full object-cover opacity-20 group-hover:opacity-25 transition-opacity duration-500 scale-105 group-hover:scale-100"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-ink-900/80 via-ink-900/75 to-ink-900/95" />
