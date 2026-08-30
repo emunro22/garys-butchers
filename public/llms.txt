@@ -1,0 +1,32 @@
+# Gary's Butchers & Fishmongers
+
+> Independent butcher and fishmonger in Erskine, Renfrewshire, Scotland. Hand-cut meat and fresh fish, prepared daily — not pre-packed.
+
+## About
+
+Gary's Butchers & Fishmongers is a local, independent shop at 19 Park Glade Shops, Erskine, PA8 7HH. Everything is hand-cut to order on the day of delivery or collection. Meat is sourced from Scottish farms and suppliers wherever possible; fish comes fresh from the Scottish coast.
+
+## Services
+
+- Hand-cut beef, pork, chicken, lamb, sausages and pies
+- Fresh fish counter
+- Curated meat packs (value bundles of cuts)
+- Click & collect from the shop, no charge
+- Home delivery: free within 5 miles, £3.95 within 10 miles, £5 up to 30 miles
+- Gift vouchers
+- Custom/special cuts and bulk orders by request
+
+## Key pages
+
+- Shop: /shop
+- Meat packs: /shop/meat-packs
+- Recipes & sourcing: /recipes
+- Reviews: /reviews
+- About: /about
+- Contact: /contact
+- FAQ: /faq
+
+## Contact
+
+Shop address: 19 Park Glade Shops, Erskine, PA8 7HH, Scotland
+Areas served: Erskine, Renfrew, Inchinnan, Bridge of Weir

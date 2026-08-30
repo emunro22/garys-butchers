@@ -1,8 +1,13 @@
-'use client';
+import type { Metadata } from 'next';
+import { FaqAccordion } from '@/components/shop/faq-accordion';
+import { buildFaqPageJsonLd } from '@/lib/structured-data';
 
-import { useState } from 'react';
-import { Plus, Minus } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+export const metadata: Metadata = {
+  title: 'FAQ — Gary’s Butchers & Fishmongers',
+  description:
+    'Delivery, click & collect, meat packs, payment and more — answers to common questions about ordering from Gary’s Butchers & Fishmongers.',
+  alternates: { canonical: '/faq' },
+};
 
 const faqs = [
   {
@@ -48,10 +53,15 @@ const faqs = [
 ];
 
 export default function FaqPage() {
-  const [open, setOpen] = useState<number | null>(0);
+  const faqJsonLd = buildFaqPageJsonLd(faqs);
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+
       <section className="bg-ink-900 text-cream-50 py-20 md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <p className="eyebrow text-gold-400 mb-4">Help</p>
@@ -63,45 +73,7 @@ export default function FaqPage() {
 
       <section className="bg-cream-50 py-16 md:py-20">
         <div className="mx-auto max-w-3xl px-4 md:px-8">
-          <ul className="divide-y divide-ink-900/10 border-y border-ink-900/10">
-            {faqs.map((item, i) => {
-              const isOpen = open === i;
-              return (
-                <li key={i}>
-                  <button
-                    onClick={() => setOpen(isOpen ? null : i)}
-                    className="w-full py-6 flex items-center justify-between gap-6 text-left group"
-                  >
-                    <span className="font-display text-lg md:text-xl text-ink-900 group-hover:text-gold-700 transition-colors">
-                      {item.q}
-                    </span>
-                    <span className="shrink-0 h-9 w-9 rounded-full border border-ink-900/15 flex items-center justify-center group-hover:border-gold-500 transition-colors">
-                      {isOpen ? (
-                        <Minus className="h-4 w-4" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                    </span>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <p className="pb-6 pr-12 text-ink-700 leading-relaxed">
-                          {item.a}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </li>
-              );
-            })}
-          </ul>
+          <FaqAccordion faqs={faqs} />
         </div>
       </section>
     </div>

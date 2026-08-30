@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { catalogDb } from '@/lib/db';
 import { products, reviews, categories } from '@/lib/db/schema';
 import { eq, and, desc, asc, count } from 'drizzle-orm';
@@ -13,6 +14,10 @@ import { AboutStrip } from '@/components/home/about-strip';
 import { DeliveryStrip } from '@/components/home/delivery-strip';
 import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import { LocalAreas } from '@/components/home/local-areas';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export const revalidate = 60;
 

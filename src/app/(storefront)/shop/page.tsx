@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: 'Shop all — Gary’s Butchers & Fishmongers',
   description:
     'Browse the full Gary’s Butchers & Fishmongers range — beef, pork, chicken, fish, sausages, pies and meat packs.',
+  alternates: { canonical: '/shop' },
 };
 
 export const revalidate = 60;

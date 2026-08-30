@@ -18,6 +18,7 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.standfirst,
+    alternates: { canonical: `/recipes/${slug}` },
   };
 }
 

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Privacy Policy | Gary\'s Butchers & Fishmongers',
   description: 'How Gary\'s Butchers & Fishmongers collects and uses your personal information.',
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {

@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/shop/cart-drawer';
 import { CustomerSessionProvider } from '@/components/account/session-provider';
 import { AnalyticsTracker } from '@/components/layout/analytics-tracker';
+import { CookieConsent } from '@/components/layout/cookie-consent';
 import { SeasonalThemeProvider } from '@/components/seasonal/seasonal-theme-context';
 import { SeasonalBanner } from '@/components/seasonal/seasonal-banner';
 import { SeasonalEffects } from '@/components/seasonal/seasonal-effects';
@@ -75,6 +76,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
           <Footer />
           <CartDrawer />
           <SeasonalEffects theme={theme} />
+          <CookieConsent />
         </CustomerSessionProvider>
       </SeasonalThemeProvider>
     </div>

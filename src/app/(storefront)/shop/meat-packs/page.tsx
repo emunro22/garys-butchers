@@ -11,6 +11,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Meat packs — Gary’s Butchers & Fishmongers',
+  alternates: { canonical: '/shop/meat-packs' },
   description:
     'Curated value packs that feed the family for less. Free home delivery within 5 miles.',
 };

@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: 'About — Gary’s Butchers & Fishmongers',
   description:
     'Local, independent butcher and fishmonger in Erskine. Hand-cut meat, fresh fish, square sausage and the famous family meat packs since 2015.',
+  alternates: { canonical: '/about' },
 };
 
 export default function AboutPage() {

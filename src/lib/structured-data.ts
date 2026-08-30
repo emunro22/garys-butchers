@@ -25,7 +25,7 @@ export function buildLocalBusinessJsonLd(opts: {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': 'GroceryStore',
+        '@type': ['GroceryStore', 'LocalBusiness'],
         '@id': businessId,
         name: opts.name,
         url: SITE_URL,
@@ -93,5 +93,20 @@ export function buildLocalBusinessJsonLd(opts: {
         name: opts.name,
       },
     ],
+  };
+}
+
+export function buildFaqPageJsonLd(faqs: { q: string; a: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
+      },
+    })),
   };
 }

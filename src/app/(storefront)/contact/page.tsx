@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Contact — Gary’s Butchers & Fishmongers',
   description: 'Get in touch with Gary’s Butchers & Fishmongers in Erskine, Scotland.',
+  alternates: { canonical: '/contact' },
 };
 
 export default async function ContactPage() {

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Terms & Conditions | Gary\'s Butchers & Fishmongers',
   description: 'Terms and conditions for shopping with Gary\'s Butchers & Fishmongers.',
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

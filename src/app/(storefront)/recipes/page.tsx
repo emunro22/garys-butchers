@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Recipes & Sourcing',
   description:
     'Cooking guides, recipes and sourcing stories from our butcher and fishmonger counter in Erskine — hand-cut Scottish meat, cooked simply.',
+  alternates: { canonical: '/recipes' },
 };
 
 export default function RecipesIndexPage() {

@@ -29,6 +29,7 @@ export async function generateMetadata({
     return {
       title: `${p.name} — Gary's Meat Packs`,
       description: p.description ?? `${p.name} from Gary's Butchers — full contents and pricing.`,
+      alternates: { canonical: `/shop/meat-packs/${slug}` },
     };
   } catch {
     return { title: 'Meat pack' };

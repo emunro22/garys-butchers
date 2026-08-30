@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: 'Reviews — Gary’s Butchers & Fishmongers',
   description:
     'See what customers in Erskine and beyond say about Gary’s Butchers & Fishmongers.',
+  alternates: { canonical: '/reviews' },
 };
 
 export const revalidate = 300;

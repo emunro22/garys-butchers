@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Search — Gary’s Butchers & Fishmongers',
+  alternates: { canonical: '/search' },
 };
 
 export const dynamic = 'force-dynamic';

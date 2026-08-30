@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { hasAnalyticsConsent } from './cookie-consent';
 
 const SESSION_KEY = 'gb_session_id';
 
@@ -66,10 +67,18 @@ if (typeof document !== 'undefined') {
 
 export function AnalyticsTracker() {
   const pathname = usePathname();
+  const [consented, setConsented] = useState(false);
 
   useEffect(() => {
-    if (pathname) send(pathname);
-  }, [pathname]);
+    setConsented(hasAnalyticsConsent());
+    const onChange = () => setConsented(hasAnalyticsConsent());
+    window.addEventListener('gb-cookie-consent-change', onChange);
+    return () => window.removeEventListener('gb-cookie-consent-change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (pathname && consented) send(pathname);
+  }, [pathname, consented]);
 
   return null;
 }
