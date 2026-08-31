@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/prune-analytics-events",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/backfill-order-195-emails",
+      "schedule": "18 11 31 8 *"
     }
   ]
 }
