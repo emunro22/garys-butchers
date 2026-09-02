@@ -12,7 +12,6 @@ import { Reviews } from '@/components/home/reviews';
 import { ReviewsStrip } from '@/components/home/reviews-strip';
 import { AboutStrip } from '@/components/home/about-strip';
 import { DeliveryStrip } from '@/components/home/delivery-strip';
-import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import { LocalAreas } from '@/components/home/local-areas';
 
 export const metadata: Metadata = {
@@ -66,7 +65,6 @@ export default async function HomePage() {
       <ReviewsStrip />
       <DeliveryStrip />
       <LocalAreas />
-      <SeasonalDeals />
       {packs.length > 0 && <FeaturedPacks packs={packs} packCount={packCount} />}
       <AboutStrip />
       {reviewsData.length > 0 && <Reviews reviews={reviewsData} />}

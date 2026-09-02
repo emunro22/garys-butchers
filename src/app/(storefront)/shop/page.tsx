@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Sparkles } from 'lucide-react';
 import { catalogDb } from '@/lib/db';
 import { categories, products } from '@/lib/db/schema';
 import { eq, asc, desc, and } from 'drizzle-orm';
@@ -7,7 +8,6 @@ import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { getCategoryImageMap } from '@/lib/db/category-images';
 import { ProductCard } from '@/components/shop/product-card';
 import { RecommendedForYou } from '@/components/shop/recommended-for-you';
-import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import { SeasonalCardDecoration } from '@/components/seasonal/seasonal-card-decoration';
 import { SeasonalCardFrame } from '@/components/seasonal/seasonal-card-frame';
 import type { Metadata } from 'next';
@@ -69,6 +69,27 @@ export default async function ShopPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <Link
+            href="/shop/deals"
+            className="group relative aspect-[4/5] overflow-hidden bg-ink-900 border border-gold-400/50 shadow-[0_0_30px_-8px_rgba(201,169,97,0.5)] transition-shadow duration-500 hover:shadow-[0_0_40px_-6px_rgba(201,169,97,0.75)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-gold-400/20 via-ink-900 to-ink-900" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent" />
+            <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-6">
+              <Sparkles className="h-5 w-5 text-gold-400 mb-3" />
+              <span className="text-[10px] uppercase tracking-[0.2em] text-gold-400 mb-1">
+                Limited time
+              </span>
+              <h3 className="font-display text-2xl md:text-3xl text-cream-50">Seasonal Deals</h3>
+              <p className="text-xs text-cream-200/70 mt-2 line-clamp-2">
+                Bundle pricing on our best seasonal combos.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-gold-400 group-hover:gap-3 transition-all">
+                Shop deals
+                <span aria-hidden>→</span>
+              </span>
+            </div>
+          </Link>
           {cats.map((c) => (
             <div key={c.id} className="relative group">
               <SeasonalCardDecoration />
@@ -102,8 +123,6 @@ export default async function ShopPage() {
           ))}
         </div>
       </section>
-
-      <SeasonalDeals compact />
 
       <RecommendedForYou />
 

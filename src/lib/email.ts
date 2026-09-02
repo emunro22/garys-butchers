@@ -521,7 +521,7 @@ export async function sendVerificationCode(email: string, name: string, code: st
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: email,
-    subject: `Your verification code: ${code}`,
+    subject: "Verify your email — Gary's Butchers",
     html: renderVerificationHtml(name, code),
     attachments: await getLogoAttachment(),
   });
@@ -531,7 +531,7 @@ export async function sendPasswordResetCode(email: string, name: string, code: s
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: email,
-    subject: `Password reset code: ${code}`,
+    subject: "Reset your password — Gary's Butchers",
     html: renderResetHtml(name, code),
     attachments: await getLogoAttachment(),
   });

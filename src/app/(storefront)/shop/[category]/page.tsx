@@ -8,7 +8,6 @@ import { ensureProductsSchema } from '@/lib/db/ensure-schema';
 import { ProductCard } from '@/components/shop/product-card';
 import { ProductSort } from '@/components/shop/product-sort';
 import { SearchBar } from '@/components/shop/search-bar';
-import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
@@ -108,8 +107,6 @@ export default async function CategoryPage({
           )}
         </div>
       </section>
-
-      <SeasonalDeals compact />
 
       <section className="mx-auto max-w-7xl px-4 md:px-8 py-12 md:py-16">
         {/* Category pills + sort */}
