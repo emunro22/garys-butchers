@@ -14,6 +14,7 @@ import { Truck, Store, Zap, Tag, Check, Package, Gift } from 'lucide-react';
 import { useCustomerSession } from '@/components/account/session-provider';
 import { generateSlots, generateTodaySlots, getDateKey, bucketKey, blockLabel, formatClock, minutesOfDay, type SlotGroupSettings } from '@/lib/slots';
 import { noticeLabel } from '@/lib/notice';
+import { computeDealsDiscount, type DealForPricing } from '@/lib/deals-pricing';
 
 // ---- Stripe loader ----
 let stripePromise: Promise<StripeJS | null> | null = null;
@@ -101,6 +102,18 @@ export function Checkout() {
     fetch('/api/referral-settings')
       .then((r) => r.json())
       .then((data) => setReferralSettings(data.referrals ?? null))
+      .catch(() => {});
+  }, []);
+
+  // Bundle deals ("buy these together for £X") — auto-applied from whatever's
+  // actually in the cart, no code to enter. This preview is just for display;
+  // the real charge is always recomputed server-side in /api/checkout.
+  const [activeDeals, setActiveDeals] = useState<DealForPricing[]>([]);
+
+  useEffect(() => {
+    fetch('/api/deals/active')
+      .then((r) => r.json())
+      .then((data) => setActiveDeals(data.deals ?? []))
       .catch(() => {});
   }, []);
 
@@ -334,9 +347,14 @@ export function Checkout() {
       const referralDiscount = Math.round((discountableSubtotal * referralSettings.rewardPercent) / 100);
       discount += Math.min(referralDiscount, remaining);
     }
+    const dealDiscount = computeDealsDiscount(
+      items.map((i) => ({ productId: i.productId, quantity: i.quantity, priceInPence: i.priceInPence })),
+      activeDeals
+    );
+    discount += dealDiscount.totalDiscountInPence;
     const total = Math.max(0, subtotal - discount) + dFee;
-    return { discount, deliveryFee: dFee, total };
-  }, [subtotal, discountableSubtotal, promoTargetSubtotal, deliveryFee, promo, referralCreditApplies, referralSettings]);
+    return { discount, deliveryFee: dFee, total, appliedDeals: dealDiscount.applied };
+  }, [subtotal, discountableSubtotal, promoTargetSubtotal, deliveryFee, promo, referralCreditApplies, referralSettings, items, activeDeals]);
 
   // Slot block definitions (times, capacity, closed days) are admin-configurable —
   // fetched per fulfilment type below, alongside live booked/capacity counts.
@@ -1100,6 +1118,23 @@ export function Checkout() {
             </li>
           ))}
         </ul>
+
+        {/* Bundle deals — automatic, nothing for the customer to enter */}
+        {totals.appliedDeals.map((deal) => (
+          <div key={deal.id} className="pt-5">
+            <div className="flex items-center justify-between gap-2 bg-gold-400/10 border border-gold-400/40 px-3 py-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <Tag className="h-4 w-4 text-gold-700 shrink-0" />
+                <p className="text-sm text-ink-900 truncate">
+                  {deal.title}{deal.count > 1 ? ` × ${deal.count}` : ''} deal
+                </p>
+              </div>
+              <p className="text-sm font-medium text-gold-700 tabular shrink-0">
+                −{formatPrice(deal.discountInPence)}
+              </p>
+            </div>
+          </div>
+        ))}
 
         {/* Referral reward — automatic, nothing for the customer to enter */}
         {referralCreditApplies && referralSettings && (

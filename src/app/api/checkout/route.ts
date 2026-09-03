@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { catalogDb, ordersDb } from '@/lib/db';
 import { orders, users } from '@/lib/db/schema-orders';
-import { products, promotions } from '@/lib/db/schema-catalog';
+import { products, promotions, deals } from '@/lib/db/schema-catalog';
 import { ensureOrdersSchema, ensureUsersSchema, ensureProductsSchema, ensurePromotionsSchema } from '@/lib/db/ensure-schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and, or, isNull, gte, asc } from 'drizzle-orm';
 import { stripe } from '@/lib/stripe';
 import {
   calculateDelivery,
@@ -23,6 +23,7 @@ import { getPickupBucketCounts } from '@/lib/pickup-availability';
 import { markOrderPaid, getPendingOrdersForEmail, supersedeOrder } from '@/lib/order-payment';
 import { computeCartSignature } from '@/lib/cart-signature';
 import { getOrCreateStripeCustomerId } from '@/lib/stripe-customer';
+import { computeDealsDiscount } from '@/lib/deals-pricing';
 
 // Shared Payment Element config for logged-in customers — shows their saved
 // cards, offers a native "save this card" checkbox on new ones (required for
@@ -407,6 +408,21 @@ export async function POST(req: NextRequest) {
         referralCreditRedeemed = true;
       }
     }
+
+    // Bundle deals ("buy these together for £X") are never entered as a code
+    // either — auto-applied from whatever's actually in the cart, same as
+    // referral credits above. This is the authoritative charge; canonical
+    // prices only (lineItems, resolved from the DB above), never the client.
+    const activeDeals = await catalogDb
+      .select({ id: deals.id, title: deals.title, dealItems: deals.dealItems, dealPrice: deals.dealPrice })
+      .from(deals)
+      .where(and(eq(deals.status, 'published'), or(isNull(deals.endsAt), gte(deals.endsAt, new Date()))))
+      .orderBy(asc(deals.createdAt));
+    const dealDiscount = computeDealsDiscount(
+      lineItems.map((i) => ({ productId: i.productId, quantity: i.quantity, priceInPence: i.priceInPence })),
+      activeDeals
+    );
+    discount += dealDiscount.totalDiscountInPence;
 
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
