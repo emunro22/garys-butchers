@@ -146,9 +146,14 @@ export function Checkout() {
   const [applying, setApplying] = useState(false);
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [customerSessionClientSecret, setCustomerSessionClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  // Opt-in, unticked by default — checked at checkout, upserted into the
+  // same `subscribers` table the footer newsletter form and admin mailing
+  // list use (see POST /api/subscribers).
+  const [subscribeToMailingList, setSubscribeToMailingList] = useState(false);
 
   // "Resume checkout" support — either a same-session reload (sessionStorage
   // has a still-matching in-flight order) or a click from the
@@ -182,6 +187,7 @@ export function Checkout() {
         if (data.status === 'resumable') {
           setOrderId(data.orderId);
           setClientSecret(data.clientSecret);
+          setCustomerSessionClientSecret(data.customerSessionClientSecret ?? null);
           setResumedTotalInPence(data.totalInPence);
           setResumeState('ready');
         } else if (data.status === 'already_paid') {
@@ -210,7 +216,13 @@ export function Checkout() {
     try {
       const raw = sessionStorage.getItem('garys_checkout_v1');
       if (!raw) return;
-      const saved = JSON.parse(raw) as { orderId: string; clientSecret: string; signature: string; savedAt: number };
+      const saved = JSON.parse(raw) as {
+        orderId: string;
+        clientSecret: string;
+        customerSessionClientSecret?: string | null;
+        signature: string;
+        savedAt: number;
+      };
       // Ignore anything older than the payment step would realistically still be valid for.
       if (Date.now() - saved.savedAt > 20 * 60 * 1000) {
         sessionStorage.removeItem('garys_checkout_v1');
@@ -219,6 +231,7 @@ export function Checkout() {
       if (saved.signature === cartFingerprint()) {
         setOrderId(saved.orderId);
         setClientSecret(saved.clientSecret);
+        setCustomerSessionClientSecret(saved.customerSessionClientSecret ?? null);
       } else {
         sessionStorage.removeItem('garys_checkout_v1');
       }
@@ -605,6 +618,17 @@ export function Checkout() {
         );
         return;
       }
+
+      if (subscribeToMailingList) {
+        // Fire-and-forget — consent was captured by the checkbox, and this
+        // is independent of whether payment itself ends up succeeding.
+        fetch('/api/subscribers', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: form.email, name: form.name, source: 'checkout' }),
+        }).catch(() => {});
+      }
+
       if (!data.clientSecret) {
         // Fully covered by a promo code — nothing to pay, order is already confirmed.
         clear();
@@ -612,6 +636,7 @@ export function Checkout() {
         return;
       }
       setClientSecret(data.clientSecret);
+      setCustomerSessionClientSecret(data.customerSessionClientSecret ?? null);
       setOrderId(data.orderId);
       try {
         sessionStorage.setItem(
@@ -619,6 +644,7 @@ export function Checkout() {
           JSON.stringify({
             orderId: data.orderId,
             clientSecret: data.clientSecret,
+            customerSessionClientSecret: data.customerSessionClientSecret ?? null,
             signature: cartFingerprint(),
             savedAt: Date.now(),
           })
@@ -675,6 +701,7 @@ export function Checkout() {
         stripe={getStripe()}
         options={{
           clientSecret,
+          ...(customerSessionClientSecret ? { customerSessionClientSecret } : {}),
           appearance: {
             theme: 'stripe',
             variables: {
@@ -814,6 +841,18 @@ export function Checkout() {
               </Link>
             )}
           </div>
+          {!user && (
+            <p className="text-xs text-ink-500 mb-4">
+              <Link href="/account/signup?next=/checkout" className="underline hover:text-ink-900">
+                Create an account
+              </Link>{' '}
+              to save your card for next time — or{' '}
+              <Link href="/account/login?next=/checkout" className="underline hover:text-ink-900">
+                sign in
+              </Link>{' '}
+              if you already have one.
+            </p>
+          )}
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <Label htmlFor="name">Full name</Label>
@@ -848,6 +887,17 @@ export function Checkout() {
               />
             </div>
           </div>
+          <label className="flex items-center gap-2 mt-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={subscribeToMailingList}
+              onChange={(e) => setSubscribeToMailingList(e.target.checked)}
+              className="h-4 w-4 accent-gold-500"
+            />
+            <span className="text-sm text-ink-700">
+              Keep me posted — sign me up for offers &amp; updates
+            </span>
+          </label>
         </section>
 
         {/* Address (delivery / same-day only) */}

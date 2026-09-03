@@ -2,10 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { ordersDb } from '@/lib/db';
-import { orders } from '@/lib/db/schema';
+import { orders, users } from '@/lib/db/schema';
 import { ensureOrdersSchema } from '@/lib/db/ensure-schema';
 import { stripe } from '@/lib/stripe';
 import { markOrderPaid } from '@/lib/order-payment';
+
+// Read-only counterpart to createCustomerSessionSecret in /api/checkout —
+// resume never creates a Stripe Customer (only a live checkout does that),
+// it just re-attaches saved-card display if one already exists.
+async function customerSessionSecretForUser(userId: string | null): Promise<string | null> {
+  if (!userId) return null;
+  const [user] = await ordersDb
+    .select({ stripeCustomerId: users.stripeCustomerId })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!user?.stripeCustomerId) return null;
+
+  const session = await stripe.customerSessions.create({
+    customer: user.stripeCustomerId,
+    components: {
+      payment_element: {
+        enabled: true,
+        features: {
+          payment_method_redisplay: 'enabled',
+          payment_method_save: 'enabled',
+          payment_method_save_usage: 'off_session',
+          payment_method_remove: 'enabled',
+        },
+      },
+    },
+  });
+  return session.client_secret ?? null;
+}
 
 const Schema = z.object({ orderId: z.string().uuid() });
 
@@ -62,6 +91,7 @@ export async function GET(req: NextRequest) {
         status: 'resumable',
         orderId: order.id,
         clientSecret: intent.client_secret,
+        customerSessionClientSecret: await customerSessionSecretForUser(order.userId),
         totalInPence: order.totalInPence,
       });
     }

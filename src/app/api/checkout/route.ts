@@ -22,6 +22,28 @@ import { getSameDayBucketCounts } from '@/lib/same-day-availability';
 import { getPickupBucketCounts } from '@/lib/pickup-availability';
 import { markOrderPaid, getPendingOrdersForEmail, supersedeOrder } from '@/lib/order-payment';
 import { computeCartSignature } from '@/lib/cart-signature';
+import { getOrCreateStripeCustomerId } from '@/lib/stripe-customer';
+
+// Shared Payment Element config for logged-in customers — shows their saved
+// cards, offers a native "save this card" checkbox on new ones (required for
+// UK SCA consent), and lets them remove a saved card inline.
+async function createCustomerSessionSecret(stripeCustomerId: string): Promise<string | null> {
+  const session = await stripe.customerSessions.create({
+    customer: stripeCustomerId,
+    components: {
+      payment_element: {
+        enabled: true,
+        features: {
+          payment_method_redisplay: 'enabled',
+          payment_method_save: 'enabled',
+          payment_method_save_usage: 'off_session',
+          payment_method_remove: 'enabled',
+        },
+      },
+    },
+  });
+  return session.client_secret ?? null;
+}
 
 // Stripe won't create a PaymentIntent below this amount for GBP — a promo
 // code that fully (or near-fully) covers the order needs to skip Stripe.
@@ -94,6 +116,12 @@ export async function POST(req: NextRequest) {
     await ensurePromotionsSchema();
 
     const customerSession = await getCustomerSession();
+    // Logged-in customers get a Stripe Customer to hang saved cards off of —
+    // guests have no `users` row, so this stays null for them and the
+    // Payment Element behaves exactly as it did before this feature.
+    const stripeCustomerId = customerSession
+      ? await getOrCreateStripeCustomerId(customerSession.userId)
+      : null;
 
     if (data.fulfilment !== 'premium' && !data.slot) {
       return NextResponse.json({ error: 'Please choose a time slot' }, { status: 400 });
@@ -468,6 +496,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           orderId: matching.id,
           clientSecret: intent.client_secret,
+          customerSessionClientSecret: stripeCustomerId ? await createCustomerSessionSecret(stripeCustomerId) : null,
           total: matching.totalInPence,
         });
       }
@@ -526,6 +555,7 @@ export async function POST(req: NextRequest) {
       currency: 'gbp',
       automatic_payment_methods: { enabled: true },
       receipt_email: data.customer.email,
+      ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
       metadata: {
         orderId: order.id,
         ...(appliedPromoCode ? { promoCode: appliedPromoCode } : {}),
@@ -543,6 +573,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       orderId: order.id,
       clientSecret: intent.client_secret,
+      customerSessionClientSecret: stripeCustomerId ? await createCustomerSessionSecret(stripeCustomerId) : null,
       total,
     });
   } catch (err) {

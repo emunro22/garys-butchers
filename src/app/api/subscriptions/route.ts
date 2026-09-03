@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { catalogDb, ordersDb } from '@/lib/db';
-import { subscriptions, users } from '@/lib/db/schema-orders';
+import { subscriptions } from '@/lib/db/schema-orders';
 import { products } from '@/lib/db/schema-catalog';
 import { ensureUsersSchema, ensureProductsSchema, ensureSubscriptionsSchema } from '@/lib/db/ensure-schema';
 import { eq, inArray, desc } from 'drizzle-orm';
 import { getCustomerSession } from '@/lib/auth';
 import { getShopSettings } from '@/lib/settings';
 import { stripe } from '@/lib/stripe';
+import { getOrCreateStripeCustomerId } from '@/lib/stripe-customer';
 
 const Schema = z.object({
   items: z.array(z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(20) })).min(1).max(30),
@@ -82,24 +83,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Add a few more items to your subscription' }, { status: 400 });
     }
 
-    const [customer] = await ordersDb
-      .select({ id: users.id, email: users.email, name: users.name, stripeCustomerId: users.stripeCustomerId })
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1);
-    if (!customer) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-
-    let stripeCustomerId = customer.stripeCustomerId;
-    if (!stripeCustomerId) {
-      const stripeCustomer = await stripe.customers.create({ email: customer.email, name: customer.name });
-      stripeCustomerId = stripeCustomer.id;
-      await ordersDb.update(users).set({ stripeCustomerId }).where(eq(users.id, customer.id));
-    }
+    const stripeCustomerId = await getOrCreateStripeCustomerId(session.userId);
+    if (!stripeCustomerId) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
 
     const [draft] = await ordersDb
       .insert(subscriptions)
       .values({
-        userId: customer.id,
+        userId: session.userId,
         status: 'pending',
         items: lineItems,
         subtotalInPence,
