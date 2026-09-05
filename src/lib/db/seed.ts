@@ -33,7 +33,7 @@ const seedCategories = [
   {
     name: 'Beef',
     slug: 'beef',
-    description: 'Hand-cut Scottish beef — sirloin, popeseye, rump, roasting joints and lean mince.',
+    description: 'Hand-cut Scottish beef: sirloin, popeseye, rump, roasting joints and lean mince.',
     sortOrder: 1,
   },
   {
@@ -51,13 +51,13 @@ const seedCategories = [
   {
     name: 'Fish',
     slug: 'fish',
-    description: 'Fresh fish from our fishmonger counter — daily catch from the Scottish coast.',
+    description: 'Fresh fish from our fishmonger counter, with daily catch from the Scottish coast.',
     sortOrder: 4,
   },
   {
     name: 'Sausages & Burgers',
     slug: 'sausages-burgers',
-    description: 'Steak burgers, chicken burgers, beef and pork links — made on site.',
+    description: 'Steak burgers, chicken burgers, beef and pork links, made on site.',
     sortOrder: 5,
   },
   {
@@ -113,7 +113,7 @@ const singleProducts: Array<{
     category: 'beef',
     price: 720,
     weight: '7oz (approx 200g)',
-    description: 'Generously cut from the hindquarter — bold flavour and excellent value.',
+    description: 'Generously cut from the hindquarter, with bold flavour and excellent value.',
   },
   {
     name: 'Lean Steak Mince (5% fat)',
@@ -175,7 +175,7 @@ const singleProducts: Array<{
     category: 'chicken',
     price: 380,
     weight: 'each, approx 200g',
-    description: 'Plump, free-range fillets — generously sized and trimmed. Endlessly versatile.',
+    description: 'Plump, free-range fillets, generously sized and trimmed. Endlessly versatile.',
     badge: 'Free range',
     featured: true,
   },
@@ -215,7 +215,7 @@ const singleProducts: Array<{
     category: 'fish',
     price: 750,
     weight: 'approx 180g',
-    description: 'Thick, white, flaking cod loin. Bake with butter and lemon — perfection.',
+    description: 'Thick, white, flaking cod loin. Bake with butter and lemon for perfection.',
   },
 
   // Sausages & Burgers
@@ -233,7 +233,7 @@ const singleProducts: Array<{
     category: 'sausages-burgers',
     price: 280,
     weight: '4oz patty',
-    description: 'A step up — coarse-ground rump trim, lightly seasoned, pressed by hand.',
+    description: 'A step up: coarse-ground rump trim, lightly seasoned, pressed by hand.',
   },
   {
     name: 'Beef Sausage Links',
@@ -258,7 +258,7 @@ const singleProducts: Array<{
     category: 'pies-bakery',
     price: 1495,
     weight: 'serves 4–6',
-    description: 'Our flagship pie. Slow-braised steak in a deep dish — feeds a family.',
+    description: 'Our flagship pie. Slow-braised steak in a deep dish that feeds a family.',
     featured: true,
   },
   {
@@ -282,7 +282,7 @@ const singleProducts: Array<{
     category: 'breakfast-sides',
     price: 180,
     weight: 'each',
-    description: "Lorne sausage at its best — the way it's meant to be. Made on the premises daily.",
+    description: "Lorne sausage at its best, the way it's meant to be. Made on the premises daily.",
     badge: 'Bestseller',
   },
   {
@@ -312,7 +312,7 @@ const singleProducts: Array<{
     category: 'breakfast-sides',
     price: 200,
     weight: '2 slices',
-    description: 'Sweet, spiced fruit pudding — a sometimes-forgotten breakfast classic.',
+    description: 'Sweet, spiced fruit pudding: a sometimes-forgotten breakfast classic.',
   },
   {
     name: '6 Large Free Range Eggs',
@@ -345,7 +345,7 @@ const meatPacks: Array<{
     name: 'Small Breakfast Pack',
     price: 1095,
     description:
-      "Everything you need for a proper Scottish fry-up — square sausage, sweetcure bacon, black pudding and free-range eggs. Wakes the house up beautifully.",
+      "Everything you need for a proper Scottish fry-up: square sausage, sweetcure bacon, black pudding and free-range eggs. Wakes the house up beautifully.",
     contents: [
       '4 Steak Square Slice',
       '4 Slice Sweetcure Bacon',
@@ -375,7 +375,7 @@ const meatPacks: Array<{
     name: 'Mid-Week Pack',
     price: 2600,
     description:
-      'A solid mid-week pack — pies for one night, steaks the next, mince and diced beef for whatever you fancy.',
+      'A solid mid-week pack: pies for one night, steaks the next, mince and diced beef for whatever you fancy.',
     contents: [
       "2 Individual Steak Pie's",
       '2 x 6oz Rump Steaks',
@@ -406,7 +406,7 @@ const meatPacks: Array<{
     name: "Manager's Special",
     price: 6000,
     description:
-      "The shop favourite — a brilliantly-priced mix of steak, chicken, burgers, pork, mince and diced beef. The pack we sell most of.",
+      "The shop favourite, a brilliantly-priced mix of steak, chicken, burgers, pork, mince and diced beef. The pack we sell most of.",
     contents: [
       "8 Large Chicken Fillet's",
       '4 x 7oz Sirloin Steaks',
@@ -422,7 +422,7 @@ const meatPacks: Array<{
     name: 'Muscle Pack',
     price: 8500,
     description:
-      "Built for protein-led households — sirloin, popeseye, rump, pork, chicken, burgers, mince, diced beef and eggs. Stocks the freezer for a fortnight.",
+      "Built for protein-led households: sirloin, popeseye, rump, pork, chicken, burgers, mince, diced beef and eggs. Stocks the freezer for a fortnight.",
     contents: [
       "4 x 7oz Sirloin Steak's",
       "4 x 7oz Popeseye Steak's",
@@ -443,7 +443,7 @@ const meatPacks: Array<{
     name: "Manager's Bumper Special",
     price: 7250,
     description:
-      'A bumper hamper — family steak pie, sirloins, popeseye, mince, diced, chicken, links, bacon, black pudding, lorne, scones, eggs and pies.',
+      'A bumper hamper: family steak pie, sirloins, popeseye, mince, diced, chicken, links, bacon, black pudding, lorne, scones, eggs and pies.',
     contents: [
       'Large Family Steak Pie',
       "4 x 7oz Sirloin Steak's",
@@ -465,7 +465,7 @@ const meatPacks: Array<{
     name: '7 Day Saver',
     price: 4750,
     description:
-      'Seven days of evening meals planned out — roasting joint, steaks, chicken, beef olives, burgers, mince and diced beef.',
+      'Seven days of evening meals planned out: roasting joint, steaks, chicken, beef olives, burgers, mince and diced beef.',
     contents: [
       '2lb Beef Roasting Joint',
       "4 x 7oz Sirloin Steak's",
@@ -500,7 +500,7 @@ const meatPacks: Array<{
     name: 'B.B.Q. Pack',
     price: 2250,
     description:
-      'Fire up the grill — rump, chicken, pork, burgers and pork links. Designed for four hungry people round the BBQ.',
+      'Fire up the grill: rump, chicken, pork, burgers and pork links. Designed for four hungry people round the BBQ.',
     contents: [
       "4 x 4oz Rump Steak's",
       "4 x 4oz Chicken Fillet's",
@@ -514,7 +514,7 @@ const meatPacks: Array<{
     name: 'Fit Pack',
     price: 3000,
     description:
-      'High-protein and lean — chicken, beef olives or pork, 5%-fat mince, 5%-fat diced beef and square slice.',
+      'High-protein and lean: chicken, beef olives or pork, 5%-fat mince, 5%-fat diced beef and square slice.',
     contents: [
       "4 Large Chicken Fillet's",
       "4 Beef Olive's or Pork Steak's",
@@ -565,14 +565,14 @@ const seedReviews = [
     authorName: 'Lesley Rees',
     rating: 5,
     body:
-      "Fantastic butchers, great prices for good quality produce. Steaks, chicken, steak pies, silverside — brilliant. Everyone should try, you won't be disappointed.",
+      "Fantastic butchers, great prices for good quality produce. Steaks, chicken, steak pies, silverside, brilliant. Everyone should try, you won't be disappointed.",
     isFeatured: true,
   },
   {
     authorName: 'Valerie Bruce',
     rating: 5,
     body:
-      'The quality of the meat is fab. Service is great — nothing too much trouble. Great to have a local "proper" butcher and none of that pre-packaged plastic stuff from supermarkets.',
+      'The quality of the meat is fab. Service is great, nothing too much trouble. Great to have a local "proper" butcher and none of that pre-packaged plastic stuff from supermarkets.',
     isFeatured: true,
   },
   {
@@ -593,7 +593,7 @@ const seedReviews = [
     authorName: 'Lindsay Campbell',
     rating: 5,
     body:
-      "I have been using Gary as my butchers for a few years. His stock is always of the highest quality with a brilliant selection. Packs available at fantastic prices — we personally love the Muscle Pack.",
+      "I have been using Gary as my butchers for a few years. His stock is always of the highest quality with a brilliant selection. Packs available at fantastic prices, we personally love the Muscle Pack.",
     isFeatured: false,
   },
   {
@@ -639,7 +639,7 @@ const seedReviews = [
     authorName: 'Ricky Whiteside',
     rating: 5,
     body:
-      'Brilliant butchers. Best by far in Erskine. Must trys are the Texan steaks, chicken stir fry, large bridies — half the size of a dinner plate — and all his selection of pies. Well done Gary and keep it going.',
+      'Brilliant butchers. Best by far in Erskine. Must trys are the Texan steaks, chicken stir fry, large bridies (half the size of a dinner plate) and all his selection of pies. Well done Gary and keep it going.',
     isFeatured: false,
   },
   {
@@ -652,7 +652,7 @@ const seedReviews = [
     authorName: 'Fiona Crawford',
     rating: 5,
     body:
-      "Gary's butchers is absolutely fantastic — chicken stir fry, sirloin steaks to pies are amazing. Lean cuts, I'll never go to another butchers.",
+      "Gary's butchers is absolutely fantastic, chicken stir fry, sirloin steaks to pies are amazing. Lean cuts, I'll never go to another butchers.",
     isFeatured: false,
   },
   {

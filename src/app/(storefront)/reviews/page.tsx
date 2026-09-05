@@ -7,7 +7,7 @@ import { avatarColor, timeAgo } from '@/lib/utils';
 import { GoogleLogo } from '@/components/ui/google-logo';
 
 export const metadata: Metadata = {
-  title: 'Reviews — Gary’s Butchers & Fishmongers',
+  title: 'Reviews | Gary’s Butchers & Fishmongers',
   description:
     'See what customers in Erskine and beyond say about Gary’s Butchers & Fishmongers.',
   alternates: { canonical: '/reviews' },

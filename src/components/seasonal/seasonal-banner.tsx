@@ -4,7 +4,7 @@ import type { SeasonalTheme } from '@/lib/settings';
 const COPY = {
   christmas: {
     icon: '/seasonal/santa-cartoon.png',
-    text: "It's beginning to look a lot like Christmas at Gary's Butchers — festive cuts in store now.",
+    text: "It's beginning to look a lot like Christmas at Gary's Butchers, with festive cuts in store now.",
     className: 'bg-gradient-to-r from-butcher-600 via-butcher-500 to-gold-600',
   },
   easter: {

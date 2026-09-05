@@ -63,7 +63,7 @@ export function ReferralsPanel() {
     return (
       <div className="space-y-6 max-w-md">
         <h2 className="font-display text-2xl text-ink-900">Refer a friend</h2>
-        <p className="text-sm text-ink-500">Our referral scheme isn&apos;t currently running — check back soon.</p>
+        <p className="text-sm text-ink-500">Our referral scheme isn&apos;t currently running, check back soon.</p>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function ReferralsPanel() {
         <h2 className="font-display text-2xl text-ink-900">Refer a friend</h2>
         <p className="text-sm text-ink-500 mt-1">
           Share your link. Once a friend signs up and completes their first order, you&apos;ll get{' '}
-          {rewardPercent}% off your next order — automatically, no code needed.
+          {rewardPercent}% off your next order, automatically, no code needed.
         </p>
       </div>
 
@@ -102,7 +102,7 @@ export function ReferralsPanel() {
         <Gift className="h-5 w-5 text-gold-700 shrink-0" />
         <p className="text-sm text-ink-900">
           {creditsAvailable > 0
-            ? `You have ${creditsAvailable} referral reward${creditsAvailable === 1 ? '' : 's'} ready — the next one is applied automatically at checkout.`
+            ? `You have ${creditsAvailable} referral reward${creditsAvailable === 1 ? '' : 's'} ready. The next one is applied automatically at checkout.`
             : "You don't have any referral rewards yet."}
         </p>
       </div>

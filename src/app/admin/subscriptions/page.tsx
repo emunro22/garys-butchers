@@ -55,7 +55,7 @@ export default async function AdminSubscriptionsPage() {
         <h1 className="font-display text-4xl text-ink-900">Subscriptions</h1>
         <p className="text-sm text-ink-500 mt-2">
           {activeCount} active · {formatPrice(mrr)} recurring monthly. Renewal orders are created
-          automatically each cycle and appear in Orders as normal — look for the &quot;Subscription
+          automatically each cycle and appear in Orders as normal. Look for the &quot;Subscription
           renewal&quot; note if a slot couldn&apos;t be auto-booked and needs scheduling by hand.
         </p>
       </header>

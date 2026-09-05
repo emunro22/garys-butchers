@@ -118,7 +118,7 @@ export async function createRenewalOrder(sub: SubscriptionRow, stripeInvoiceId: 
       deliverySlot: sub.fulfilment === 'delivery' ? slot : null,
       notes: slot
         ? `Subscription renewal (${sub.id})`
-        : `Subscription renewal (${sub.id}) — no slot had capacity in the usual window, please schedule manually.`,
+        : `Subscription renewal (${sub.id}): no slot had capacity in the usual window, please schedule manually.`,
       items: sub.items,
       subtotalInPence: subtotal,
       deliveryInPence: 0,

@@ -2,7 +2,7 @@ import { Checkout } from '@/components/shop/checkout';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Checkout — Gary’s Butchers & Fishmongers',
+  title: 'Checkout | Gary’s Butchers & Fishmongers',
   description: 'Complete your order at Gary’s Butchers & Fishmongers.',
 };
 

@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              'Premium/bulk delivery is not available on your account — please sign in with an eligible account, or contact us.',
+              'Premium/bulk delivery is not available on your account. Please sign in with an eligible account, or contact us.',
           },
           { status: 403 }
         );
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
         {
           error: `Sorry, there's a ${formatPrice(
             MINIMUM_DELIVERY_ORDER_PENCE
-          )} minimum order for delivery — please add more items, or choose pickup instead.`,
+          )} minimum order for delivery. Please add more items, or choose pickup instead.`,
         },
         { status: 400 }
       );
@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
     if (sameDayBlock && slotDate) {
       if (maxNoticeDays > 0) {
         return NextResponse.json(
-          { error: "Sorry, an item in your basket isn't available for same-day delivery — please choose a later date." },
+          { error: "Sorry, an item in your basket isn't available for same-day delivery. Please choose a later date." },
           { status: 400 }
         );
       }
@@ -262,14 +262,14 @@ export async function POST(req: NextRequest) {
       const nowMinutes = minutesOfDay(now);
       if (!isToday(slotDate, now) || nowMinutes >= endsAt || shopSettings.sameDay.closedDays.includes(getWeekday(now))) {
         return NextResponse.json(
-          { error: 'That same-day slot has passed — please choose another time.' },
+          { error: 'That same-day slot has passed. Please choose another time.' },
           { status: 400 }
         );
       }
       if (typeof shopSettings.sameDay.opensAtMinutes === 'number' && nowMinutes < shopSettings.sameDay.opensAtMinutes) {
         return NextResponse.json(
           {
-            error: `Same-day delivery isn't available yet — come back at ${formatClock(
+            error: `Same-day delivery isn't available yet. Come back at ${formatClock(
               shopSettings.sameDay.opensAtMinutes
             )} to place your order.`,
           },
@@ -281,14 +281,14 @@ export async function POST(req: NextRequest) {
         nowMinutes >= shopSettings.sameDay.orderCutoffMinutes
       ) {
         return NextResponse.json(
-          { error: 'Same-day delivery has finished for today — please choose another fulfilment option.' },
+          { error: 'Same-day delivery has finished for today. Please choose another fulfilment option.' },
           { status: 400 }
         );
       }
       const counts = await getSameDayBucketCounts();
       if ((counts[sameDayBlock.id] ?? 0) >= sameDayBlock.capacity) {
         return NextResponse.json(
-          { error: 'That same-day slot is fully booked — please choose another.' },
+          { error: 'That same-day slot is fully booked. Please choose another.' },
           { status: 400 }
         );
       }
@@ -306,8 +306,8 @@ export async function POST(req: NextRequest) {
           {
             error:
               maxNoticeDays > 0
-                ? `Sorry, an item in your basket needs ${maxNoticeDays} day${maxNoticeDays === 1 ? '' : 's'} notice — please choose a later date.`
-                : "Sorry, today's next-day delivery cutoff has passed — please choose a later date.",
+                ? `Sorry, an item in your basket needs ${maxNoticeDays} day${maxNoticeDays === 1 ? '' : 's'} notice. Please choose a later date.`
+                : "Sorry, today's next-day delivery cutoff has passed. Please choose a later date.",
           },
           { status: 400 }
         );
@@ -442,7 +442,7 @@ export async function POST(req: NextRequest) {
       const key = bucketKey(getDateKey(slotDate), block.id);
       if ((counts[key] ?? 0) >= block.capacity) {
         return NextResponse.json(
-          { error: 'That delivery slot is fully booked — please choose another.' },
+          { error: 'That delivery slot is fully booked. Please choose another.' },
           { status: 400 }
         );
       }
@@ -461,7 +461,7 @@ export async function POST(req: NextRequest) {
       const key = bucketKey(getDateKey(slotDate), block.id);
       if ((counts[key] ?? 0) >= block.capacity) {
         return NextResponse.json(
-          { error: 'That pickup slot is fully booked — please choose another.' },
+          { error: 'That pickup slot is fully booked. Please choose another.' },
           { status: 400 }
         );
       }
@@ -518,7 +518,7 @@ export async function POST(req: NextRequest) {
       }
       if (intent.status === 'processing') {
         return NextResponse.json(
-          { error: 'Your previous payment for this order is still processing — please wait a moment and check your email before trying again.' },
+          { error: 'Your previous payment for this order is still processing. Please wait a moment and check your email before trying again.' },
           { status: 409 }
         );
       }

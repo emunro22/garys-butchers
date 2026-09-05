@@ -123,7 +123,7 @@ export default async function AdminDashboardPage() {
               {stats.recent.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-ink-500">
-                    No orders yet — they&apos;ll appear here once customers start shopping.
+                    No orders yet. They&apos;ll appear here once customers start shopping.
                   </td>
                 </tr>
               )}

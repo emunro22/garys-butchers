@@ -34,7 +34,7 @@ export function AboutStrip() {
               </div>
               <div>
                 <div className="h-px bg-gold-400/30 mb-4" />
-                <p className="eyebrow text-gold-400">— Suzanne, regular customer</p>
+                <p className="eyebrow text-gold-400">–Suzanne, regular customer</p>
               </div>
             </div>
           </motion.div>
@@ -52,15 +52,15 @@ export function AboutStrip() {
               <em className="text-gold-500">in the centre of Erskine</em>.
             </h2>
             <p className="text-ink-700 leading-relaxed mb-5">
-              We&apos;ve been hand-cutting meat behind the counter since 2015 — sourced from
+              We&apos;ve been hand-cutting meat behind the counter since 2015, sourced from
               Scottish farms we know by name, prepared on the day, and priced honestly.
               No clingfilm trays, no anonymous supermarket cuts. Just a proper butcher,
               doing it the proper way.
             </p>
             <p className="text-ink-700 leading-relaxed mb-10">
               Our fishmonger counter runs Tuesday to Saturday, with daily deliveries from
-              the Scottish coast. And our meat packs — the ones lining the wall on the
-              shop&apos;s price list — are how local families feed themselves well, all week.
+              the Scottish coast. And our meat packs, the ones lining the wall on the
+              shop&apos;s price list, are how local families feed themselves well, all week.
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 lg:gap-4 mb-10 py-8 border-y border-ink-900/10">

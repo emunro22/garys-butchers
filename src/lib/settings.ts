@@ -23,13 +23,13 @@ export const DEFAULT_SETTINGS = {
     ratePerKgInPence: 150,
     carriers: ['DHL', 'UPS', 'Parcelforce', 'Royal Mail'],
     description:
-      "For bulk orders and deliveries outside our usual area — we'll confirm the exact price and courier once your order is weighed.",
+      "For bulk orders and deliveries outside our usual area, we'll confirm the exact price and courier once your order is weighed.",
   },
   banner: {
     messages: [
       '🥩  Free home delivery within 5 miles',
       '⭐  Rated 5/5 by our customers in Erskine',
-      '🐟  Fresh fish delivered daily — Tuesday to Saturday',
+      '🐟  Fresh fish delivered daily, Tuesday to Saturday',
       '🎁  Use code WELCOME10 for 10% off your first order',
     ],
     showCountdown: true,

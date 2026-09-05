@@ -433,7 +433,7 @@ export function ProductForm({
         <h2 className="font-display text-xl text-ink-900 mb-4">Price</h2>
         {hasVariants ? (
           <p className="text-sm text-ink-500 bg-cream-100 border border-ink-900/10 px-4 py-3">
-            This product has size variants, so it&apos;s priced per size — set prices in the
+            This product has size variants, so it&apos;s priced per size. Set prices in the
             Size variants section below instead.
           </p>
         ) : (
@@ -536,7 +536,7 @@ export function ProductForm({
             checked={form.showOnOffers}
             onChange={(v) => setForm({ ...form, showOnOffers: v })}
             label="Show on Offers page"
-            hint="Feature this product on /shop/offers — independent of whether a discounted price is set above."
+            hint="Feature this product on /shop/offers, independent of whether a discounted price is set above."
           />
           <Toggle
             checked={form.isSubscribable}
@@ -553,7 +553,7 @@ export function ProductForm({
           <h2 className="font-display text-xl text-ink-900 mb-4">Pack contents</h2>
           <div className="space-y-2 mb-4">
             {packContents.length === 0 && (
-              <p className="text-sm text-ink-500 italic">No items yet — add what&apos;s in the pack below.</p>
+              <p className="text-sm text-ink-500 italic">No items yet, add what&apos;s in the pack below.</p>
             )}
             {packContents.map((line, i) => (
               <div
@@ -596,7 +596,7 @@ export function ProductForm({
       <section>
         <h2 className="font-display text-xl text-ink-900 mb-1">Size variants</h2>
         <p className="text-xs text-ink-500 mb-5">
-          When variants are added, customers pick a size from a dropdown on the product page — each
+          When variants are added, customers pick a size from a dropdown on the product page. Each
           size has its own current price and, optionally, its own discounted price. Leave empty to
           use the base price above.
         </p>
@@ -744,7 +744,7 @@ export function ProductForm({
         <h2 className="font-display text-xl text-ink-900 mb-1">Marinade options</h2>
         <p className="text-xs text-ink-500 mb-5">
           Add one or more marinades to give this product a &quot;Choose marinade&quot; dropdown on
-          its product page — this is how you grant the dropdown to specific products (e.g. chicken
+          its product page. This is how you grant the dropdown to specific products (e.g. chicken
           strips, chicken breasts). Leave empty for no dropdown.
         </p>
 

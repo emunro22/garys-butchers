@@ -110,7 +110,7 @@ async function main() {
     const catSlug = product.categoryId ? slugById.get(product.categoryId) : null;
     const imageUrl = pickImage(product.name, catSlug);
     if (!imageUrl) {
-      console.log(`  ⚠  Skipped "${product.name}" — no match found`);
+      console.log(`  ⚠  Skipped "${product.name}": no match found`);
       skipped++;
       continue;
     }

@@ -141,7 +141,7 @@ export function CategoryForm({
       </div>
 
       <div>
-        <Label htmlFor="slug">URL slug (optional — auto-generated from name)</Label>
+        <Label htmlFor="slug">URL slug (optional, auto-generated from name)</Label>
         <Input
           id="slug"
           value={form.slug}

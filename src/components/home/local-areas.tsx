@@ -6,11 +6,11 @@ import { MapPin } from 'lucide-react';
 const areas = [
   {
     name: 'Erskine',
-    body: "The shop itself — Park Glade Shops. Pop in for a fresh-cut order, or book a click & collect slot online and it'll be ready to grab on your way past.",
+    body: "The shop itself: Park Glade Shops. Pop in for a fresh-cut order, or book a click & collect slot online and it'll be ready to grab on your way past.",
   },
   {
     name: 'Renfrew',
-    body: 'A regular delivery round for us — Sunday roast joints, meat packs and fresh fish, ordered online and dropped at the door.',
+    body: 'A regular delivery round for us: Sunday roast joints, meat packs and fresh fish, ordered online and dropped at the door.',
   },
   {
     name: 'Inchinnan',
@@ -18,7 +18,7 @@ const areas = [
   },
   {
     name: 'Bridge of Weir',
-    body: 'A little further out, but still on our delivery route — the same hand-cut meat and daily fish, delivered rather than collected.',
+    body: 'A little further out, but still on our delivery route, with the same hand-cut meat and daily fish, delivered rather than collected.',
   },
 ];
 
@@ -28,7 +28,7 @@ export function LocalAreas() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
         <p className="eyebrow text-ink-500 mb-3">Where we deliver</p>
         <h2 className="font-display text-3xl md:text-4xl text-ink-900 leading-tight max-w-2xl">
-          Erskine, Renfrew, Inchinnan, Bridge of Weir — and everywhere in between.
+          Erskine, Renfrew, Inchinnan, Bridge of Weir, and everywhere in between.
         </h2>
         <p className="mt-4 text-ink-700 max-w-2xl leading-relaxed">
           We're based at Park Glade Shops in Erskine, with free home delivery within 5

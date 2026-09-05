@@ -156,7 +156,7 @@ function ReportCard({
               onClick={onRun}
               disabled={state.status === 'sending'}
             >
-              {state.status === 'sending' ? 'Sending…' : `Email report — last ${days} day${days === 1 ? '' : 's'}`}
+              {state.status === 'sending' ? 'Sending…' : `Email report: last ${days} day${days === 1 ? '' : 's'}`}
             </Button>
             {state.status === 'sent' && (
               <span className="text-sm text-green-600">{state.message}</span>

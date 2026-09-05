@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth';
 import { AdminShell } from '@/components/admin/admin-shell';
 
 export const metadata = {
-  title: 'Admin — Gary’s Butchers',
+  title: 'Admin | Gary’s Butchers',
 };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

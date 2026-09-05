@@ -23,33 +23,33 @@ export const recipes: RecipePost[] = [
     title: 'How to Cook the Perfect Rib of Beef for Sunday Dinner',
     eyebrow: 'Cooking guide',
     standfirst:
-      "A butcher's guide to picking, seasoning and roasting a rib of Scottish beef — timings, resting, and the gravy that goes with it.",
+      "A butcher's guide to picking, seasoning and roasting a rib of Scottish beef: timings, resting, and the gravy that goes with it.",
     readTime: '5 min read',
     publishedAt: '2026-01-12',
     body: [
       {
         paragraphs: [
-          'Rib of beef is the one joint we sell out of first every Sunday morning, and for good reason — it bastes itself as it cooks, carves into generous slices, and forgives a few extra minutes in the oven if the family is running late. Here\'s how we\'d cook it at home.',
+          'Rib of beef is the one joint we sell out of first every Sunday morning, and for good reason: it bastes itself as it cooks, carves into generous slices, and forgives a few extra minutes in the oven if the family is running late. Here\'s how we\'d cook it at home.',
         ],
       },
       {
         heading: 'Choosing the joint',
         paragraphs: [
-          "Ask for a rib on the bone if you can — the bone insulates the meat and keeps it juicier, and it makes for a better centrepiece at the table. As a rough guide, one rib feeds two to three people, so a two-rib joint comfortably feeds four to six. We hand-cut every rib joint to order, so let us know the head count and we'll cut accordingly.",
-          'Take it out of the fridge an hour before it goes in the oven. A cold joint straight from the fridge cooks unevenly — you get a well-done outer ring and a cool centre.',
+          "Ask for a rib on the bone if you can: the bone insulates the meat and keeps it juicier, and it makes for a better centrepiece at the table. As a rough guide, one rib feeds two to three people, so a two-rib joint comfortably feeds four to six. We hand-cut every rib joint to order, so let us know the head count and we'll cut accordingly.",
+          'Take it out of the fridge an hour before it goes in the oven. A cold joint straight from the fridge cooks unevenly, giving you a well-done outer ring and a cool centre.',
         ],
       },
       {
         heading: 'Timings',
         paragraphs: [
-          'For a joint on the bone, we work on 15 minutes at 240°C to seal it, then roughly 15 minutes per 450g at 180°C for medium-rare, a little longer for medium. A meat thermometer is the honest way to check — pull it out at 52–54°C for medium-rare, since it will climb another few degrees while it rests.',
+          'For a joint on the bone, we work on 15 minutes at 240°C to seal it, then roughly 15 minutes per 450g at 180°C for medium-rare, a little longer for medium. A meat thermometer is the honest way to check: pull it out at 52–54°C for medium-rare, since it will climb another few degrees while it rests.',
           'Resting matters as much as the cooking. Give it at least 20 minutes under foil somewhere warm before carving. The juices redistribute through the meat instead of running out onto the board, and it makes carving neater too.',
         ],
       },
       {
         heading: 'The gravy',
         paragraphs: [
-          "Don't wash the roasting tin. Sit it on the hob, add a splash of red wine and scrape up everything stuck to the bottom — that's where the flavour is. Add beef stock, reduce by half, and finish with a knob of butter for shine.",
+          "Don't wash the roasting tin. Sit it on the hob, add a splash of red wine and scrape up everything stuck to the bottom, since that's where the flavour is. Add beef stock, reduce by half, and finish with a knob of butter for shine.",
         ],
       },
     ],
@@ -76,9 +76,9 @@ export const recipes: RecipePost[] = [
       instructions: [
         'Take the beef out of the fridge 1 hour before cooking so it comes up to room temperature.',
         'Preheat the oven to 240°C (fan 220°C). Season the joint generously with salt and pepper and rub with oil or dripping.',
-        'Sit the beef on top of the onion and carrots in a roasting tin — this keeps it off the base and flavours the gravy.',
+        'Sit the beef on top of the onion and carrots in a roasting tin, which keeps it off the base and flavours the gravy.',
         'Roast for 15 minutes at 240°C, then turn down to 180°C (fan 160°C) and continue roasting, allowing roughly 15 minutes per 450g for medium-rare.',
-        'Check with a meat thermometer — remove at 52–54°C for medium-rare.',
+        'Check with a meat thermometer, and remove at 52–54°C for medium-rare.',
         'Rest under foil for at least 20 minutes before carving.',
         'Make the gravy in the roasting tin with wine and stock while the beef rests, then carve and serve.',
       ],
@@ -89,13 +89,13 @@ export const recipes: RecipePost[] = [
     title: 'Where Our Meat Comes From: Sourcing Scottish Beef, Pork & Fish',
     eyebrow: 'Sourcing',
     standfirst:
-      "A look at the farms and suppliers behind the counter — why we source Scottish where we can, and what that means for what ends up in your order.",
+      "A look at the farms and suppliers behind the counter: why we source Scottish where we can, and what that means for what ends up in your order.",
     readTime: '4 min read',
     publishedAt: '2025-11-03',
     body: [
       {
         paragraphs: [
-          "One of the first questions customers ask when they walk in is where the meat comes from. It's a fair question, and one the big supermarket chains can rarely answer with a straight name and a place — we can.",
+          "One of the first questions customers ask when they walk in is where the meat comes from. It's a fair question, and one the big supermarket chains can rarely answer with a straight name and a place. We can.",
         ],
       },
       {
@@ -108,13 +108,13 @@ export const recipes: RecipePost[] = [
       {
         heading: 'Why hand-cut matters',
         paragraphs: [
-          "Every joint, steak and sausage in the shop is cut and prepared by hand on the premises — nothing arrives pre-packed in plastic from a central factory. That's slower than buying in ready-portioned trays, but it means we can cut to the exact weight or thickness a customer wants, and it means what you're buying was still a whole carcass a day or two before it reaches your bag.",
+          "Every joint, steak and sausage in the shop is cut and prepared by hand on the premises, and nothing arrives pre-packed in plastic from a central factory. That's slower than buying in ready-portioned trays, but it means we can cut to the exact weight or thickness a customer wants, and it means what you're buying was still a whole carcass a day or two before it reaches your bag.",
         ],
       },
       {
         heading: 'Ask us',
         paragraphs: [
-          "If you want to know more about a specific cut — where it's from, how it was reared, how to cook it — just ask at the counter. It's the kind of thing an independent butcher can tell you that a supermarket shelf can't.",
+          "If you want to know more about a specific cut, where it's from, how it was reared, how to cook it, just ask at the counter. It's the kind of thing an independent butcher can tell you that a supermarket shelf can't.",
         ],
       },
     ],
@@ -135,20 +135,20 @@ export const recipes: RecipePost[] = [
     body: [
       {
         paragraphs: [
-          'If you\'ve grown up in Scotland, square (or "Lorne") sausage needs no introduction. If you haven\'t, the shape is the first surprise — it\'s sliced from a block rather than twisted into links, so every slice fits a breakfast roll edge to edge with no gaps.',
+          'If you\'ve grown up in Scotland, square (or "Lorne") sausage needs no introduction. If you haven\'t, the shape is the first surprise: it\'s sliced from a block rather than twisted into links, so every slice fits a breakfast roll edge to edge with no gaps.',
         ],
       },
       {
         heading: "What's in it",
         paragraphs: [
-          "Ours is minced beef and pork, seasoned simply and formed into a block in-store, then sliced to order — no fillers, no mystery ingredients. Customers across Erskine, Renfrew, Inchinnan and Bridge of Weir tend to buy it a few slices thick for the griddle, or ask us to slice it thinner for rolling into sausage rolls.",
+          "Ours is minced beef and pork, seasoned simply and formed into a block in-store, then sliced to order: no fillers, no mystery ingredients. Customers across Erskine, Renfrew, Inchinnan and Bridge of Weir tend to buy it a few slices thick for the griddle, or ask us to slice it thinner for rolling into sausage rolls.",
         ],
       },
       {
         heading: 'How to cook it',
         paragraphs: [
-          'A dry, hot pan is all you need — no oil, since there\'s enough fat in the mix to stop it sticking. Around 3–4 minutes a side on a medium-high heat until it\'s browned and cooked through. Don\'t press it down with the spatula, or you\'ll push the juice out and it\'ll dry out.',
-          "Butter a soft floury roll, add the sausage, and a squeeze of brown sauce if you're doing it properly. That's a Scottish breakfast roll — simple, and hard to beat.",
+          'A dry, hot pan is all you need: no oil, since there\'s enough fat in the mix to stop it sticking. Around 3–4 minutes a side on a medium-high heat until it\'s browned and cooked through. Don\'t press it down with the spatula, or you\'ll push the juice out and it\'ll dry out.',
+          "Butter a soft floury roll, add the sausage, and a squeeze of brown sauce if you're doing it properly. That's a Scottish breakfast roll, simple, and hard to beat.",
         ],
       },
     ],

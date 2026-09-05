@@ -24,7 +24,7 @@ export async function generateMetadata({
     const [p] = await catalogDb.select().from(products).where(eq(products.slug, slug)).limit(1);
     if (!p) return { title: 'Not found' };
     return {
-      title: `${p.name} — Gary's Butchers & Fishmongers`,
+      title: `${p.name} | Gary's Butchers & Fishmongers`,
       description: p.description ?? `${p.name}, hand-cut at Gary's Butchers & Fishmongers.`,
       alternates: { canonical: `/product/${slug}` },
     };

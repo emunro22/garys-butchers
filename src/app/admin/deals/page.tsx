@@ -32,7 +32,7 @@ export default async function AdminDealsPage() {
       </header>
 
       <p className="text-sm text-ink-500 bg-cream-100 border border-ink-900/10 px-4 py-3">
-        Create Christmas, Easter, Summer BBQ or general deals here. Save as <strong>draft</strong> — they won&apos;t appear on the site until you publish them.
+        Create Christmas, Easter, Summer BBQ or general deals here. Save as <strong>draft</strong> and they won&apos;t appear on the site until you publish them.
       </p>
 
       <DealsTable initial={all} />

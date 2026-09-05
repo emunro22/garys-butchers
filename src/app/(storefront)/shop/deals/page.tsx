@@ -7,7 +7,7 @@ import { SeasonalDeals } from '@/components/home/seasonal-deals';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Seasonal Deals — Gary's Butchers & Fishmongers",
+  title: "Seasonal Deals | Gary's Butchers & Fishmongers",
   description: 'Limited-time bundle pricing on our best seasonal combos at Gary’s Butchers & Fishmongers.',
   alternates: { canonical: '/shop/deals' },
 };
@@ -44,7 +44,7 @@ export default async function DealsPage() {
             Seasonal <span className="font-display italic text-gold-400">deals.</span>
           </h1>
           <p className="mt-6 max-w-xl text-cream-200/80 leading-relaxed">
-            Bundle pricing on our best combos — for a limited time only.
+            Bundle pricing on our best combos, for a limited time only.
           </p>
         </div>
       </section>

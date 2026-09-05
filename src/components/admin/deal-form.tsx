@@ -187,7 +187,7 @@ export function DealForm({ initial, mode }: { initial?: Deal; mode: 'create' | '
         <span className="text-sm font-medium">
           {form.status === 'published'
             ? '✓ This deal will be visible on the site'
-            : '✏ Draft — not visible to customers yet'}
+            : '✏ Draft, not visible to customers yet'}
         </span>
         <button
           type="button"
@@ -254,7 +254,7 @@ export function DealForm({ initial, mode }: { initial?: Deal; mode: 'create' | '
             rows={3}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Everything you need for the perfect BBQ — hand-selected by Gary."
+            placeholder="Everything you need for the perfect BBQ, hand-selected by Gary."
           />
         </div>
       </section>
@@ -263,7 +263,7 @@ export function DealForm({ initial, mode }: { initial?: Deal; mode: 'create' | '
       <section>
         <h2 className="font-display text-xl text-ink-900 mb-1">Bundle items</h2>
         <p className="text-xs text-ink-500 mb-4">
-          Add products to this deal — customers can add the whole bundle to their cart in one click.
+          Add products to this deal, so customers can add the whole bundle to their cart in one click.
         </p>
 
         {/* Search / add */}
@@ -360,7 +360,7 @@ export function DealForm({ initial, mode }: { initial?: Deal; mode: 'create' | '
           </div>
         ) : (
           <p className="text-sm text-ink-400 border border-dashed border-ink-900/15 py-6 text-center">
-            No items added yet — search above to build the bundle.
+            No items added yet, search above to build the bundle.
           </p>
         )}
 
@@ -368,7 +368,7 @@ export function DealForm({ initial, mode }: { initial?: Deal; mode: 'create' | '
         {dealItems.length > 0 && (
           <div className="mt-4">
             <Label htmlFor="dealPrice">
-              Special deal price (optional — leave blank to use the calculated total)
+              Special deal price (optional, leave blank to use the calculated total)
             </Label>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-ink-500 text-sm">£</span>

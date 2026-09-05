@@ -43,7 +43,7 @@ export default async function AdminReferralsPage() {
         <p className="text-sm text-ink-500 mt-2">
           Every referral relationship created via a customer&apos;s referral link. A referral
           becomes &quot;Rewarded&quot; the moment the referred customer completes their first paid
-          order — that's when the referrer's discount is credited. Reward percentage and the
+          order, and that's when the referrer's discount is credited. Reward percentage and the
           on/off switch are in Settings.
         </p>
       </header>

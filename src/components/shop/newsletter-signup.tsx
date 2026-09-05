@@ -50,7 +50,7 @@ export function NewsletterSignup({
       >
         <Check className={`h-5 w-5 ${dark ? 'text-gold-400' : 'text-gold-600'}`} />
         <p className="text-sm">
-          Thanks — you&apos;re on the list. Look out for offers and seasonal specials.
+          Thanks, you&apos;re on the list. Look out for offers and seasonal specials.
         </p>
       </div>
     );

@@ -79,7 +79,7 @@ export async function DELETE(
     if (count > 0) {
       return NextResponse.json(
         {
-          error: `Can't delete — ${count} product${count === 1 ? ' is' : 's are'} still in this category. Move or delete them first.`,
+          error: `Can't delete: ${count} product${count === 1 ? ' is' : 's are'} still in this category. Move or delete them first.`,
         },
         { status: 409 }
       );

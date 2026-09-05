@@ -36,11 +36,11 @@ export default function PrivacyPage() {
 
           <h2 className="font-display text-2xl text-ink-900 mt-10 mb-4">Information we collect</h2>
           <ul className="space-y-2 text-ink-700">
-            <li><strong>Order information</strong> — your name, delivery address, email address, and phone number when you place an order.</li>
-            <li><strong>Payment information</strong> — card details are processed securely by Stripe. We never store your full card number.</li>
-            <li><strong>Contact messages</strong> — anything you submit through our contact form.</li>
-            <li><strong>Newsletter subscription</strong> — your email address if you opt in to marketing emails.</li>
-            <li><strong>Website usage</strong> — basic analytics such as pages visited and referring sources, collected without personally identifying you.</li>
+            <li><strong>Order information</strong>: your name, delivery address, email address, and phone number when you place an order.</li>
+            <li><strong>Payment information</strong>: card details are processed securely by Stripe. We never store your full card number.</li>
+            <li><strong>Contact messages</strong>: anything you submit through our contact form.</li>
+            <li><strong>Newsletter subscription</strong>: your email address if you opt in to marketing emails.</li>
+            <li><strong>Website usage</strong>: basic analytics such as pages visited and referring sources, collected without personally identifying you.</li>
           </ul>
 
           <h2 className="font-display text-2xl text-ink-900 mt-10 mb-4">How we use your information</h2>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
 
           <h2 className="font-display text-2xl text-ink-900 mt-10 mb-4">Third parties</h2>
           <ul className="space-y-2 text-ink-700">
-            <li><strong>Stripe</strong> — payment processing. Stripe may store payment data in line with their own privacy policy.</li>
+            <li><strong>Stripe</strong>: payment processing. Stripe may store payment data in line with their own privacy policy.</li>
             <li>We do not sell your personal data to any third party.</li>
           </ul>
 

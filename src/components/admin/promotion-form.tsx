@@ -174,7 +174,7 @@ export function PromotionForm({
           </div>
           <p className="text-xs text-ink-500 mt-2">
             {form.productIds.length > 0
-              ? `${form.productIds.length} product${form.productIds.length === 1 ? '' : 's'} selected — this code only works if one of them is in the customer's basket, and the discount only applies to those products' lines — not the rest of the order.`
+              ? `${form.productIds.length} product${form.productIds.length === 1 ? '' : 's'} selected. This code only works if one of them is in the customer's basket, and the discount only applies to those products' lines, not the rest of the order.`
               : 'Applies to the whole order (minus meat packs, which already have bundled pricing).'}
           </p>
         </div>

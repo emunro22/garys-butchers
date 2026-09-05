@@ -64,7 +64,7 @@ function SignupForm() {
           </p>
           {referralCode && (
             <p className="text-sm text-gold-700 mt-3 bg-gold-400/10 border border-gold-400/30 px-4 py-2 inline-block">
-              You&apos;ve been invited by a friend — create your account to get started.
+              You&apos;ve been invited by a friend, so create your account to get started.
             </p>
           )}
         </div>

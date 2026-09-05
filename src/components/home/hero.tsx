@@ -46,7 +46,7 @@ export function Hero() {
             >
               An independent butcher and fishmonger serving Erskine and the surrounding villages.
               Hand-cut Scottish beef, free-range chicken, fresh fish daily, and our famous
-              meat packs — all at honest prices.
+              meat packs, all at honest prices.
             </motion.p>
 
             <motion.div

@@ -89,7 +89,7 @@ export function AddToCartButton({
                 !!v.compareAtPriceInPence && v.compareAtPriceInPence > v.priceInPence;
               return (
                 <option key={v.label} value={v.label}>
-                  {v.label} — {formatPrice(v.priceInPence)}
+                  {v.label}: {formatPrice(v.priceInPence)}
                   {saleActive ? ` (was ${formatPrice(v.compareAtPriceInPence!)})` : ''}
                 </option>
               );

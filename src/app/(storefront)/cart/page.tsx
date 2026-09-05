@@ -131,7 +131,7 @@ export default function CartPage() {
             <div className="mt-6">
               <p className="text-sm text-ink-700">
                 <span className="font-semibold text-ink-900">Free delivery</span> within 5 miles
-                of the shop — your exact fee is shown once you enter your postcode at checkout.
+                of the shop. Your exact fee is shown once you enter your postcode at checkout.
               </p>
             </div>
 

@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         {
           price_data: {
             currency: 'gbp',
-            product_data: { name: "Gary's Butchers — Custom Subscription" },
+            product_data: { name: "Gary's Butchers: Custom Subscription" },
             unit_amount: subtotalInPence,
             recurring: { interval: 'month' },
           },

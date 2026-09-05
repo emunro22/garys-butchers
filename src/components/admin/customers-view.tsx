@@ -126,7 +126,7 @@ export function CustomersView({ customers }: { customers: Customer[] }) {
       {filtered.length === 0 ? (
         <p className="text-center py-12 text-ink-500">
           {customers.length === 0
-            ? "No customers yet — once orders come in or users sign up, they'll appear here."
+            ? "No customers yet. Once orders come in or users sign up, they'll appear here."
             : 'No customers match your search.'}
         </p>
       ) : (

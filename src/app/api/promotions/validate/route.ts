@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error: productNames.length > 0
-              ? `This code only applies to ${productNames.map((n) => `"${n}"`).join(', ')} — add one to your basket to use it.`
+              ? `This code only applies to ${productNames.map((n) => `"${n}"`).join(', ')}. Add one to your basket to use it.`
               : 'This code only applies to specific products that are no longer available.',
           },
           { status: 400 }

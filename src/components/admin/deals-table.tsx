@@ -54,7 +54,7 @@ export function DealsTable({ initial }: { initial: Deal[] }) {
     return (
       <div className="bg-cream-100 border border-ink-900/10 py-16 text-center">
         <p className="font-display text-2xl text-ink-700 mb-2">No deals yet</p>
-        <p className="text-sm text-ink-500">Create your first seasonal deal — it'll be saved as draft until you publish it.</p>
+        <p className="text-sm text-ink-500">Create your first seasonal deal, and it'll be saved as draft until you publish it.</p>
       </div>
     );
   }

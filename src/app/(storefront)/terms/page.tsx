@@ -43,7 +43,7 @@ export default function TermsPage() {
           <h2 className="font-display text-2xl text-ink-900 mt-10 mb-4">Payment</h2>
           <p className="text-ink-700 leading-relaxed">
             Payment is taken in full at the time of ordering via Stripe. We accept all major debit and credit
-            cards, Apple Pay, and Google Pay. Your card details are encrypted and handled securely by Stripe —
+            cards, Apple Pay, and Google Pay. Your card details are encrypted and handled securely by Stripe;
             we never store them.
           </p>
 

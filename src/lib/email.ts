@@ -228,7 +228,7 @@ function renderAdminHtml(o: OrderEmailPayload) {
         ${addressRow}`
       : `<tr>
           <td style="padding:6px 0;color:#6b5d4f;width:130px">Type</td>
-          <td style="padding:6px 0;font-weight:600;color:#1a4d8f">HOME DELIVERY${isSameDayOrder ? ' — SAME DAY' : ''}</td>
+          <td style="padding:6px 0;font-weight:600;color:#1a4d8f">HOME DELIVERY${isSameDayOrder ? ' (SAME DAY)' : ''}</td>
         </tr>
         <tr>
           <td style="padding:6px 0;color:#6b5d4f">Slot</td>
@@ -266,7 +266,7 @@ function renderAdminHtml(o: OrderEmailPayload) {
       </table>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:10px">
         <tr><td style="padding:4px 0;color:#6b5d4f">Subtotal</td><td style="text-align:right">${fmt(o.subtotalInPence)}</td></tr>
-        ${o.discountInPence > 0 ? `<tr><td style="padding:4px 0;color:#8b1f1f">Discount${o.promotionCode ? ` — code: <strong>${o.promotionCode}</strong>` : ''}</td><td style="text-align:right;color:#8b1f1f">−${fmt(o.discountInPence)}</td></tr>` : ''}
+        ${o.discountInPence > 0 ? `<tr><td style="padding:4px 0;color:#8b1f1f">Discount${o.promotionCode ? ` (code: <strong>${o.promotionCode}</strong>)` : ''}</td><td style="text-align:right;color:#8b1f1f">−${fmt(o.discountInPence)}</td></tr>` : ''}
         ${o.promotionCode && o.discountInPence === 0 ? `<tr><td style="padding:4px 0;color:#6b5d4f">Promo code</td><td style="text-align:right">${o.promotionCode} (free delivery)</td></tr>` : ''}
         <tr><td style="padding:4px 0;color:#6b5d4f">${o.fulfilment === 'pickup' ? 'Collection' : 'Delivery'}</td><td style="text-align:right">${o.deliveryInPence === 0 ? 'Free' : fmt(o.deliveryInPence)}</td></tr>
         <tr style="border-top:2px solid #c9a961">
@@ -287,7 +287,7 @@ function renderAdminHtml(o: OrderEmailPayload) {
 
   return renderEmailLayout({
     eyebrow: 'New order',
-    title: `Order #${String(o.orderNumber).padStart(5, '0')} — ${fmt(o.totalInPence)}`,
+    title: `Order #${String(o.orderNumber).padStart(5, '0')}: ${fmt(o.totalInPence)}`,
     intro: new Date().toLocaleString('en-GB', {
       day: 'numeric',
       month: 'short',
@@ -332,7 +332,7 @@ function renderResetHtml(name: string, code: string) {
       <p style="margin:0;font-size:34px;letter-spacing:0.35em;font-weight:bold;color:#c9a961;font-family:monospace">${code}</p>
     </div>
     <p style="font-size:13px;color:#4a443a;line-height:1.7">
-      This code expires in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email — your password won't change.
+      This code expires in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email, and your password won't change.
     </p>`;
 
   return renderEmailLayout({
@@ -349,7 +349,7 @@ export async function sendOrderConfirmation(payload: OrderEmailPayload) {
     from: `Gary's Butchers <${FROM}>`,
     to: payload.customerEmail,
     replyTo: REPLY_TO,
-    subject: `Order confirmed — #${String(payload.orderNumber).padStart(5, '0')}`,
+    subject: `Order confirmed: #${String(payload.orderNumber).padStart(5, '0')}`,
     html: renderCustomerHtml(payload),
     attachments: await getLogoAttachment(),
   });
@@ -362,7 +362,7 @@ export async function sendShopNotification(payload: OrderEmailPayload) {
   await resend.emails.send({
     from: `Gary's Butchers Orders <${FROM}>`,
     to: ADMIN_EMAILS,
-    subject: `${prefix} New order #${String(payload.orderNumber).padStart(5, '0')} — ${payload.customerName} — ${fmt(payload.totalInPence)}`,
+    subject: `${prefix} New order #${String(payload.orderNumber).padStart(5, '0')} · ${payload.customerName} · ${fmt(payload.totalInPence)}`,
     html: renderAdminHtml(payload),
     attachments: await getLogoAttachment(),
   });
@@ -393,7 +393,7 @@ export async function sendAbandonedCheckoutEmail(opts: {
 
   const bodyHtml = `
     <p style="margin:0 0 20px;font-size:14px;color:#4a443a;line-height:1.7">
-      Looks like you didn't quite finish checking out — <strong>no payment has been taken</strong>,
+      Looks like you didn't quite finish checking out. <strong>No payment has been taken</strong>,
       so nothing's been charged to your card yet. Your order's still waiting for you below.
     </p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -416,7 +416,7 @@ export async function sendAbandonedCheckoutEmail(opts: {
     from: `Gary's Butchers <${FROM}>`,
     to: opts.customerEmail,
     replyTo: REPLY_TO,
-    subject: "You're almost done — complete your order",
+    subject: "You're almost done, complete your order",
     html: renderEmailLayout({
       eyebrow: 'Order not completed',
       title: `${opts.customerName ? `${opts.customerName.split(' ')[0]}, ` : ''}you're one step from finishing.`,
@@ -439,7 +439,7 @@ export async function sendReviewRequestEmail(opts: {
   const bodyHtml = `
     <p style="margin:0 0 20px;font-size:14px;color:#4a443a;line-height:1.7">
       We hope you enjoyed your order today. If you've got a spare minute, a quick review
-      helps a local independent business more than you'd think — and we'd really appreciate it.
+      helps a local independent business more than you'd think, and we'd really appreciate it.
     </p>
     <div style="text-align:center;margin-top:8px">
       <a href="${REVIEW_URL}" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600">
@@ -507,7 +507,7 @@ export async function sendContactConfirmation(opts: { name: string; message: str
     from: `Gary's Butchers <${FROM}>`,
     to: opts.email,
     replyTo: REPLY_TO,
-    subject: "Thanks for your enquiry — Gary's Butchers & Fishmongers",
+    subject: "Thanks for your enquiry | Gary's Butchers & Fishmongers",
     html: renderEmailLayout({
       eyebrow: 'Enquiry received',
       title: `Thanks, ${opts.name.split(' ')[0]}.`,
@@ -521,7 +521,7 @@ export async function sendVerificationCode(email: string, name: string, code: st
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: email,
-    subject: "Verify your email — Gary's Butchers",
+    subject: "Verify your email | Gary's Butchers",
     html: renderVerificationHtml(name, code),
     attachments: await getLogoAttachment(),
   });
@@ -531,7 +531,7 @@ export async function sendPasswordResetCode(email: string, name: string, code: s
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: email,
-    subject: "Reset your password — Gary's Butchers",
+    subject: "Reset your password | Gary's Butchers",
     html: renderResetHtml(name, code),
     attachments: await getLogoAttachment(),
   });
@@ -568,7 +568,7 @@ export async function sendNewCustomerNotification(customer: {
   await resend.emails.send({
     from: `Gary's Butchers <${FROM}>`,
     to: ADMIN_EMAILS,
-    subject: `New customer sign-up — ${customer.name}`,
+    subject: `New customer sign-up: ${customer.name}`,
     html: renderEmailLayout({
       eyebrow: 'New customer',
       title: 'New Customer Sign-Up',

@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     if (order.status !== 'pending') {
       if (order.status === 'cancelled' || order.status === 'refunded') {
         return NextResponse.json(
-          { status: 'expired', error: 'This checkout has expired — please start a new order.' },
+          { status: 'expired', error: 'This checkout has expired. Please start a new order.' },
           { status: 410 }
         );
       }
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     if (!order.stripePaymentIntentId) {
       return NextResponse.json(
-        { status: 'expired', error: 'This checkout has expired — please start a new order.' },
+        { status: 'expired', error: 'This checkout has expired. Please start a new order.' },
         { status: 410 }
       );
     }
@@ -98,13 +98,13 @@ export async function GET(req: NextRequest) {
 
     if (intent.status === 'processing') {
       return NextResponse.json(
-        { status: 'processing', error: 'This payment is still being processed — please check back in a minute.' },
+        { status: 'processing', error: 'This payment is still being processed. Please check back in a minute.' },
         { status: 409 }
       );
     }
 
     return NextResponse.json(
-      { status: 'expired', error: 'This checkout has expired — please start a new order.' },
+      { status: 'expired', error: 'This checkout has expired. Please start a new order.' },
       { status: 410 }
     );
   } catch (err) {

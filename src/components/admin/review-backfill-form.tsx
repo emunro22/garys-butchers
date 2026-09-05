@@ -64,7 +64,7 @@ export function ReviewBackfillForm() {
         <p className="text-sm text-ink-500 mb-4">
           One email per customer, covering every already-fulfilled order (today or earlier) that
           hasn&apos;t had a review request sent yet. Orders with a future pickup/delivery date and
-          premium/bulk orders are excluded — those get picked up by the ongoing 8pm cron instead.
+          premium/bulk orders are excluded; those get picked up by the ongoing 8pm cron instead.
         </p>
 
         {loadingPreview ? (
@@ -79,7 +79,7 @@ export function ReviewBackfillForm() {
               <ul className="mt-3 space-y-1 text-xs text-ink-500">
                 {preview.sample.map((s, i) => (
                   <li key={i}>
-                    #{String(s.orderNumber ?? '—').padStart(5, '0')} — {s.customerName} &lt;{s.customerEmail}&gt;
+                    #{String(s.orderNumber ?? '—').padStart(5, '0')}: {s.customerName} &lt;{s.customerEmail}&gt;
                   </li>
                 ))}
                 {preview.eligibleCustomers > preview.sample.length && (

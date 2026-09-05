@@ -586,11 +586,11 @@ export function Checkout() {
     }
     if (fulfilment !== 'pickup') {
       if (belowDeliveryMinimum) {
-        return `Sorry, there's a ${formatPrice(MINIMUM_DELIVERY_ORDER_PENCE)} minimum order for delivery — please add more items, or choose pickup instead.`;
+        return `Sorry, there's a ${formatPrice(MINIMUM_DELIVERY_ORDER_PENCE)} minimum order for delivery. Please add more items, or choose pickup instead.`;
       }
       if (!form.line1) return 'Please enter your delivery address.';
       if (!form.postcode) return 'Please enter your postcode.';
-      if (!withinRadius) return "Sorry, that address is outside our 30 mile delivery area — please choose pickup instead.";
+      if (!withinRadius) return "Sorry, that address is outside our 30 mile delivery area. Please choose pickup instead.";
     }
     return null;
   }
@@ -833,7 +833,7 @@ export function Checkout() {
 
         {belowDeliveryMinimum && (
           <p className="text-sm text-butcher-500 border border-butcher-500/30 bg-butcher-500/5 px-4 py-3">
-            There&apos;s a {formatPrice(MINIMUM_DELIVERY_ORDER_PENCE)} minimum order for delivery — you&apos;re{' '}
+            There&apos;s a {formatPrice(MINIMUM_DELIVERY_ORDER_PENCE)} minimum order for delivery. You&apos;re{' '}
             {formatPrice(MINIMUM_DELIVERY_ORDER_PENCE - subtotal)} away, or{' '}
             <button
               type="button"
@@ -864,7 +864,7 @@ export function Checkout() {
               <Link href="/account/signup?next=/checkout" className="underline hover:text-ink-900">
                 Create an account
               </Link>{' '}
-              to save your card for next time — or{' '}
+              to save your card for next time, or{' '}
               <Link href="/account/login?next=/checkout" className="underline hover:text-ink-900">
                 sign in
               </Link>{' '}
@@ -913,7 +913,7 @@ export function Checkout() {
               className="h-4 w-4 accent-gold-500"
             />
             <span className="text-sm text-ink-700">
-              Keep me posted — sign me up for offers &amp; updates
+              Keep me posted, sign me up for offers &amp; updates
             </span>
           </label>
         </section>
@@ -964,9 +964,9 @@ export function Checkout() {
                 <div className="sm:col-span-2">
                   <p className="text-sm text-butcher-500 border border-butcher-500/30 bg-butcher-500/5 px-4 py-3">
                     {postcodeUnverifiable ? (
-                      <>Sorry — we couldn&apos;t verify that postcode. Please double-check it, or choose{' '}</>
+                      <>Sorry, we couldn&apos;t verify that postcode. Please double-check it, or choose{' '}</>
                     ) : (
-                      <>Sorry — that&apos;s outside our 30 mile delivery area. Please choose{' '}</>
+                      <>Sorry, that&apos;s outside our 30 mile delivery area. Please choose{' '}</>
                     )}
                     <button
                       type="button"
@@ -996,12 +996,12 @@ export function Checkout() {
           </h2>
           {maxNoticeDays > 0 && fulfilment !== 'sameDay' && fulfilment !== 'premium' && (
             <p className="text-xs text-butcher-500 mb-3">
-              Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()} — earlier slots are unavailable.
+              Your basket includes an item that needs {noticeLabel(maxNoticeDays).toLowerCase()}, so earlier slots are unavailable.
             </p>
           )}
           {fulfilment === 'delivery' && deliveryCutoffNoticeDays > 0 && (
             <p className="text-xs text-butcher-500 mb-3">
-              Today&apos;s next-day delivery cutoff has passed — the earliest delivery is now the day after tomorrow.
+              Today&apos;s next-day delivery cutoff has passed. The earliest delivery is now the day after tomorrow.
             </p>
           )}
           {fulfilment === 'sameDay' ? (
@@ -1009,7 +1009,7 @@ export function Checkout() {
               <Zap className="h-4 w-4 mt-0.5 shrink-0 text-gold-500" />
               <span>
                 All same-day delivery orders are delivered today
-                {sameDayWindowText ? `, ${sameDayWindowText}` : ''} — no need to pick a time.
+                {sameDayWindowText ? `, ${sameDayWindowText}` : ''}, so no need to pick a time.
               </span>
             </p>
           ) : fulfilment === 'premium' ? (
@@ -1017,9 +1017,9 @@ export function Checkout() {
               <Package className="h-4 w-4 mt-0.5 shrink-0 text-gold-500" />
               <span>
                 {premiumSettings?.description ??
-                  "For bulk orders and deliveries outside our usual area — we'll confirm the exact price and courier once your order is weighed."}
+                  "For bulk orders and deliveries outside our usual area, we'll confirm the exact price and courier once your order is weighed."}
                 {premiumSettings?.carriers?.length ? ` Courier: ${premiumSettings.carriers.join(' / ')}.` : ''}{' '}
-                Minimum {formatPrice(premiumSettings?.minimumFeeInPence ?? 2000)} — no need to pick a delivery time,
+                Minimum {formatPrice(premiumSettings?.minimumFeeInPence ?? 2000)}, no need to pick a delivery time,
                 we&apos;ll be in touch to arrange it.
               </span>
             </p>
@@ -1167,7 +1167,7 @@ export function Checkout() {
                       {promo.productNames && promo.productNames.length > 0
                         ? promo.productNames.join(', ')
                         : 'specific products'}{' '}
-                      — add one to your basket for this discount to apply.
+                      so add one to your basket for this discount to apply.
                     </p>
                   )}
                 </div>
@@ -1299,7 +1299,7 @@ function PaymentForm({
       const safeToShow = stripeError.type === 'card_error' || stripeError.type === 'validation_error';
       setError(
         safeToShow
-          ? stripeError.message ?? 'Payment failed — please try again.'
+          ? stripeError.message ?? 'Payment failed. Please try again.'
           : "Sorry, we couldn't process that payment. Please try again, or contact us if it keeps happening."
       );
       setSubmitting(false);

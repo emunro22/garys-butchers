@@ -20,7 +20,7 @@ export function CategoriesTable({
     const count = countMap[id] ?? 0;
     if (count > 0) {
       alert(
-        `Can't delete "${name}" — ${count} product${count === 1 ? '' : 's'} still in this category. Move or delete them first.`
+        `Can't delete "${name}": ${count} product${count === 1 ? '' : 's'} still in this category. Move or delete them first.`
       );
       return;
     }

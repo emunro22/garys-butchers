@@ -8,7 +8,7 @@ import { SearchBar } from '@/components/shop/search-bar';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Search — Gary’s Butchers & Fishmongers',
+  title: 'Search | Gary’s Butchers & Fishmongers',
   alternates: { canonical: '/search' },
 };
 

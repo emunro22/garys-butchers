@@ -33,7 +33,7 @@ export default async function BuildSubscriptionPage() {
           <h1 className="font-display text-4xl md:text-5xl text-ink-900">Build your subscription</h1>
           <p className="text-sm text-ink-500 mt-2 max-w-2xl">
             Pick your regulars, choose pickup or delivery, and we&apos;ll charge your card
-            automatically every month and get it ready around your preferred day — no need to
+            automatically every month and get it ready around your preferred day, so no need to
             reorder each time.
           </p>
         </div>

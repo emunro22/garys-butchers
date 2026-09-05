@@ -93,7 +93,7 @@ export default async function AdminAnalyticsPage({
           <h1 className="font-display text-4xl text-ink-900">Analytics</h1>
         </header>
         <div className="bg-cream-100 border border-ink-900/10 p-6 text-sm text-ink-700">
-          Analytics couldn&apos;t load — if this is the first time you&apos;re seeing this page,
+          Analytics couldn&apos;t load. If this is the first time you&apos;re seeing this page,
           the tracking table probably hasn&apos;t been created yet. Run{' '}
           <code className="bg-ink-900/5 px-1.5 py-0.5">POST /api/admin/migrate-analytics</code>{' '}
           once, then refresh.
@@ -112,7 +112,7 @@ export default async function AdminAnalyticsPage({
           <h1 className="font-display text-4xl text-ink-900">Analytics</h1>
           <p className="text-ink-500 text-sm mt-2 max-w-prose">
             Everything below is scoped to the last{' '}
-            <span className="text-ink-700 font-medium">{range.label}</span> —{' '}
+            <span className="text-ink-700 font-medium">{range.label}</span>:{' '}
             {overview.totalCustomersEver} customers have signed up in total.
           </p>
         </div>
@@ -170,7 +170,7 @@ export default async function AdminAnalyticsPage({
         <Section title="Hottest item per category">
           <BarList
             items={hottest.hottestByCategory.map((h) => ({
-              label: `${h.categoryName} — ${h.productName}`,
+              label: `${h.categoryName}: ${h.productName}`,
               value: h.quantity,
             }))}
             valueFormatter={(v) => `${v} sold`}

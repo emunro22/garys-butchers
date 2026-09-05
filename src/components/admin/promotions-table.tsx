@@ -81,7 +81,7 @@ export function PromotionsTable({
           {rows.length === 0 && (
             <tr>
               <td colSpan={9} className="px-5 py-10 text-center text-ink-500">
-                No promotions yet — create your first discount code.
+                No promotions yet, create your first discount code.
               </td>
             </tr>
           )}

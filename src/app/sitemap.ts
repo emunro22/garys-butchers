@@ -3,6 +3,7 @@ import { catalogDb } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { recipes } from '@/lib/recipes';
+import { blogPosts } from '@/lib/blogPosts';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -13,6 +14,7 @@ const staticRoutes = [
   { path: '/about', changeFrequency: 'monthly' as const, priority: 0.7 },
   { path: '/reviews', changeFrequency: 'weekly' as const, priority: 0.6 },
   { path: '/recipes', changeFrequency: 'weekly' as const, priority: 0.7 },
+  { path: '/blog', changeFrequency: 'weekly' as const, priority: 0.7 },
   { path: '/faq', changeFrequency: 'monthly' as const, priority: 0.5 },
   { path: '/contact', changeFrequency: 'monthly' as const, priority: 0.5 },
   { path: '/subscriptions/build', changeFrequency: 'monthly' as const, priority: 0.5 },
@@ -30,6 +32,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const post of recipes) {
     entries.push({
       url: `${SITE_URL}/recipes/${post.slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    });
+  }
+
+  for (const post of blogPosts) {
+    entries.push({
+      url: `${SITE_URL}/blog/${post.slug}`,
       changeFrequency: 'monthly',
       priority: 0.6,
     });

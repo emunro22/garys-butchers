@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About — Gary’s Butchers & Fishmongers',
+  title: 'About | Gary’s Butchers & Fishmongers',
   description:
     'Local, independent butcher and fishmonger in Erskine. Hand-cut meat, fresh fish, square sausage and the famous family meat packs since 2015.',
   alternates: { canonical: '/about' },
@@ -35,13 +35,13 @@ export default function AboutPage() {
             <div className="space-y-5 text-ink-700 leading-relaxed">
               <p>
                 Gary opened the shop in Park Glade Shops in 2015 with a simple
-                idea — give people in Erskine a proper local butcher again. Meat cut by
+                idea: give people in Erskine a proper local butcher again. Meat cut by
                 hand, fresh fish on the counter, and the kind of service you don&apos;t get
                 from the big chains.
               </p>
               <p>
                 A decade on, the same idea still runs the shop. We hand-cut everything in
-                store — sirloin, popeseye, rump, square sausage, link sausage, our own
+                store: sirloin, popeseye, rump, square sausage, link sausage, our own
                 burgers, our own pies. The fish counter gets a fresh delivery from the
                 Scottish coast, and our meat packs have become a bit of a local legend
                 (the Muscle Pack and the Family Pack get most of the love).
@@ -85,7 +85,7 @@ export default function AboutPage() {
             </h2>
             <p className="mt-6 text-ink-700 leading-relaxed">
               Pop in, have a chat, take home a real Scottish steak. We&apos;re happy to
-              prepare anything specially — just ask Gary at the counter.
+              prepare anything specially, just ask Gary at the counter.
             </p>
             <div className="mt-8">
               <Link href="/contact">
@@ -97,12 +97,12 @@ export default function AboutPage() {
             <p className="eyebrow text-gold-400 mb-5">Opening hours</p>
             <dl className="space-y-2 text-sm">
               {[
-                ['Monday', '7:30 — 17:00'],
-                ['Tuesday', '7:30 — 17:00'],
-                ['Wednesday', '7:30 — 17:00'],
-                ['Thursday', '7:30 — 17:00'],
-                ['Friday', '7:30 — 17:00'],
-                ['Saturday', '7:30 — 14:00'],
+                ['Monday', '7:30–17:00'],
+                ['Tuesday', '7:30–17:00'],
+                ['Wednesday', '7:30–17:00'],
+                ['Thursday', '7:30–17:00'],
+                ['Friday', '7:30–17:00'],
+                ['Saturday', '7:30–14:00'],
                 ['Sunday', 'Closed'],
               ].map(([d, h]) => (
                 <div key={d} className="flex justify-between border-b border-gold-400/10 pb-2">

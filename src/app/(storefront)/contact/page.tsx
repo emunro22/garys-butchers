@@ -3,7 +3,7 @@ import { getShopSettings } from '@/lib/settings';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Contact — Gary’s Butchers & Fishmongers',
+  title: 'Contact | Gary’s Butchers & Fishmongers',
   description: 'Get in touch with Gary’s Butchers & Fishmongers in Erskine, Scotland.',
   alternates: { canonical: '/contact' },
 };
@@ -37,8 +37,8 @@ export default async function ContactPage() {
               </div>
               <div>
                 <p className="eyebrow text-ink-500 mb-2">Hours</p>
-                <p>Monday — Friday · 7:30 — 17:00</p>
-                <p>Saturday · 7:30 — 14:00</p>
+                <p>Monday–Friday · 7:30–17:00</p>
+                <p>Saturday · 7:30–14:00</p>
                 <p>Sunday · Closed</p>
               </div>
             </div>
@@ -48,7 +48,7 @@ export default async function ContactPage() {
           <div className="bg-cream-100 border border-ink-900/10 p-6 md:p-10">
             <h2 className="font-display text-3xl text-ink-900 mb-2">Send a message</h2>
             <p className="text-ink-500 text-sm mb-6">
-              Special orders, delivery enquiries, anything else — we&apos;ll come back to
+              Special orders, delivery enquiries, anything else, we&apos;ll come back to
               you within a working day.
             </p>
             <ContactForm />

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     if (rateLimit(`verify-email:${normalizedEmail}`, WINDOW_MS, MAX_ATTEMPTS)) {
       return NextResponse.json(
-        { error: 'Too many attempts — please request a new code and try again shortly.' },
+        { error: 'Too many attempts. Please request a new code and try again shortly.' },
         { status: 429 }
       );
     }

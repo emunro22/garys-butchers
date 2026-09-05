@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       // the customer never retries, the expire-pending-orders cron cleans
       // this order up properly after PENDING_ORDER_TTL_MINUTES.
       const intent = event.data.object as Stripe.PaymentIntent;
-      console.log(`payment_intent.payment_failed for order ${intent.metadata?.orderId ?? '(no orderId)'} — leaving pending, customer may retry`);
+      console.log(`payment_intent.payment_failed for order ${intent.metadata?.orderId ?? '(no orderId)'}: leaving pending, customer may retry`);
     } else if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode === 'subscription') {

@@ -9,7 +9,7 @@ function getDeliveryMessage(now: Date, cutoffHour: number): string {
 
   const msRemaining = cutoff.getTime() - now.getTime();
   if (msRemaining <= 0) {
-    return `⏰  Today's next-day delivery cutoff has passed — order before ${formatHour(cutoffHour)} tomorrow`;
+    return `⏰  Today's next-day delivery cutoff has passed, order before ${formatHour(cutoffHour)} tomorrow`;
   }
 
   const minutesRemaining = Math.ceil(msRemaining / 60000);

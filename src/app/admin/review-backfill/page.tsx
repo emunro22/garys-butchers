@@ -11,7 +11,7 @@ export default function AdminReviewBackfillPage() {
         <p className="text-ink-500 text-sm mt-2 max-w-prose">
           Sends the &quot;leave us a review&quot; email to every existing customer whose order has
           already been fulfilled. Going forward this happens automatically at 8pm each day an
-          order is due — this page is just for catching up on orders placed before that was set
+          order is due. This page is just for catching up on orders placed before that was set
           up. Safe to leave this page here; running it again later only catches anything new.
         </p>
       </header>

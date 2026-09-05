@@ -154,13 +154,13 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
       if (!res.ok) throw new Error('Reconcile failed');
       const data = await res.json();
       if (!data.fixed?.length) {
-        alert(`Checked ${data.checked} cancelled order(s) with a payment on file — none needed fixing.`);
+        alert(`Checked ${data.checked} cancelled order(s) with a payment on file: none needed fixing.`);
       } else {
         alert(
           `Fixed ${data.fixed.length} order(s) that were charged but never numbered:\n\n` +
             data.fixed
               .map((f: { orderNumber: number; customerName: string; customerEmail: string }) =>
-                `#${String(f.orderNumber).padStart(5, '0')} — ${f.customerName} (${f.customerEmail})`
+                `#${String(f.orderNumber).padStart(5, '0')}: ${f.customerName} (${f.customerEmail})`
               )
               .join('\n')
         );
@@ -775,14 +775,14 @@ function EmailOrderModal({ order, onClose }: { order: Order; onClose: () => void
               onChange={(e) => setMessage(e.target.value)}
               rows={8}
               maxLength={5000}
-              placeholder="Hi, we noticed your order was cancelled — can you let us know why? We'd love to make it right..."
+              placeholder="Hi, we noticed your order was cancelled. Can you let us know why? We'd love to make it right..."
               autoFocus
             />
             <p className="text-xs text-ink-400 mt-1 text-right">{message.length}/5000</p>
           </div>
           <p className="text-xs text-ink-500">
-            Sent from Gary&apos;s Butchers in the same style as your order confirmation emails —
-            the customer can reply directly to it.
+            Sent from Gary&apos;s Butchers in the same style as your order confirmation emails.
+            The customer can reply directly to it.
           </p>
           {error && <p className="text-sm text-butcher-500">{error}</p>}
           {sent && <p className="text-sm text-green-700">Sent!</p>}

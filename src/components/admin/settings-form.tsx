@@ -457,7 +457,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
         <div>
           <p className="eyebrow text-ink-500 mb-1">Delivery radius</p>
           <p className="text-xs text-ink-500">
-            Addresses beyond the radius cannot be delivered to — customers are told to choose pickup instead.
+            Addresses beyond the radius cannot be delivered to. Customers are told to choose pickup instead.
           </p>
         </div>
         <div>
@@ -485,7 +485,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           <p className="text-xs text-ink-500">
             A courier-fulfilled option for bulk orders and addresses outside our usual area. Only
             appears at checkout for customers you&apos;ve flagged as eligible on their customer
-            profile. The minimum fee below is what the customer sees and pays at checkout — the
+            profile. The minimum fee below is what the customer sees and pays at checkout; the
             rate per kg is only used by the weight calculator on the order, to help you work out
             what to actually charge or invoice for.
           </p>
@@ -605,7 +605,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           <p className="text-xs text-ink-500">
             Each customer gets a shareable referral link from their account. Once someone they
             referred signs up and completes their first paid order, the referrer is automatically
-            given a one-time discount off their next order — no code to enter.
+            given a one-time discount off their next order, with no code to enter.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-ink-700">
@@ -638,7 +638,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           <p className="eyebrow text-ink-500 mb-1">Seasonal theme</p>
           <p className="text-xs text-ink-500">
             Recolours the storefront, adds a themed banner, and drops small decorations onto
-            product and category tiles. Only one can be active at a time — switch back to
+            product and category tiles. Only one can be active at a time; switch back to
             &quot;None&quot; to return to the normal look. Doesn&apos;t affect this admin panel.
           </p>
         </div>
@@ -690,8 +690,8 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           <p className="eyebrow text-ink-500 mb-1">Same-day delivery slots</p>
           <p className="text-xs text-ink-500">
             Time windows for same-day delivery, today only. Only products marked &quot;Available same
-            day&quot; are eligible — a basket with any item requiring advance notice can&apos;t use
-            same-day delivery. Set a slot&apos;s capacity to 0 to turn it off, or remove it entirely —
+            day&quot; are eligible, so a basket with any item requiring advance notice can&apos;t use
+            same-day delivery. Set a slot&apos;s capacity to 0 to turn it off, or remove it entirely,
             e.g. delete anything after 5pm so same-day deliveries stop being offered past then.
           </p>
         </div>
@@ -704,7 +704,7 @@ export function SettingsForm({ initial }: { initial: AllSettings }) {
           <p className="eyebrow text-ink-500 mb-1">Same-day delivery fee</p>
           <p className="text-xs text-ink-500">
             An optional rush-delivery surcharge, added on top of the normal distance-based delivery
-            fee above — only for orders placed with a same-day slot.
+            fee above, only for orders placed with a same-day slot.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-ink-700">

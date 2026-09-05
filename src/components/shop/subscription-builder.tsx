@@ -106,7 +106,7 @@ export function SubscriptionBuilder({
       <div className="text-center py-16 bg-cream-100 border border-ink-900/10">
         <ShoppingBag className="h-10 w-10 text-ink-300 mx-auto mb-4" />
         <p className="font-display text-xl text-ink-700">No subscription items yet</p>
-        <p className="text-sm text-ink-500 mt-1">Check back soon — we&apos;re still setting this up.</p>
+        <p className="text-sm text-ink-500 mt-1">Check back soon, we&apos;re still setting this up.</p>
       </div>
     );
   }
@@ -225,7 +225,7 @@ export function SubscriptionBuilder({
             ))}
           </select>
           <p className="text-xs text-ink-400 mt-1">
-            We&apos;ll aim for this day each month — if it&apos;s fully booked we&apos;ll use the nearest available day.
+            We&apos;ll aim for this day each month. If it&apos;s fully booked we&apos;ll use the nearest available day.
           </p>
         </div>
 

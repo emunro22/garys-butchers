@@ -3,16 +3,16 @@ import { FaqAccordion } from '@/components/shop/faq-accordion';
 import { buildFaqPageJsonLd } from '@/lib/structured-data';
 
 export const metadata: Metadata = {
-  title: 'FAQ — Gary’s Butchers & Fishmongers',
+  title: 'FAQ | Gary’s Butchers & Fishmongers',
   description:
-    'Delivery, click & collect, meat packs, payment and more — answers to common questions about ordering from Gary’s Butchers & Fishmongers.',
+    'Delivery, click & collect, meat packs, payment and more: answers to common questions about ordering from Gary’s Butchers & Fishmongers.',
   alternates: { canonical: '/faq' },
 };
 
 const faqs = [
   {
     q: 'Do you deliver?',
-    a: 'Yes — free home delivery within 5 miles of the shop. Between 5 and 10 miles, delivery is £3.95. Beyond 10 miles (up to 30 miles), a £5 delivery charge applies. Orders placed before 10am are delivered same day where possible.',
+    a: 'Yes, free home delivery within 5 miles of the shop. Between 5 and 10 miles, delivery is £3.95. Beyond 10 miles (up to 30 miles), a £5 delivery charge applies. Orders placed before 10am are delivered same day where possible.',
   },
   {
     q: 'Can I click & collect?',
@@ -24,11 +24,11 @@ const faqs = [
   },
   {
     q: 'Where does your meat come from?',
-    a: 'Scottish-sourced wherever possible. We work with local farms and suppliers we know personally. The same goes for the fish on our fishmonger counter — fresh from the Scottish coast.',
+    a: 'Scottish-sourced wherever possible. We work with local farms and suppliers we know personally. The same goes for the fish on our fishmonger counter, which is fresh from the Scottish coast.',
   },
   {
     q: 'Can I order something specific that isn\'t on the website?',
-    a: 'Yes — just give us a call or use the contact form with your request. We can prepare special cuts, larger joints for events, or custom mixes from our meat packs.',
+    a: 'Yes, just give us a call or use the contact form with your request. We can prepare special cuts, larger joints for events, or custom mixes from our meat packs.',
   },
   {
     q: 'How do meat packs work?',
@@ -36,7 +36,7 @@ const faqs = [
   },
   {
     q: 'How do I use a discount code?',
-    a: 'Add your items to the basket, then enter the code at checkout in the “Discount code” field. We run regular promotions — sign up to our newsletter or check our Facebook for the latest.',
+    a: 'Add your items to the basket, then enter the code at checkout in the “Discount code” field. We run regular promotions, so sign up to our newsletter or check our Facebook for the latest.',
   },
   {
     q: 'Do you do gift vouchers?',
@@ -48,7 +48,7 @@ const faqs = [
   },
   {
     q: 'Can I change or cancel my order?',
-    a: 'Get in touch as soon as possible — we\'ll do everything we can to amend or cancel before your meat is cut. Once it\'s prepared, we may not be able to refund.',
+    a: 'Get in touch as soon as possible. We\'ll do everything we can to amend or cancel before your meat is cut. Once it\'s prepared, we may not be able to refund.',
   },
 ];
 

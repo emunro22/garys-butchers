@@ -26,7 +26,7 @@ export async function generateMetadata({
       .limit(1);
     if (!cat) return { title: 'Not found' };
     return {
-      title: `${cat.name} — Gary’s Butchers & Fishmongers`,
+      title: `${cat.name} | Gary’s Butchers & Fishmongers`,
       description: cat.description ?? `Shop ${cat.name} at Gary's Butchers & Fishmongers.`,
       alternates: { canonical: `/shop/${category}` },
     };
@@ -161,7 +161,7 @@ export default async function CategoryPage({
               <>
                 <p className="font-display text-2xl text-ink-700">Nothing here yet.</p>
                 <p className="text-ink-500 mt-2">
-                  We&apos;re still stocking this counter — check back soon.
+                  We&apos;re still stocking this counter, check back soon.
                 </p>
                 <Link
                   href="/shop"

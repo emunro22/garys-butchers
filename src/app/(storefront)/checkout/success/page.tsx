@@ -9,7 +9,7 @@ import { CheckCircle2, Mail } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Order confirmed — Gary’s Butchers & Fishmongers',
+  title: 'Order confirmed | Gary’s Butchers & Fishmongers',
   description: 'Thanks for your order at Gary’s Butchers & Fishmongers.',
 };
 
@@ -53,7 +53,7 @@ export default async function CheckoutSuccessPage({
 
         {order && stillConfirming && (
           <p className="mt-10 text-sm text-ink-500">
-            Just finalising your order details — this will update automatically in a moment.
+            Just finalising your order details. This will update automatically in a moment.
           </p>
         )}
 

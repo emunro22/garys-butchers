@@ -5,7 +5,7 @@ import { recipes } from '@/lib/recipes';
 export const metadata: Metadata = {
   title: 'Recipes & Sourcing',
   description:
-    'Cooking guides, recipes and sourcing stories from our butcher and fishmonger counter in Erskine — hand-cut Scottish meat, cooked simply.',
+    'Cooking guides, recipes and sourcing stories from our butcher and fishmonger counter in Erskine: hand-cut Scottish meat, cooked simply.',
   alternates: { canonical: '/recipes' },
 };
 
@@ -20,7 +20,7 @@ export default function RecipesIndexPage() {
             <span className="font-display italic text-gold-400"> &amp; sourcing.</span>
           </h1>
           <p className="mt-6 text-cream-200/80 max-w-xl leading-relaxed">
-            Cooking guides and stories from Gary and the team — how we choose what goes
+            Cooking guides and stories from Gary and the team: how we choose what goes
             on the counter, and how to cook it once it's home.
           </p>
         </div>

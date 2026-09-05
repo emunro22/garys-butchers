@@ -10,7 +10,7 @@ import { SearchBar } from '@/components/shop/search-bar';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Meat packs — Gary’s Butchers & Fishmongers',
+  title: 'Meat packs | Gary’s Butchers & Fishmongers',
   alternates: { canonical: '/shop/meat-packs' },
   description:
     'Curated value packs that feed the family for less. Free home delivery within 5 miles.',
@@ -78,7 +78,7 @@ export default async function MeatPacksPage({
           </nav>
           <h1 className="font-display text-5xl md:text-7xl leading-[0.95]">Meat packs</h1>
           <p className="mt-6 max-w-2xl text-cream-200/80 leading-relaxed">
-            From quick weekday breakfasts to a full week&apos;s shop — hand-built packs, cut
+            From quick weekday breakfasts to a full week&apos;s shop: hand-built packs, cut
             fresh and bagged the day you collect. Free home delivery within 5 miles.
           </p>
         </div>
@@ -137,7 +137,7 @@ export default async function MeatPacksPage({
               <>
                 <p className="font-display text-2xl text-ink-700">Nothing here yet.</p>
                 <p className="text-ink-500 mt-2">
-                  We&apos;re still building packs — check back soon.
+                  We&apos;re still building packs, check back soon.
                 </p>
                 <Link
                   href="/shop"

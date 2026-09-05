@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     if (rateLimit(`reset-password:${normalizedEmail}`, WINDOW_MS, MAX_ATTEMPTS)) {
       return NextResponse.json(
-        { error: 'Too many attempts — please request a new reset code and try again shortly.' },
+        { error: 'Too many attempts. Please request a new reset code and try again shortly.' },
         { status: 429 }
       );
     }

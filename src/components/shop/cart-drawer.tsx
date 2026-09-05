@@ -44,7 +44,7 @@ export function CartDrawer() {
                   <Truck className="h-3.5 w-3.5 text-gold-500" />
                   <span>
                     <strong className="text-ink-900">Free delivery</strong> within 5 miles of the
-                    shop — your exact fee is shown once you enter your postcode at checkout.
+                    shop. Your exact fee is shown once you enter your postcode at checkout.
                   </span>
                 </div>
               </div>

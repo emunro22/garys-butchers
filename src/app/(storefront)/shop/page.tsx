@@ -13,9 +13,9 @@ import { SeasonalCardFrame } from '@/components/seasonal/seasonal-card-frame';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Shop all — Gary’s Butchers & Fishmongers',
+  title: 'Shop all | Gary’s Butchers & Fishmongers',
   description:
-    'Browse the full Gary’s Butchers & Fishmongers range — beef, pork, chicken, fish, sausages, pies and meat packs.',
+    'Browse the full Gary’s Butchers & Fishmongers range: beef, pork, chicken, fish, sausages, pies and meat packs.',
   alternates: { canonical: '/shop' },
 };
 

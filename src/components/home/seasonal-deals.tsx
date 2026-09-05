@@ -79,7 +79,7 @@ export async function SeasonalDeals({ compact = false }: { compact?: boolean }) 
                 <span className="text-cream-50 text-sm font-medium">{deal.title}</span>
                 {deal.enrichedItems.length > 0 && (
                   <span className="text-cream-200/50 text-xs hidden md:inline">
-                    — {deal.enrichedItems.map((i) => `${i.quantity > 1 ? i.quantity + '× ' : ''}${i.name}`).join(', ')}
+                    : {deal.enrichedItems.map((i) => `${i.quantity > 1 ? i.quantity + '× ' : ''}${i.name}`).join(', ')}
                   </span>
                 )}
               </div>

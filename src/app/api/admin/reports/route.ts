@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (type === 'signups') {
       const report = await buildSignupsReport(days);
       await sendReportEmail({
-        title: `New sign-ups — last ${dayLabel}`,
+        title: `New sign-ups, last ${dayLabel}`,
         summaryHtml: `<p style="margin:0;font-size:14px;color:#4a443a;line-height:1.6">Total new sign-ups: <strong>${report.total}</strong>. Full list attached as a CSV file.</p>`,
         filename: report.filename,
         csvContent: report.csv,
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     } else if (type === 'product-sales') {
       const report = await buildProductSalesReport(days);
       await sendReportEmail({
-        title: `Product sales — last ${dayLabel}`,
+        title: `Product sales, last ${dayLabel}`,
         summaryHtml: `<p style="margin:0;font-size:14px;color:#4a443a;line-height:1.6">Across <strong>${report.totalOrders}</strong> paid order${report.totalOrders === 1 ? '' : 's'} · <strong>${report.totalProducts}</strong> distinct product${report.totalProducts === 1 ? '' : 's'} sold. Full breakdown attached as a CSV file.</p>`,
         filename: report.filename,
         csvContent: report.csv,
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     } else {
       const report = await buildOrdersScheduleReport(days);
       await sendReportEmail({
-        title: `Orders schedule — last ${dayLabel}`,
+        title: `Orders schedule, last ${dayLabel}`,
         summaryHtml: `<p style="margin:0;font-size:14px;color:#4a443a;line-height:1.6"><strong>${report.total}</strong> order${report.total === 1 ? '' : 's'}, grouped by pickup / delivery / same-day delivery / premium and sorted for the day's run. Full breakdown attached as a CSV file.</p>`,
         filename: report.filename,
         csvContent: report.csv,

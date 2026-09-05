@@ -23,6 +23,7 @@ const cols = [
       { label: 'Frequently asked', href: '/faq' },
       { label: 'Reviews', href: '/reviews' },
       { label: 'Recipes', href: '/recipes' },
+      { label: 'Blog', href: '/blog' },
       { label: 'Contact us', href: '/contact' },
     ],
   },
@@ -51,7 +52,7 @@ export async function Footer() {
               Subscribe for up-to-date offers
             </h2>
             <p className="mt-3 text-sm text-cream-200/70 max-w-md">
-              Seasonal specials, new meat packs and discount codes — straight to your inbox. No spam, unsubscribe any time.
+              Seasonal specials, new meat packs and discount codes, straight to your inbox. No spam, unsubscribe any time.
             </p>
           </div>
           <div>

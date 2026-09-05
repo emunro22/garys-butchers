@@ -13,7 +13,7 @@ export function ReviewsStrip() {
           ))}
         </div>
         <p className="text-sm text-ink-700">
-          <span className="font-semibold text-ink-900">5.0</span> from local Google reviews —
+          <span className="font-semibold text-ink-900">5.0</span> from local Google reviews,
           <Link href="/reviews" className="text-gold-600 hover:underline ml-1">
             read them all
           </Link>

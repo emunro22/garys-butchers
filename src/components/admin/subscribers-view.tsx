@@ -124,7 +124,7 @@ export function SubscribersView({ subscribers }: { subscribers: Subscriber[] }) 
       {filtered.length === 0 ? (
         <p className="text-center py-12 text-ink-500">
           {subscribers.length === 0
-            ? "No subscribers yet — they'll appear here once people sign up from the website."
+            ? "No subscribers yet. They'll appear here once people sign up from the website."
             : 'No subscribers match those filters.'}
         </p>
       ) : (
